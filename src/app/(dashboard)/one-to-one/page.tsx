@@ -1,8 +1,22 @@
-export default function OneToOnePage() {
+import { getOneToOnes, getActiveMembers } from "./actions";
+import OneToOneView from "./OneToOneView";
+
+export default async function OneToOnePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string }>;
+}) {
+  const params = await searchParams;
+  const [entries, members] = await Promise.all([
+    getOneToOnes(params.status),
+    getActiveMembers(),
+  ]);
+
   return (
-    <div>
-      <h2 className="text-2xl font-bold text-gray-900">1:1 양육</h2>
-      <p className="mt-2 text-gray-500">Phase 5에서 구현 예정</p>
-    </div>
+    <OneToOneView
+      entries={entries}
+      members={members}
+      currentStatus={params.status || "all"}
+    />
   );
 }

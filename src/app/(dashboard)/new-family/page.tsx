@@ -1,8 +1,11 @@
-export default function NewFamilyPage() {
-  return (
-    <div>
-      <h2 className="text-2xl font-bold text-gray-900">새가족</h2>
-      <p className="mt-2 text-gray-500">Phase 5에서 구현 예정</p>
-    </div>
-  );
+import { getNewFamilies, getActiveMembers } from "./actions";
+import NewFamilyView from "./NewFamilyView";
+
+export default async function NewFamilyPage() {
+  const [families, members] = await Promise.all([
+    getNewFamilies(),
+    getActiveMembers(),
+  ]);
+
+  return <NewFamilyView families={families} members={members} />;
 }
