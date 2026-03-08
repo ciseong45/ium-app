@@ -7,7 +7,7 @@ import {
   updateStep,
   deleteNewFamily,
 } from "./actions";
-import type { NewFamilyEntry } from "./actions";
+import type { NewFamilyEntry, Season } from "./actions";
 
 const STEPS = [
   { step: 1, label: "1주차 방문", color: "bg-gray-100 text-gray-700" },
@@ -20,13 +20,27 @@ type SimpleMember = { id: number; name: string };
 export default function NewFamilyView({
   families,
   members,
+  seasons,
+  currentSeasonId,
 }: {
   families: NewFamilyEntry[];
   members: SimpleMember[];
+  seasons: Season[];
+  currentSeasonId?: number;
 }) {
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const activeSeason = seasons.find((s) => s.is_active);
+
+  const handleSeasonFilter = (seasonId: string) => {
+    if (seasonId === "all") {
+      router.push("/new-family");
+    } else {
+      router.push(`/new-family?season=${seasonId}`);
+    }
+  };
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -88,6 +102,36 @@ export default function NewFamilyView({
         </button>
       </div>
 
+      {/* 시즌 필터 */}
+      {seasons.length > 0 && (
+        <div className="mt-4 flex gap-1.5 overflow-x-auto pb-1">
+          <button
+            onClick={() => handleSeasonFilter("all")}
+            className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+              !currentSeasonId
+                ? "bg-blue-600 text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            전체
+          </button>
+          {seasons.map((season) => (
+            <button
+              key={season.id}
+              onClick={() => handleSeasonFilter(String(season.id))}
+              className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                currentSeasonId === season.id
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              {season.name}
+              {season.is_active && " (현재)"}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* 단계별 요약 */}
       <div className="mt-4 flex gap-3 overflow-x-auto pb-2">
         {stepCounts.map((s) => (
@@ -119,6 +163,15 @@ export default function NewFamilyView({
               </span>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* 활성 시즌 없음 경고 */}
+      {!activeSeason && (
+        <div className="mt-4 rounded-lg border border-orange-200 bg-orange-50 p-4">
+          <p className="text-sm text-orange-700">
+            활성 시즌이 없습니다. 소그룹 관리에서 시즌을 생성하고 활성화해주세요.
+          </p>
         </div>
       )}
 

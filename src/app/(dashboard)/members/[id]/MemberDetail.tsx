@@ -2,9 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { deleteMember } from "../actions";
-import type { Member } from "@/types/member";
-import { STATUS_LABELS, STATUS_COLORS } from "@/types/member";
+import { deleteMember, startLeave, returnFromLeave } from "../actions";
+import type { Member, MemberLeave, LeaveType } from "@/types/member";
+import { STATUS_LABELS, STATUS_COLORS, LEAVE_TYPE_LABELS } from "@/types/member";
 
 type StatusLogEntry = {
   id: number;
@@ -17,12 +17,18 @@ type StatusLogEntry = {
 export default function MemberDetail({
   member,
   statusLog,
+  leaves,
 }: {
   member: Member;
   statusLog: StatusLogEntry[];
+  leaves: MemberLeave[];
 }) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
+  const [showLeaveForm, setShowLeaveForm] = useState(false);
+  const [leaveLoading, setLeaveLoading] = useState(false);
+
+  const activeLeave = leaves.find((l) => !l.actual_return);
 
   const handleDelete = async () => {
     if (!confirm(`정말 ${member.name}님을 삭제하시겠습니까?`)) return;
@@ -34,6 +40,37 @@ export default function MemberDetail({
     } catch {
       alert("삭제에 실패했습니다.");
       setDeleting(false);
+    }
+  };
+
+  const handleStartLeave = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLeaveLoading(true);
+    const formData = new FormData(e.currentTarget);
+    try {
+      await startLeave(
+        member.id,
+        formData.get("leave_type") as LeaveType,
+        (formData.get("reason") as string) || null,
+        formData.get("start_date") as string,
+        (formData.get("expected_return") as string) || null
+      );
+      setShowLeaveForm(false);
+      router.refresh();
+    } catch {
+      alert("휴적 등록에 실패했습니다.");
+    }
+    setLeaveLoading(false);
+  };
+
+  const handleReturn = async () => {
+    if (!activeLeave) return;
+    if (!confirm(`${member.name}님의 복귀를 처리하시겠습니까?`)) return;
+    try {
+      await returnFromLeave(member.id, activeLeave.id);
+      router.refresh();
+    } catch {
+      alert("복귀 처리에 실패했습니다.");
     }
   };
 
@@ -94,6 +131,148 @@ export default function MemberDetail({
             <dd className="mt-1 whitespace-pre-wrap text-sm text-gray-900">
               {member.notes}
             </dd>
+          </div>
+        )}
+      </div>
+
+      {/* 휴적 관리 */}
+      <div className="mt-6">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-gray-900">휴적 관리</h3>
+          {member.status === "on_leave" && activeLeave ? (
+            <button
+              onClick={handleReturn}
+              className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+            >
+              복귀 처리
+            </button>
+          ) : member.status !== "on_leave" && member.status !== "removed" ? (
+            <button
+              onClick={() => setShowLeaveForm(!showLeaveForm)}
+              className="rounded-lg border border-orange-300 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50"
+            >
+              휴적 등록
+            </button>
+          ) : null}
+        </div>
+
+        {/* 현재 휴적 중 알림 */}
+        {activeLeave && (
+          <div className="mt-3 rounded-lg border border-orange-200 bg-orange-50 p-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-orange-700">
+                현재 휴적 중
+              </span>
+              <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
+                {LEAVE_TYPE_LABELS[activeLeave.leave_type]}
+              </span>
+            </div>
+            <div className="mt-2 space-y-1 text-sm text-orange-600">
+              <p>시작일: {activeLeave.start_date}</p>
+              {activeLeave.expected_return && (
+                <p>예상 복귀일: {activeLeave.expected_return}</p>
+              )}
+              {activeLeave.reason && <p>사유: {activeLeave.reason}</p>}
+            </div>
+          </div>
+        )}
+
+        {/* 휴적 등록 폼 */}
+        {showLeaveForm && (
+          <form
+            onSubmit={handleStartLeave}
+            className="mt-3 rounded-xl border bg-white p-4 space-y-3"
+          >
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  사유 유형 <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="leave_type"
+                  required
+                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="military">군대</option>
+                  <option value="academic_leave">휴학</option>
+                  <option value="study_abroad">유학/교환학생</option>
+                  <option value="other">기타</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  시작일 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  name="start_date"
+                  type="date"
+                  required
+                  defaultValue={new Date().toISOString().split("T")[0]}
+                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  예상 복귀일
+                </label>
+                <input
+                  name="expected_return"
+                  type="date"
+                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  상세 사유
+                </label>
+                <input
+                  name="reason"
+                  type="text"
+                  placeholder="예: 육군 입대"
+                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="submit"
+                disabled={leaveLoading}
+                className="rounded-lg bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700 disabled:opacity-50"
+              >
+                {leaveLoading ? "등록 중..." : "휴적 등록"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowLeaveForm(false)}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                취소
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* 휴적 이력 */}
+        {leaves.length > 0 && (
+          <div className="mt-3 space-y-2">
+            {leaves
+              .filter((l) => l.actual_return)
+              .map((leave) => (
+                <div
+                  key={leave.id}
+                  className="flex items-center gap-3 rounded-lg border bg-white px-4 py-3 text-sm"
+                >
+                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+                    {LEAVE_TYPE_LABELS[leave.leave_type]}
+                  </span>
+                  <span className="text-gray-500">
+                    {leave.start_date} ~ {leave.actual_return}
+                  </span>
+                  {leave.reason && (
+                    <span className="text-gray-400">{leave.reason}</span>
+                  )}
+                </div>
+              ))}
           </div>
         )}
       </div>

@@ -58,6 +58,7 @@ export default function MemberList({
             { value: "all", label: "전체" },
             { value: "active", label: "재적" },
             { value: "attending", label: "출석" },
+            { value: "on_leave", label: "휴적" },
             { value: "inactive", label: "미출석" },
             { value: "removed", label: "제적" },
           ].map((option) => (

@@ -40,11 +40,19 @@ export async function submitVisitorCard(formData: FormData) {
     return { success: false, error: "등록에 실패했습니다. 다시 시도해주세요." };
   }
 
-  // 2. 새가족 등록
+  // 2. 활성 시즌 확인
+  const { data: activeSeason } = await supabase
+    .from("small_group_seasons")
+    .select("id")
+    .eq("is_active", true)
+    .single();
+
+  // 3. 새가족 등록
   const today = new Date().toISOString().split("T")[0];
   const { error: nfError } = await supabase.from("new_family").insert({
     member_id: member.id,
     first_visit: today,
+    season_id: activeSeason?.id || null,
   });
 
   if (nfError) {
