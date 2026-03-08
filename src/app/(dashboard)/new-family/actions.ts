@@ -65,7 +65,47 @@ export async function updateStep(id: number, step: number) {
     .update({ step, step_updated_at: new Date().toISOString() })
     .eq("id", id);
   if (error) throw error;
+
+  // 3주차 교육 완료 시 멤버 상태를 attending(출석)으로 자동 전환
+  if (step === 3) {
+    const { data: family } = await supabase
+      .from("new_family")
+      .select("member_id")
+      .eq("id", id)
+      .single();
+
+    if (family) {
+      // 현재 멤버 상태 확인
+      const { data: member } = await supabase
+        .from("members")
+        .select("status")
+        .eq("id", family.member_id)
+        .single();
+
+      if (member && member.status !== "attending") {
+        // 멤버 상태를 attending으로 변경
+        await supabase
+          .from("members")
+          .update({ status: "attending" })
+          .eq("id", family.member_id);
+
+        // 상태 변경 이력 기록
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        await supabase.from("member_status_log").insert({
+          member_id: family.member_id,
+          old_status: member.status,
+          new_status: "attending",
+          changed_by: user?.id,
+        });
+      }
+    }
+  }
+
   revalidatePath("/new-family");
+  revalidatePath("/members");
   return { success: true };
 }
 

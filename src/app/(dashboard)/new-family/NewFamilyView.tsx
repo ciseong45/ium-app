@@ -10,10 +10,9 @@ import {
 import type { NewFamilyEntry } from "./actions";
 
 const STEPS = [
-  { step: 1, label: "첫 방문", color: "bg-gray-100 text-gray-700" },
-  { step: 2, label: "재방문", color: "bg-blue-100 text-blue-700" },
-  { step: 3, label: "소그룹 연결", color: "bg-purple-100 text-purple-700" },
-  { step: 4, label: "정착 완료", color: "bg-green-100 text-green-700" },
+  { step: 1, label: "1주차 방문", color: "bg-gray-100 text-gray-700" },
+  { step: 2, label: "2주차 교육", color: "bg-blue-100 text-blue-700" },
+  { step: 3, label: "3주차 교육", color: "bg-green-100 text-green-700" },
 ];
 
 type SimpleMember = { id: number; name: string };
@@ -43,6 +42,9 @@ export default function NewFamilyView({
   };
 
   const handleStepChange = async (id: number, step: number) => {
+    if (step === 3) {
+      if (!confirm("3주차 교육을 완료하면 출석 멤버로 자동 등록됩니다. 진행하시겠습니까?")) return;
+    }
     try {
       await updateStep(id, step);
       router.refresh();
@@ -71,7 +73,7 @@ export default function NewFamilyView({
   const twoWeeksAgo = new Date();
   twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
   const stalled = families.filter(
-    (f) => f.step < 4 && new Date(f.step_updated_at) < twoWeeksAgo
+    (f) => f.step < 3 && new Date(f.step_updated_at) < twoWeeksAgo
   );
 
   return (
@@ -215,9 +217,15 @@ export default function NewFamilyView({
                       {family.member.name}
                     </h3>
                     <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${STEPS[family.step - 1].color}`}
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                        family.step === 3
+                          ? "bg-green-100 text-green-700"
+                          : STEPS[family.step - 1].color
+                      }`}
                     >
-                      {STEPS[family.step - 1].label}
+                      {family.step === 3
+                        ? "등록 완료"
+                        : STEPS[family.step - 1].label}
                     </span>
                   </div>
                   <div className="mt-1 flex gap-3 text-sm text-gray-500">
