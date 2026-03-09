@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import type { MemberWithGroup } from "@/types/member";
 import { STATUS_LABELS, STATUS_COLORS } from "@/types/member";
-import { deleteMembers } from "./actions";
+import { deleteMembers, moveMembersToGroup } from "./actions";
 
 type FilterOptions = {
   groups: { id: number; name: string }[];
@@ -36,6 +36,7 @@ export default function MemberList({
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [isPending, startTransition] = useTransition();
   const isAdmin = role === "admin";
+  const canEdit = role !== "viewer";
 
   const toggleSelect = (id: number) => {
     setSelected((prev) => {
@@ -59,6 +60,24 @@ export default function MemberList({
     if (!confirm(`선택한 ${selected.size}명의 멤버를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
     startTransition(async () => {
       const result = await deleteMembers([...selected]);
+      if (result.success) {
+        setSelected(new Set());
+        router.refresh();
+      } else {
+        alert(result.error);
+      }
+    });
+  };
+
+  const handleMoveToGroup = (groupId: string) => {
+    if (selected.size === 0 || groupId === "") return;
+    const targetId = groupId === "none" ? null : Number(groupId);
+    const label = targetId === null
+      ? "소그룹 배정 해제"
+      : `${filterOptions.groups.find((g) => g.id === targetId)?.name}(으)로 이동`;
+    if (!confirm(`선택한 ${selected.size}명을 ${label}하시겠습니까?`)) return;
+    startTransition(async () => {
+      const result = await moveMembersToGroup([...selected], targetId);
       if (result.success) {
         setSelected(new Set());
         router.refresh();
@@ -191,22 +210,45 @@ export default function MemberList({
         </select>
       </div>
 
-      {/* 결과 수 + 선택 삭제 */}
+      {/* 결과 수 + 선택 액션 */}
       <div className="mt-4 flex items-center justify-between">
         <p className="text-sm text-gray-500">
           총 {members.length}명
-          {isAdmin && selected.size > 0 && (
+          {canEdit && selected.size > 0 && (
             <span className="ml-2 text-blue-600">({selected.size}명 선택)</span>
           )}
         </p>
-        {isAdmin && selected.size > 0 && (
-          <button
-            onClick={handleDeleteSelected}
-            disabled={isPending}
-            className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50"
-          >
-            {isPending ? "삭제 중..." : `선택 삭제 (${selected.size})`}
-          </button>
+        {canEdit && selected.size > 0 && (
+          <div className="flex items-center gap-2">
+            {filterOptions.groups.length > 0 && (
+              <select
+                defaultValue=""
+                onChange={(e) => {
+                  handleMoveToGroup(e.target.value);
+                  e.target.value = "";
+                }}
+                disabled={isPending}
+                className="rounded-lg border border-gray-300 px-2 py-1.5 text-xs text-gray-700 focus:border-blue-500 focus:outline-none disabled:opacity-50"
+              >
+                <option value="" disabled>소그룹 이동</option>
+                <option value="none">배정 해제</option>
+                {filterOptions.groups.map((g) => (
+                  <option key={g.id} value={String(g.id)}>
+                    {g.name}
+                  </option>
+                ))}
+              </select>
+            )}
+            {isAdmin && (
+              <button
+                onClick={handleDeleteSelected}
+                disabled={isPending}
+                className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                {isPending ? "처리 중..." : `선택 삭제 (${selected.size})`}
+              </button>
+            )}
+          </div>
         )}
       </div>
 
@@ -222,7 +264,7 @@ export default function MemberList({
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b text-gray-500">
-                {isAdmin && (
+                {canEdit && (
                   <th className="pb-3 pr-2 font-medium w-8">
                     <input
                       type="checkbox"
@@ -250,7 +292,7 @@ export default function MemberList({
                   onClick={() => router.push(`/members/${member.id}`)}
                   className="cursor-pointer border-b transition-colors hover:bg-gray-50"
                 >
-                  {isAdmin && (
+                  {canEdit && (
                     <td className="py-3 pr-2" onClick={(e) => e.stopPropagation()}>
                       <input
                         type="checkbox"

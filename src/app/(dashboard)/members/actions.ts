@@ -304,6 +304,62 @@ export async function deleteMembers(ids: number[]): Promise<ActionResult> {
   return { success: true };
 }
 
+export async function moveMembersToGroup(
+  memberIds: number[],
+  targetGroupId: number | null
+): Promise<ActionResult> {
+  const { supabase, role } = await requireAuth();
+  if (role === "viewer") return { success: false, error: "권한이 없습니다." };
+  if (memberIds.length === 0) return { success: false, error: "선택한 멤버가 없습니다." };
+
+  // 활성 시즌의 그룹 ID 목록 조회
+  const { data: activeSeason } = await supabase
+    .from("small_group_seasons")
+    .select("id")
+    .eq("is_active", true)
+    .single();
+
+  if (!activeSeason) return { success: false, error: "활성 시즌이 없습니다." };
+
+  const { data: seasonGroups } = await supabase
+    .from("small_groups")
+    .select("id")
+    .eq("season_id", activeSeason.id);
+
+  const seasonGroupIds = (seasonGroups || []).map((g: { id: number }) => g.id);
+  if (seasonGroupIds.length === 0) return { success: false, error: "활성 시즌에 소그룹이 없습니다." };
+
+  // 기존 배정 삭제 (활성 시즌 소그룹만)
+  const { error: deleteError } = await supabase
+    .from("small_group_members")
+    .delete()
+    .in("member_id", memberIds)
+    .in("group_id", seasonGroupIds);
+
+  if (deleteError) return { success: false, error: "기존 소그룹 배정 해제에 실패했습니다." };
+
+  // targetGroupId가 null이면 배정 해제만
+  if (targetGroupId === null) {
+    revalidatePath("/members");
+    return { success: true };
+  }
+
+  // 새 그룹에 배정
+  const rows = memberIds.map((memberId) => ({
+    group_id: targetGroupId,
+    member_id: memberId,
+  }));
+
+  const { error: insertError } = await supabase
+    .from("small_group_members")
+    .insert(rows);
+
+  if (insertError) return { success: false, error: "소그룹 배정에 실패했습니다." };
+
+  revalidatePath("/members");
+  return { success: true };
+}
+
 export async function getStatusLog(memberId: number) {
   const { supabase } = await requireAuth();
 
