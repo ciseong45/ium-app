@@ -69,6 +69,43 @@ export const STATUS_COLORS: Record<MemberStatus, string> = {
   adjusting: "bg-teal-100 text-teal-700",
 };
 
+// --- 메인/보조 상태 체계 ---
+
+// 인라인 편집 드롭다운용 메인 상태 옵션
+export const MAIN_STATUS_OPTIONS: { value: MemberStatus; label: string }[] = [
+  { value: "active", label: "재적" },
+  { value: "removed", label: "제적" },
+  { value: "on_leave", label: "휴적" },
+  { value: "new_family", label: "새가족" },
+];
+
+// 상태 → 메인상태 표시용
+export function getMainStatus(status: MemberStatus): { label: string; color: string } {
+  switch (status) {
+    case "removed":
+      return { label: "제적", color: STATUS_COLORS.removed };
+    case "on_leave":
+      return { label: "휴적", color: STATUS_COLORS.on_leave };
+    case "new_family":
+      return { label: "새가족", color: STATUS_COLORS.new_family };
+    default: // active, attending, inactive, adjusting → 모두 "재적"
+      return { label: "재적", color: STATUS_COLORS.active };
+  }
+}
+
+// 보조상태 (있으면 반환, 없으면 null)
+export function getSubStatus(status: MemberStatus): { label: string; color: string } | null {
+  if (status === "adjusting") {
+    return { label: "적응중", color: STATUS_COLORS.adjusting };
+  }
+  return null;
+}
+
+// 학교 목록
+export const COMMON_SCHOOLS = [
+  "NEU", "BU", "Boston College", "MCPHS", "Berklee", "MIT", "Harvard", "Wellesley", "NEC",
+];
+
 export type LeaveType = "military" | "academic_leave" | "study_abroad" | "other";
 
 export const LEAVE_TYPE_LABELS: Record<LeaveType, string> = {

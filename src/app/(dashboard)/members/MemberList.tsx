@@ -2,8 +2,15 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition, useRef, useEffect } from "react";
-import type { MemberWithGroup, MinistryTeam } from "@/types/member";
-import { STATUS_LABELS, STATUS_COLORS, MINISTRY_TEAM_COLORS } from "@/types/member";
+import type { MemberWithGroup, MinistryTeam, MemberStatus } from "@/types/member";
+import {
+  STATUS_COLORS,
+  MINISTRY_TEAM_COLORS,
+  MAIN_STATUS_OPTIONS,
+  COMMON_SCHOOLS,
+  getMainStatus,
+  getSubStatus,
+} from "@/types/member";
 import { deleteMembers, moveMembersToGroup, quickUpdateField, updateMemberMinistryTeams } from "./actions";
 
 type FilterOptions = {
@@ -13,10 +20,12 @@ type FilterOptions = {
   ministryTeams: MinistryTeam[];
 };
 
-type EditingCell = {
+type EditingCellValue = {
   memberId: number;
-  field: "gender" | "status" | "school_or_work";
-} | null;
+  field: "gender" | "status" | "school_or_work" | "group";
+};
+
+type EditingCell = EditingCellValue | null;
 
 export default function MemberList({
   members,
@@ -47,8 +56,46 @@ export default function MemberList({
   const [editingMinistryTeam, setEditingMinistryTeam] = useState<number | null>(null);
   const [schoolCustomMode, setSchoolCustomMode] = useState(false);
   const [schoolCustomValue, setSchoolCustomValue] = useState("");
+  const [sortKey, setSortKey] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const isAdmin = role === "admin";
   const canEdit = role !== "viewer";
+
+  // --- 정렬 ---
+  const handleSort = (key: string) => {
+    if (sortKey === key) {
+      setSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  };
+
+  const sortedMembers = [...members].sort((a, b) => {
+    if (!sortKey) return 0;
+    const dir = sortDir === "asc" ? 1 : -1;
+
+    const getValue = (m: MemberWithGroup): string => {
+      switch (sortKey) {
+        case "name": return m.name;
+        case "phone": return m.phone || "";
+        case "gender": return m.gender || "";
+        case "group": return m.group_info?.group_name || "";
+        case "school": return m.school_or_work || "";
+        case "ministry": return (m.ministry_teams ?? []).map((t) => t.name).join(",");
+        case "birth_year": return m.birth_date?.substring(0, 4) || "";
+        case "status": return m.status;
+        default: return "";
+      }
+    };
+
+    const aVal = getValue(a);
+    const bVal = getValue(b);
+    if (aVal === bVal) return 0;
+    if (aVal === "") return 1; // 빈 값은 뒤로
+    if (bVal === "") return -1;
+    return aVal.localeCompare(bVal, "ko") * dir;
+  });
 
   const toggleSelect = (id: number) => {
     setSelected((prev) => {
@@ -103,12 +150,12 @@ export default function MemberList({
   const handleCellClick = (
     e: React.MouseEvent,
     memberId: number,
-    field: "gender" | "status" | "school_or_work",
+    field: EditingCellValue["field"],
     currentValue: string | null
   ) => {
     if (!canEdit) return;
     e.stopPropagation();
-    setEditingCell({ memberId, field });
+    setEditingCell({ memberId, field: field as "gender" | "status" | "school_or_work" | "group" });
     setSchoolCustomMode(false);
     setSchoolCustomValue(currentValue || "");
   };
@@ -120,6 +167,14 @@ export default function MemberList({
   ) => {
     setEditingCell(null);
     const result = await quickUpdateField(memberId, field, value);
+    if (!result.success) alert(result.error);
+    router.refresh();
+  };
+
+  const handleGroupSave = async (memberId: number, groupId: string) => {
+    setEditingCell(null);
+    const targetId = groupId === "none" ? null : Number(groupId);
+    const result = await moveMembersToGroup([memberId], targetId);
     if (!result.success) alert(result.error);
     router.refresh();
   };
@@ -198,11 +253,9 @@ export default function MemberList({
           {[
             { value: "all", label: "전체" },
             { value: "active", label: "재적" },
-            { value: "attending", label: "출석" },
             { value: "new_family", label: "새가족" },
             { value: "adjusting", label: "적응중" },
             { value: "on_leave", label: "휴적" },
-            { value: "inactive", label: "미출석" },
             { value: "removed", label: "제적" },
           ].map((option) => (
             <button
@@ -241,10 +294,8 @@ export default function MemberList({
           className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-700 focus:border-blue-500 focus:outline-none"
         >
           <option value="all">학교/직장 전체</option>
-          {filterOptions.schoolOptions.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
+          {COMMON_SCHOOLS.map((s) => (
+            <option key={s} value={s}>{s}</option>
           ))}
         </select>
 
@@ -350,28 +401,25 @@ export default function MemberList({
                     />
                   </th>
                 )}
-                <th className="pb-3 pr-4 font-medium">이름</th>
-                <th className="pb-3 pr-4 font-medium">전화번호</th>
-                <th className="hidden pb-3 pr-4 font-medium sm:table-cell">성별</th>
-                <th className="hidden pb-3 pr-4 font-medium md:table-cell">소그룹</th>
-                <th className="hidden pb-3 pr-4 font-medium md:table-cell">학교/직장</th>
-                <th className="hidden pb-3 pr-4 font-medium lg:table-cell">사역팀</th>
-                <th className="hidden pb-3 pr-4 font-medium lg:table-cell">생년</th>
-                <th className="pb-3 pr-4 font-medium">상태</th>
+                <SortableHeader label="이름" sortKey="name" currentKey={sortKey} dir={sortDir} onSort={handleSort} />
+                <SortableHeader label="전화번호" sortKey="phone" currentKey={sortKey} dir={sortDir} onSort={handleSort} />
+                <SortableHeader label="성별" sortKey="gender" currentKey={sortKey} dir={sortDir} onSort={handleSort} className="hidden sm:table-cell" />
+                <SortableHeader label="소그룹" sortKey="group" currentKey={sortKey} dir={sortDir} onSort={handleSort} className="hidden md:table-cell" />
+                <SortableHeader label="학교" sortKey="school" currentKey={sortKey} dir={sortDir} onSort={handleSort} className="hidden md:table-cell" />
+                <SortableHeader label="사역팀" sortKey="ministry" currentKey={sortKey} dir={sortDir} onSort={handleSort} className="hidden lg:table-cell" />
+                <SortableHeader label="생년" sortKey="birth_year" currentKey={sortKey} dir={sortDir} onSort={handleSort} className="hidden lg:table-cell" />
+                <SortableHeader label="상태" sortKey="status" currentKey={sortKey} dir={sortDir} onSort={handleSort} />
               </tr>
             </thead>
             <tbody>
-              {members.map((member) => (
+              {sortedMembers.map((member) => {
+                const main = getMainStatus(member.status);
+                const sub = getSubStatus(member.status);
+                return (
                 <tr
                   key={member.id}
                   onClick={() => router.push(`/members/${member.id}`)}
-                  className={`cursor-pointer border-b transition-colors ${
-                    member.gender === "M"
-                      ? "bg-blue-50/50 hover:bg-blue-100/60"
-                      : member.gender === "F"
-                        ? "bg-rose-50/50 hover:bg-rose-100/60"
-                        : "hover:bg-gray-50"
-                  }`}
+                  className="cursor-pointer border-b transition-colors hover:bg-gray-50"
                 >
                   {canEdit && (
                     <td className="py-3 pr-2" onClick={(e) => e.stopPropagation()}>
@@ -383,8 +431,18 @@ export default function MemberList({
                       />
                     </td>
                   )}
-                  <td className="py-3 pr-4 font-medium text-gray-900">
-                    {member.name}
+                  <td className="py-3 pr-4">
+                    <span
+                      className={`font-medium ${
+                        member.gender === "M"
+                          ? "text-blue-700"
+                          : member.gender === "F"
+                            ? "text-rose-600"
+                            : "text-gray-900"
+                      }`}
+                    >
+                      {member.name}
+                    </span>
                   </td>
                   <td className="py-3 pr-4 text-gray-600">
                     {member.phone || "—"}
@@ -414,9 +472,29 @@ export default function MemberList({
                     )}
                   </td>
 
-                  {/* 소그룹 */}
-                  <td className="hidden py-3 pr-4 text-gray-600 md:table-cell">
-                    {member.group_info ? member.group_info.group_name : "—"}
+                  {/* 소그룹 (인라인 편집) */}
+                  <td
+                    className="hidden py-3 pr-4 text-gray-600 md:table-cell"
+                    onClick={(e) => handleCellClick(e, member.id, "group", member.group_info?.group_name || null)}
+                  >
+                    {editingCell?.memberId === member.id && editingCell.field === "group" ? (
+                      <select
+                        autoFocus
+                        defaultValue={member.group_info ? String(member.group_info.group_id) : "none"}
+                        onChange={(e) => handleGroupSave(member.id, e.target.value)}
+                        onBlur={() => setEditingCell(null)}
+                        className="rounded border border-blue-300 px-1 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      >
+                        <option value="none">배정 해제</option>
+                        {filterOptions.groups.map((g) => (
+                          <option key={g.id} value={String(g.id)}>{g.name}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span className={canEdit ? "cursor-pointer hover:text-blue-600" : ""}>
+                        {member.group_info ? member.group_info.group_name : "—"}
+                      </span>
+                    )}
                   </td>
 
                   {/* 학교/직장 (인라인 편집) */}
@@ -436,8 +514,8 @@ export default function MemberList({
                             if (e.key === "Enter") handleFieldSave(member.id, "school_or_work", schoolCustomValue || null);
                             if (e.key === "Escape") setEditingCell(null);
                           }}
-                          className="w-full min-w-[120px] rounded border border-blue-300 px-1 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                          placeholder="학교/직장 입력"
+                          className="w-full min-w-[100px] rounded border border-blue-300 px-1 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          placeholder="직접 입력"
                         />
                       ) : (
                         <select
@@ -455,7 +533,7 @@ export default function MemberList({
                           className="rounded border border-blue-300 px-1 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                         >
                           <option value="">-</option>
-                          {filterOptions.schoolOptions.map((s) => (
+                          {COMMON_SCHOOLS.map((s) => (
                             <option key={s} value={s}>{s}</option>
                           ))}
                           <option value="__custom__">직접 입력...</option>
@@ -509,7 +587,7 @@ export default function MemberList({
                     {member.birth_date ? member.birth_date.substring(0, 4) : "—"}
                   </td>
 
-                  {/* 상태 (인라인 편집) */}
+                  {/* 상태 (메인 + 보조) 인라인 편집 */}
                   <td
                     className="py-3 pr-4"
                     onClick={(e) => handleCellClick(e, member.id, "status", member.status)}
@@ -517,25 +595,40 @@ export default function MemberList({
                     {editingCell?.memberId === member.id && editingCell.field === "status" ? (
                       <select
                         autoFocus
-                        defaultValue={member.status}
+                        defaultValue={
+                          // adjusting → "active" 기본 선택 (재적)
+                          member.status === "adjusting" || member.status === "attending" || member.status === "inactive"
+                            ? "active"
+                            : member.status
+                        }
                         onChange={(e) => handleFieldSave(member.id, "status", e.target.value)}
                         onBlur={() => setEditingCell(null)}
                         className="rounded border border-blue-300 px-1 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
                       >
-                        {Object.entries(STATUS_LABELS).map(([value, label]) => (
-                          <option key={value} value={value}>{label}</option>
+                        {MAIN_STATUS_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
                         ))}
                       </select>
                     ) : (
-                      <span
-                        className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[member.status]} ${canEdit ? "cursor-pointer" : ""}`}
-                      >
-                        {STATUS_LABELS[member.status]}
-                      </span>
+                      <div className={`flex flex-wrap gap-1 ${canEdit ? "cursor-pointer" : ""}`}>
+                        <span
+                          className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${main.color}`}
+                        >
+                          {main.label}
+                        </span>
+                        {sub && (
+                          <span
+                            className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${sub.color}`}
+                          >
+                            {sub.label}
+                          </span>
+                        )}
+                      </div>
                     )}
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -620,5 +713,47 @@ function MinistryTeamEditor({
         저장
       </button>
     </div>
+  );
+}
+
+// --- 정렬 가능한 테이블 헤더 ---
+function SortableHeader({
+  label,
+  sortKey,
+  currentKey,
+  dir,
+  onSort,
+  className = "",
+}: {
+  label: string;
+  sortKey: string;
+  currentKey: string | null;
+  dir: "asc" | "desc";
+  onSort: (key: string) => void;
+  className?: string;
+}) {
+  const isActive = currentKey === sortKey;
+  return (
+    <th
+      className={`pb-3 pr-4 font-medium select-none cursor-pointer hover:text-blue-600 transition-colors ${className}`}
+      onClick={() => onSort(sortKey)}
+    >
+      <span className="inline-flex items-center gap-1">
+        {label}
+        {isActive ? (
+          <svg className="h-3.5 w-3.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            {dir === "asc" ? (
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+            ) : (
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            )}
+          </svg>
+        ) : (
+          <svg className="h-3.5 w-3.5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+          </svg>
+        )}
+      </span>
+    </th>
   );
 }

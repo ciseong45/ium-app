@@ -21,7 +21,12 @@ export async function getMembers(
     .order("name", { ascending: true });
 
   if (status && status !== "all") {
-    query = query.eq("status", status);
+    // "재적" 필터: active, attending, inactive 포함
+    if (status === "active") {
+      query = query.in("status", ["active", "attending", "inactive"]);
+    } else {
+      query = query.eq("status", status);
+    }
   }
 
   if (search) {
@@ -867,6 +872,16 @@ export async function importMembersCSV(
 
 export async function downloadCSVTemplate(): Promise<string> {
   return "\uFEFF" + CSV_HEADERS.join(",") + "\n홍길동,010-1234-5678,hong@email.com,남,1995-03-15,서울시 강남구,출석,hong_kakao,O,한국대학교,";
+}
+
+export async function getMemberMinistryTeams(memberId: number) {
+  const { supabase } = await requireAuth();
+  const { data } = await supabase
+    .from("member_ministry_teams")
+    .select("ministry_team:ministry_teams(*)")
+    .eq("member_id", memberId);
+  if (!data) return [];
+  return data.map((d: any) => d.ministry_team).filter(Boolean) as MinistryTeam[];
 }
 
 export async function getNewFamilyEntry(memberId: number) {
