@@ -7,17 +7,18 @@ import {
   deleteGroup,
   assignMember,
   unassignMember,
+  updateUpperRoom,
 } from "../actions";
 import type { Member } from "@/types/member";
-import GroupCard from "./GroupCard";
+import type { UpperRoom, GroupMemberEntry } from "@/types/small-group";
+import UpperRoomSection from "./UpperRoomSection";
 import { useRole } from "@/lib/RoleContext";
-import EmptyState from "@/components/ui/EmptyState";
-import { INPUT_CLASS } from "@/components/ui/constants";
 
 type Group = {
   id: number;
   name: string;
   season_id: number;
+  upper_room_id: number;
   leader: { id: number; name: string } | null;
 };
 
@@ -27,49 +28,56 @@ type Season = {
   is_active: boolean;
 };
 
-export type GroupMemberEntry = {
-  id: number;
-  group_id: number;
-  member: Member;
-};
-
 export default function SeasonDetail({
   season,
   groups,
+  upperRooms,
   unassignedMembers,
   initialGroupMembers,
 }: {
   season: Season;
   groups: Group[];
+  upperRooms: UpperRoom[];
   unassignedMembers: Member[];
   initialGroupMembers: Record<number, GroupMemberEntry[]>;
 }) {
   const router = useRouter();
   const role = useRole();
-  const [showGroupForm, setShowGroupForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [assigningTo, setAssigningTo] = useState<number | null>(null);
+  const [showGroupForm, setShowGroupForm] = useState<number | null>(null);
 
   // 로컬 상태 — optimistic update 용
   const [localUnassigned, setLocalUnassigned] = useState(unassignedMembers);
   const [groupMembers, setGroupMembers] = useState(initialGroupMembers);
 
-  const handleCreateGroup = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  // 전체 멤버 목록 (다락방장 선택용) = 모든 배정된 멤버 + 미배정 멤버
+  const allAssignedMembers = Object.values(groupMembers)
+    .flat()
+    .map((e) => e.member);
+  const allMembers = [
+    ...allAssignedMembers,
+    ...localUnassigned,
+  ].sort((a, b) => a.name.localeCompare(b.name, "ko"));
+
+  // 다락방별 순(그룹) 매핑
+  const groupsByUpperRoom = (upperRoomId: number) =>
+    groups.filter((g) => g.upper_room_id === upperRoomId);
+
+  const handleCreateGroup = async (upperRoomId: number, formData: FormData) => {
     setLoading(true);
-    const formData = new FormData(e.currentTarget);
     try {
-      await createGroup(season.id, formData);
-      setShowGroupForm(false);
+      await createGroup(season.id, upperRoomId, formData);
+      setShowGroupForm(null);
       router.refresh();
     } catch {
-      alert("소그룹 생성에 실패했습니다.");
+      alert("순 생성에 실패했습니다.");
     }
     setLoading(false);
   };
 
   const handleDeleteGroup = async (groupId: number, groupName: string) => {
-    if (!confirm(`"${groupName}" 소그룹을 삭제하시겠습니까?`)) return;
+    if (!confirm(`"${groupName}" 순을 삭제하시겠습니까?`)) return;
     try {
       await deleteGroup(groupId, season.id);
       router.refresh();
@@ -141,6 +149,20 @@ export default function SeasonDetail({
     }
   };
 
+  const handleUpdateUpperRoom = async (id: number, formData: FormData) => {
+    const result = await updateUpperRoom(id, season.id, formData);
+    if (!result.success) {
+      alert(result.error);
+    } else {
+      router.refresh();
+    }
+  };
+
+  const totalMembers = Object.values(groupMembers).reduce(
+    (sum, arr) => sum + arr.length,
+    0
+  );
+
   return (
     <div>
       {/* 헤더 */}
@@ -163,79 +185,36 @@ export default function SeasonDetail({
 
       {/* 요약 */}
       <div className="mt-4 flex gap-4 text-sm text-gray-500">
-        <span>소그룹 {groups.length}개</span>
+        <span>다락방 {upperRooms.length}개</span>
+        <span>순 {groups.length}개</span>
+        <span>배정 {totalMembers}명</span>
         <span>미배정 {localUnassigned.length}명</span>
       </div>
 
-      {/* 소그룹 추가 */}
-      {role === "admin" && (
-        <div className="mt-6">
-          <button
-            onClick={() => setShowGroupForm(!showGroupForm)}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            + 소그룹 추가
-          </button>
-        </div>
-      )}
-
-      {showGroupForm && (
-        <form
-          onSubmit={handleCreateGroup}
-          className="mt-4 rounded-xl border bg-white p-4 space-y-3"
-        >
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              그룹명 <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="name"
-              required
-              placeholder="예: 1조"
-              className={INPUT_CLASS}
-            />
-          </div>
-          <div className="flex gap-2">
-            <button
-              type="submit"
-              disabled={loading}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-            >
-              {loading ? "생성 중..." : "생성"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowGroupForm(false)}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-            >
-              취소
-            </button>
-          </div>
-        </form>
-      )}
-
-      {/* 소그룹 목록 */}
-      {groups.length === 0 ? (
-        <EmptyState message="소그룹이 없습니다. 소그룹을 추가해주세요." />
-      ) : (
-        <div className="mt-6 grid gap-4 lg:grid-cols-2">
-          {groups.map((group) => (
-            <GroupCard
-              key={group.id}
-              group={group}
-              members={groupMembers[group.id] || []}
-              isAssigning={assigningTo === group.id}
-              unassignedMembers={localUnassigned}
-              onStartAssign={() =>
-                setAssigningTo(assigningTo === group.id ? null : group.id)
-              }
-              onAssign={(memberId) => handleAssign(group.id, memberId)}
-              onUnassign={(memberId) => handleUnassign(group.id, memberId)}
-              onDelete={() => handleDeleteGroup(group.id, group.name)}
-            />
-          ))}
-        </div>
-      )}
+      {/* 다락방 목록 */}
+      <div className="mt-6 space-y-4">
+        {upperRooms.map((ur) => (
+          <UpperRoomSection
+            key={ur.id}
+            upperRoom={ur}
+            groups={groupsByUpperRoom(ur.id)}
+            groupMembers={groupMembers}
+            assigningTo={assigningTo}
+            unassignedMembers={localUnassigned}
+            allMembers={allMembers}
+            seasonId={season.id}
+            showGroupForm={showGroupForm}
+            onToggleGroupForm={setShowGroupForm}
+            onSetAssigningTo={setAssigningTo}
+            onAssign={handleAssign}
+            onUnassign={handleUnassign}
+            onDeleteGroup={handleDeleteGroup}
+            onCreateGroup={handleCreateGroup}
+            onUpdateUpperRoom={handleUpdateUpperRoom}
+            loading={loading}
+          />
+        ))}
+      </div>
 
       {/* 미배정 멤버 */}
       {localUnassigned.length > 0 && (

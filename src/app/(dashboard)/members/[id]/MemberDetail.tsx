@@ -255,7 +255,9 @@ export default function MemberDetail({
                 </span>
                 <div>
                   <p className="text-sm font-medium text-gray-900">
-                    {groupInfo.group_name}
+                    {groupInfo.upper_room_name
+                      ? `${groupInfo.upper_room_name} > ${groupInfo.group_name}`
+                      : groupInfo.group_name}
                   </p>
                   {groupInfo.leader_name && (
                     <p className="text-xs text-gray-400">

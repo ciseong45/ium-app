@@ -21,6 +21,8 @@ export type MemberGroupInfo = {
   group_id: number;
   group_name: string;
   leader_name: string | null;
+  upper_room_id: number;
+  upper_room_name: string;
 };
 
 // --- Ministry Team Types ---

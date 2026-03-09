@@ -88,11 +88,16 @@ export async function getMembersWithGroups(
     .eq("is_active", true)
     .single();
 
-  let memberGroupMap = new Map<number, { group_id: number; group_name: string; leader_name: string | null }>();
+  let memberGroupMap = new Map<number, { group_id: number; group_name: string; leader_name: string | null; upper_room_id: number; upper_room_name: string }>();
   if (activeSeason) {
     const { data: groups } = await supabase
       .from("small_groups")
-      .select("id, name, leader:members!leader_id(name)")
+      .select("id, name, upper_room_id, leader:members!leader_id(name)")
+      .eq("season_id", activeSeason.id);
+
+    const { data: upperRooms } = await supabase
+      .from("upper_rooms")
+      .select("id, name")
       .eq("season_id", activeSeason.id);
 
     const { data: assignments } = await supabase
@@ -100,8 +105,11 @@ export async function getMembersWithGroups(
       .select("member_id, group_id");
 
     const activeGroupIds = new Set((groups || []).map((g: { id: number }) => g.id));
-    const groupMap = new Map<number, { id: number; name: string; leader: { name: string } | null }>();
+    const groupMap = new Map<number, { id: number; name: string; upper_room_id: number; leader: { name: string } | null }>();
     (groups || []).forEach((g: any) => groupMap.set(g.id, g));
+
+    const upperRoomMap = new Map<number, string>();
+    (upperRooms || []).forEach((ur: any) => upperRoomMap.set(ur.id, ur.name));
 
     (assignments || []).forEach((a: any) => {
       if (activeGroupIds.has(a.group_id)) {
@@ -111,6 +119,8 @@ export async function getMembersWithGroups(
             group_id: group.id,
             group_name: group.name,
             leader_name: group.leader?.name || null,
+            upper_room_id: group.upper_room_id,
+            upper_room_name: upperRoomMap.get(group.upper_room_id) || "",
           });
         }
       }
@@ -159,15 +169,29 @@ export async function getFilterOptions() {
     supabase.from("ministry_teams").select("*").order("display_order"),
   ]);
 
-  // 시즌 의존 쿼리
-  let groups: { id: number; name: string }[] = [];
+  // 시즌 의존 쿼리: 순 + 다락방 정보
+  let groups: { id: number; name: string; upper_room_name: string }[] = [];
   if (activeSeason) {
-    const { data } = await supabase
-      .from("small_groups")
-      .select("id, name")
-      .eq("season_id", activeSeason.id)
-      .order("name");
-    groups = data || [];
+    const [groupResult, urResult] = await Promise.all([
+      supabase
+        .from("small_groups")
+        .select("id, name, upper_room_id")
+        .eq("season_id", activeSeason.id)
+        .order("name"),
+      supabase
+        .from("upper_rooms")
+        .select("id, name")
+        .eq("season_id", activeSeason.id),
+    ]);
+
+    const urMap = new Map<number, string>();
+    (urResult.data || []).forEach((ur: any) => urMap.set(ur.id, ur.name));
+
+    groups = (groupResult.data || []).map((g: any) => ({
+      id: g.id,
+      name: g.name,
+      upper_room_name: urMap.get(g.upper_room_id) || "",
+    }));
   }
 
   const schoolOptions = [...new Set(
@@ -203,17 +227,30 @@ export async function getMemberGroupInfo(memberId: number) {
 
   const { data: group } = await supabase
     .from("small_groups")
-    .select("id, name, leader:members!leader_id(name)")
+    .select("id, name, upper_room_id, leader:members!leader_id(name)")
     .eq("season_id", activeSeason.id)
     .in("id", groupIds)
     .single();
 
   if (!group) return null;
 
+  // 다락방 이름 조회
+  let upperRoomName = "";
+  if (group.upper_room_id) {
+    const { data: ur } = await supabase
+      .from("upper_rooms")
+      .select("name")
+      .eq("id", group.upper_room_id)
+      .single();
+    upperRoomName = ur?.name || "";
+  }
+
   return {
     group_id: group.id,
     group_name: group.name,
     leader_name: (group.leader as any)?.name || null,
+    upper_room_id: group.upper_room_id,
+    upper_room_name: upperRoomName,
   };
 }
 

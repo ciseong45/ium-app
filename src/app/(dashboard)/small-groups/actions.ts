@@ -33,13 +33,25 @@ export async function createSeason(formData: FormData): Promise<ActionResult> {
   const name = (formData.get("name") as string)?.trim();
   if (!name) return { success: false, error: "시즌 이름은 필수입니다." };
 
-  const { error } = await supabase.from("small_group_seasons").insert({
-    name,
-    start_date: (formData.get("start_date") as string) || null,
-    end_date: (formData.get("end_date") as string) || null,
-    is_active: formData.get("is_active") === "on",
-  });
-  if (error) return { success: false, error: "시즌 생성에 실패했습니다." };
+  const { data: newSeason, error } = await supabase
+    .from("small_group_seasons")
+    .insert({
+      name,
+      start_date: (formData.get("start_date") as string) || null,
+      end_date: (formData.get("end_date") as string) || null,
+      is_active: formData.get("is_active") === "on",
+    })
+    .select("id")
+    .single();
+  if (error || !newSeason) return { success: false, error: "시즌 생성에 실패했습니다." };
+
+  // 3개 다락방 자동 생성
+  await supabase.from("upper_rooms").insert([
+    { season_id: newSeason.id, name: "1다락방", display_order: 1 },
+    { season_id: newSeason.id, name: "2다락방", display_order: 2 },
+    { season_id: newSeason.id, name: "3다락방", display_order: 3 },
+  ]);
+
   revalidatePath("/small-groups");
   return { success: true };
 }
@@ -77,7 +89,51 @@ export async function deleteSeason(id: number): Promise<ActionResult> {
   return { success: true };
 }
 
-// ===== 소그룹 =====
+// ===== 다락방 =====
+
+export async function getUpperRoomsBySeason(seasonId: number) {
+  const { supabase } = await requireAuth();
+  const { data, error } = await supabase
+    .from("upper_rooms")
+    .select("*, leader:members!leader_id(id, name)")
+    .eq("season_id", seasonId)
+    .order("display_order");
+  if (error) return [];
+  return (data ?? []).map((d: any) => ({
+    id: d.id as number,
+    season_id: d.season_id as number,
+    name: d.name as string,
+    leader_id: d.leader_id as number | null,
+    leader: d.leader as { id: number; name: string } | null,
+    display_order: d.display_order as number,
+  }));
+}
+
+export async function updateUpperRoom(
+  id: number,
+  seasonId: number,
+  formData: FormData
+): Promise<ActionResult> {
+  const { supabase, role } = await requireAuth();
+  if (role !== "admin") return { success: false, error: "권한이 없습니다." };
+
+  const name = (formData.get("name") as string)?.trim();
+  if (!name) return { success: false, error: "다락방 이름은 필수입니다." };
+
+  const leaderId = formData.get("leader_id") as string;
+  const { error } = await supabase
+    .from("upper_rooms")
+    .update({
+      name,
+      leader_id: leaderId ? Number(leaderId) : null,
+    })
+    .eq("id", id);
+  if (error) return { success: false, error: "다락방 수정에 실패했습니다." };
+  revalidatePath(`/small-groups/${seasonId}`);
+  return { success: true };
+}
+
+// ===== 소그룹(순) =====
 
 export async function getGroupsBySeason(seasonId: number) {
   const { supabase } = await requireAuth();
@@ -90,7 +146,11 @@ export async function getGroupsBySeason(seasonId: number) {
   return data;
 }
 
-export async function createGroup(seasonId: number, formData: FormData): Promise<ActionResult> {
+export async function createGroup(
+  seasonId: number,
+  upperRoomId: number,
+  formData: FormData
+): Promise<ActionResult> {
   const { supabase, role } = await requireAuth();
   if (role !== "admin") return { success: false, error: "권한이 없습니다." };
 
@@ -100,6 +160,7 @@ export async function createGroup(seasonId: number, formData: FormData): Promise
   const leaderId = formData.get("leader_id") as string;
   const { error } = await supabase.from("small_groups").insert({
     season_id: seasonId,
+    upper_room_id: upperRoomId,
     name,
     leader_id: leaderId ? Number(leaderId) : null,
   });
@@ -136,6 +197,23 @@ export async function deleteGroup(groupId: number, seasonId: number): Promise<Ac
     .delete()
     .eq("id", groupId);
   if (error) return { success: false, error: "그룹 삭제에 실패했습니다." };
+  revalidatePath(`/small-groups/${seasonId}`);
+  return { success: true };
+}
+
+export async function moveGroupToUpperRoom(
+  groupId: number,
+  upperRoomId: number,
+  seasonId: number
+): Promise<ActionResult> {
+  const { supabase, role } = await requireAuth();
+  if (role !== "admin") return { success: false, error: "권한이 없습니다." };
+
+  const { error } = await supabase
+    .from("small_groups")
+    .update({ upper_room_id: upperRoomId })
+    .eq("id", groupId);
+  if (error) return { success: false, error: "순 이동에 실패했습니다." };
   revalidatePath(`/small-groups/${seasonId}`);
   return { success: true };
 }

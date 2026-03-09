@@ -3,15 +3,11 @@ import {
   getGroupsBySeason,
   getUnassignedMembers,
   getAllGroupMembersForSeason,
+  getUpperRoomsBySeason,
 } from "../actions";
 import SeasonDetail from "./SeasonDetail";
 import type { Member } from "@/types/member";
-
-type GroupMemberEntry = {
-  id: number;
-  group_id: number;
-  member: Member;
-};
+import type { GroupMemberEntry } from "@/types/small-group";
 
 export default async function SeasonDetailPage({
   params,
@@ -21,11 +17,12 @@ export default async function SeasonDetailPage({
   const { seasonId } = await params;
   const id = Number(seasonId);
 
-  const [seasons, groups, unassigned, allGroupMembers] = await Promise.all([
+  const [seasons, groups, unassigned, allGroupMembers, upperRooms] = await Promise.all([
     getSeasons(),
     getGroupsBySeason(id),
     getUnassignedMembers(id),
     getAllGroupMembersForSeason(id),
+    getUpperRoomsBySeason(id),
   ]);
 
   const season = seasons.find((s) => s.id === id);
@@ -45,6 +42,7 @@ export default async function SeasonDetailPage({
     <SeasonDetail
       season={season}
       groups={groups}
+      upperRooms={upperRooms}
       unassignedMembers={unassigned}
       initialGroupMembers={groupMembersMap}
     />

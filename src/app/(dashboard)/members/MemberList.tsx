@@ -16,7 +16,7 @@ import FilterPill from "@/components/ui/FilterPill";
 import EmptyState from "@/components/ui/EmptyState";
 
 type FilterOptions = {
-  groups: { id: number; name: string }[];
+  groups: { id: number; name: string; upper_room_name: string }[];
   schoolOptions: string[];
   birthYears: string[];
   ministryTeams: MinistryTeam[];
@@ -135,7 +135,11 @@ export default function MemberList({
     const targetId = groupId === "none" ? null : Number(groupId);
     const label = targetId === null
       ? "소그룹 배정 해제"
-      : `${filterOptions.groups.find((g) => g.id === targetId)?.name}(으)로 이동`;
+      : (() => {
+        const g = filterOptions.groups.find((g) => g.id === targetId);
+        const displayName = g ? (g.upper_room_name ? `${g.upper_room_name} > ${g.name}` : g.name) : "";
+        return `${displayName}(으)로 이동`;
+      })();
     if (!confirm(`선택한 ${selected.size}명을 ${label}하시겠습니까?`)) return;
     startTransition(async () => {
       const result = await moveMembersToGroup([...selected], targetId);
@@ -280,7 +284,7 @@ export default function MemberList({
           <option value="all">소그룹 전체</option>
           {filterOptions.groups.map((g) => (
             <option key={g.id} value={String(g.id)}>
-              {g.name}
+              {g.upper_room_name ? `${g.upper_room_name} > ${g.name}` : g.name}
             </option>
           ))}
         </select>
@@ -358,7 +362,7 @@ export default function MemberList({
                 <option value="none">배정 해제</option>
                 {filterOptions.groups.map((g) => (
                   <option key={g.id} value={String(g.id)}>
-                    {g.name}
+                    {g.upper_room_name ? `${g.upper_room_name} > ${g.name}` : g.name}
                   </option>
                 ))}
               </select>
@@ -482,12 +486,16 @@ export default function MemberList({
                       >
                         <option value="none">배정 해제</option>
                         {filterOptions.groups.map((g) => (
-                          <option key={g.id} value={String(g.id)}>{g.name}</option>
+                          <option key={g.id} value={String(g.id)}>
+                            {g.upper_room_name ? `${g.upper_room_name} > ${g.name}` : g.name}
+                          </option>
                         ))}
                       </select>
                     ) : (
                       <span className={canEdit ? "cursor-pointer hover:text-blue-600" : ""}>
-                        {member.group_info ? member.group_info.group_name : "—"}
+                        {member.group_info
+                          ? `${member.group_info.upper_room_name} > ${member.group_info.group_name}`
+                          : "—"}
                       </span>
                     )}
                   </td>

@@ -1,8 +1,8 @@
 "use client";
 
 import type { Member } from "@/types/member";
+import type { GroupMemberEntry } from "@/types/small-group";
 import { useRole } from "@/lib/RoleContext";
-import type { GroupMemberEntry } from "./SeasonDetail";
 
 type Group = {
   id: number;
