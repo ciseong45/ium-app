@@ -9,9 +9,22 @@ export type Member = {
   birth_date: string | null;
   address: string | null;
   status: MemberStatus;
+  kakao_id: string | null;
+  is_baptized: boolean;
+  school_or_work: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type MemberGroupInfo = {
+  group_id: number;
+  group_name: string;
+  leader_name: string | null;
+};
+
+export type MemberWithGroup = Member & {
+  group_info?: MemberGroupInfo | null;
 };
 
 export const STATUS_LABELS: Record<MemberStatus, string> = {

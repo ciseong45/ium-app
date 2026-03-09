@@ -3,10 +3,16 @@
 import { requireAuth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { memberSchema, type ActionResult } from "@/lib/validations";
-import type { MemberStatus, LeaveType } from "@/types/member";
+import type { MemberStatus, LeaveType, MemberWithGroup } from "@/types/member";
 import { ZodError } from "zod";
 
-export async function getMembers(search?: string, status?: string) {
+export async function getMembers(
+  search?: string,
+  status?: string,
+  groupId?: string,
+  schoolOrWork?: string,
+  birthYear?: string
+) {
   const { supabase } = await requireAuth();
 
   let query = supabase
@@ -22,10 +28,158 @@ export async function getMembers(search?: string, status?: string) {
     query = query.or(`name.ilike.%${search}%,phone.ilike.%${search}%`);
   }
 
-  const { data, error } = await query;
+  if (schoolOrWork && schoolOrWork !== "all") {
+    query = query.eq("school_or_work", schoolOrWork);
+  }
 
+  if (birthYear && birthYear !== "all") {
+    query = query.gte("birth_date", `${birthYear}-01-01`).lte("birth_date", `${birthYear}-12-31`);
+  }
+
+  const { data, error } = await query;
   if (error) return [];
+
+  if (groupId && groupId !== "all") {
+    const { data: groupMembers } = await supabase
+      .from("small_group_members")
+      .select("member_id")
+      .eq("group_id", Number(groupId));
+    const memberIds = new Set((groupMembers || []).map((gm: { member_id: number }) => gm.member_id));
+    return data.filter((m: { id: number }) => memberIds.has(m.id));
+  }
+
   return data;
+}
+
+export async function getMembersWithGroups(
+  search?: string,
+  status?: string,
+  groupId?: string,
+  schoolOrWork?: string,
+  birthYear?: string
+): Promise<MemberWithGroup[]> {
+  const members = await getMembers(search, status, groupId, schoolOrWork, birthYear);
+  if (members.length === 0) return [];
+
+  const { supabase } = await requireAuth();
+
+  const { data: activeSeason } = await supabase
+    .from("small_group_seasons")
+    .select("id")
+    .eq("is_active", true)
+    .single();
+
+  if (!activeSeason) return members.map((m) => ({ ...m, group_info: null }));
+
+  const { data: groups } = await supabase
+    .from("small_groups")
+    .select("id, name, leader:members!leader_id(name)")
+    .eq("season_id", activeSeason.id);
+
+  const { data: assignments } = await supabase
+    .from("small_group_members")
+    .select("member_id, group_id");
+
+  const activeGroupIds = new Set((groups || []).map((g: { id: number }) => g.id));
+  const groupMap = new Map<number, { id: number; name: string; leader: { name: string } | null }>();
+  (groups || []).forEach((g: any) => groupMap.set(g.id, g));
+
+  const memberGroupMap = new Map<number, { group_id: number; group_name: string; leader_name: string | null }>();
+  (assignments || []).forEach((a: any) => {
+    if (activeGroupIds.has(a.group_id)) {
+      const group = groupMap.get(a.group_id);
+      if (group) {
+        memberGroupMap.set(a.member_id, {
+          group_id: group.id,
+          group_name: group.name,
+          leader_name: group.leader?.name || null,
+        });
+      }
+    }
+  });
+
+  return members.map((m) => ({
+    ...m,
+    group_info: memberGroupMap.get(m.id) || null,
+  }));
+}
+
+export async function getFilterOptions() {
+  const { supabase } = await requireAuth();
+
+  const { data: activeSeason } = await supabase
+    .from("small_group_seasons")
+    .select("id")
+    .eq("is_active", true)
+    .single();
+
+  let groups: { id: number; name: string }[] = [];
+  if (activeSeason) {
+    const { data } = await supabase
+      .from("small_groups")
+      .select("id, name")
+      .eq("season_id", activeSeason.id)
+      .order("name");
+    groups = data || [];
+  }
+
+  const { data: schoolData } = await supabase
+    .from("members")
+    .select("school_or_work")
+    .not("school_or_work", "is", null)
+    .order("school_or_work");
+
+  const schoolOptions = [...new Set(
+    (schoolData || []).map((m: { school_or_work: string | null }) => m.school_or_work).filter(Boolean)
+  )] as string[];
+
+  const { data: birthData } = await supabase
+    .from("members")
+    .select("birth_date")
+    .not("birth_date", "is", null)
+    .order("birth_date", { ascending: false });
+
+  const birthYears = [...new Set(
+    (birthData || []).map((m: { birth_date: string | null }) => m.birth_date?.substring(0, 4)).filter(Boolean)
+  )] as string[];
+
+  return { groups, schoolOptions, birthYears };
+}
+
+export async function getMemberGroupInfo(memberId: number) {
+  const { supabase } = await requireAuth();
+
+  const { data: activeSeason } = await supabase
+    .from("small_group_seasons")
+    .select("id")
+    .eq("is_active", true)
+    .single();
+
+  if (!activeSeason) return null;
+
+  const { data: assignment } = await supabase
+    .from("small_group_members")
+    .select("group_id")
+    .eq("member_id", memberId);
+
+  if (!assignment || assignment.length === 0) return null;
+
+  const groupIds = assignment.map((a: { group_id: number }) => a.group_id);
+
+  const { data: group } = await supabase
+    .from("small_groups")
+    .select("id, name, leader:members!leader_id(name)")
+    .eq("season_id", activeSeason.id)
+    .in("id", groupIds)
+    .single();
+
+  if (!group) return null;
+
+  return {
+    group_id: group.id,
+    group_name: group.name,
+    leader_name: (group.leader as any)?.name || null,
+  };
 }
 
 export async function getMember(id: number) {
@@ -54,6 +208,9 @@ export async function createMember(formData: FormData): Promise<ActionResult> {
       birth_date: formData.get("birth_date") || null,
       address: formData.get("address") || null,
       status: formData.get("status") || "active",
+      kakao_id: formData.get("kakao_id") || null,
+      is_baptized: formData.get("is_baptized") === "true",
+      school_or_work: formData.get("school_or_work") || null,
       notes: formData.get("notes") || null,
     });
 
@@ -83,6 +240,9 @@ export async function updateMember(id: number, formData: FormData): Promise<Acti
       birth_date: formData.get("birth_date") || null,
       address: formData.get("address") || null,
       status: formData.get("status") || "active",
+      kakao_id: formData.get("kakao_id") || null,
+      is_baptized: formData.get("is_baptized") === "true",
+      school_or_work: formData.get("school_or_work") || null,
       notes: formData.get("notes") || null,
     });
 
@@ -209,7 +369,7 @@ export async function startLeave(
 
 // ===== CSV 내보내기/가져오기 =====
 
-const CSV_HEADERS = ["이름", "전화번호", "이메일", "성별", "생년월일", "주소", "상태", "메모"] as const;
+const CSV_HEADERS = ["이름", "전화번호", "이메일", "성별", "생년월일", "주소", "상태", "카카오톡ID", "세례입교", "학교/직장", "메모"] as const;
 
 const GENDER_KR: Record<string, string> = { M: "남", F: "여" };
 const GENDER_EN: Record<string, string> = { 남: "M", 여: "F" };
@@ -275,7 +435,7 @@ export async function exportMembersCSV(): Promise<{ success: true; csv: string }
 
   const { data, error } = await supabase
     .from("members")
-    .select("name, phone, email, gender, birth_date, address, status, notes")
+    .select("name, phone, email, gender, birth_date, address, status, kakao_id, is_baptized, school_or_work, notes")
     .order("name", { ascending: true });
 
   if (error) return { success: false, error: "멤버 목록을 불러오지 못했습니다." };
@@ -290,6 +450,9 @@ export async function exportMembersCSV(): Promise<{ success: true; csv: string }
       m.birth_date ?? "",
       escapeCsvField(m.address ?? ""),
       STATUS_EN_TO_KR[m.status as MemberStatus] ?? m.status ?? "",
+      escapeCsvField(m.kakao_id ?? ""),
+      m.is_baptized ? "O" : "X",
+      escapeCsvField(m.school_or_work ?? ""),
       escapeCsvField(m.notes ?? ""),
     ].join(",");
   });
@@ -326,6 +489,9 @@ export async function importMembersCSV(
     생년월일: "birth_date", birth_date: "birth_date",
     주소: "address", address: "address",
     상태: "status", status: "status",
+    카카오톡id: "kakao_id", kakao_id: "kakao_id", "카카오톡ID": "kakao_id",
+    세례입교: "is_baptized", is_baptized: "is_baptized",
+    "학교/직장": "school_or_work", school_or_work: "school_or_work",
     메모: "notes", notes: "notes",
   };
 
@@ -371,6 +537,11 @@ export async function importMembersCSV(
       birth_date: headerMap["birth_date"] !== undefined ? fields[headerMap["birth_date"]] || null : null,
       address: headerMap["address"] !== undefined ? fields[headerMap["address"]] || null : null,
       status,
+      kakao_id: headerMap["kakao_id"] !== undefined ? fields[headerMap["kakao_id"]] || null : null,
+      is_baptized: headerMap["is_baptized"] !== undefined
+        ? ["O", "예", "true", "Y"].includes((fields[headerMap["is_baptized"]] ?? "").trim())
+        : false,
+      school_or_work: headerMap["school_or_work"] !== undefined ? fields[headerMap["school_or_work"]] || null : null,
       notes: headerMap["notes"] !== undefined ? fields[headerMap["notes"]] || null : null,
     });
   }
@@ -399,7 +570,7 @@ export async function importMembersCSV(
 }
 
 export async function downloadCSVTemplate(): Promise<string> {
-  return "\uFEFF" + CSV_HEADERS.join(",") + "\n홍길동,010-1234-5678,hong@email.com,남,1995-03-15,서울시 강남구,출석,";
+  return "\uFEFF" + CSV_HEADERS.join(",") + "\n홍길동,010-1234-5678,hong@email.com,남,1995-03-15,서울시 강남구,출석,hong_kakao,O,한국대학교,";
 }
 
 export async function returnFromLeave(memberId: number, leaveId: number): Promise<ActionResult> {

@@ -75,6 +75,19 @@ export default function MemberForm({ member }: { member?: Member }) {
         />
       </div>
 
+      {/* 카카오톡 ID */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700">
+          카카오톡 ID
+        </label>
+        <input
+          name="kakao_id"
+          type="text"
+          defaultValue={member?.kakao_id || ""}
+          className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        />
+      </div>
+
       {/* 성별 */}
       <div>
         <label className="block text-sm font-medium text-gray-700">성별</label>
@@ -100,6 +113,48 @@ export default function MemberForm({ member }: { member?: Member }) {
           defaultValue={member?.birth_date || ""}
           className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
+      </div>
+
+      {/* 학교/직장 */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700">
+          학교/직장
+        </label>
+        <input
+          name="school_or_work"
+          type="text"
+          defaultValue={member?.school_or_work || ""}
+          className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        />
+      </div>
+
+      {/* 세례입교 여부 */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700">
+          세례입교 여부
+        </label>
+        <div className="mt-2 flex gap-4">
+          <label className="flex items-center gap-1.5">
+            <input
+              type="radio"
+              name="is_baptized"
+              value="true"
+              defaultChecked={member?.is_baptized === true}
+              className="text-blue-600"
+            />
+            <span className="text-sm text-gray-700">예</span>
+          </label>
+          <label className="flex items-center gap-1.5">
+            <input
+              type="radio"
+              name="is_baptized"
+              value="false"
+              defaultChecked={!member?.is_baptized}
+              className="text-blue-600"
+            />
+            <span className="text-sm text-gray-700">아니오</span>
+          </label>
+        </div>
       </div>
 
       {/* 주소 */}

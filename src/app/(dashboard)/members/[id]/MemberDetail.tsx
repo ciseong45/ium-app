@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { deleteMember, startLeave, returnFromLeave } from "../actions";
-import type { Member, MemberLeave, LeaveType } from "@/types/member";
+import type { Member, MemberLeave, LeaveType, MemberGroupInfo } from "@/types/member";
 import { STATUS_LABELS, STATUS_COLORS, LEAVE_TYPE_LABELS } from "@/types/member";
 import { useRole } from "@/lib/RoleContext";
 
@@ -19,10 +19,12 @@ export default function MemberDetail({
   member,
   statusLog,
   leaves,
+  groupInfo,
 }: {
   member: Member;
   statusLog: StatusLogEntry[];
   leaves: MemberLeave[];
+  groupInfo: MemberGroupInfo | null;
 }) {
   const router = useRouter();
   const role = useRole();
@@ -125,6 +127,9 @@ export default function MemberDetail({
             }
           />
           <InfoItem label="생년월일" value={member.birth_date} />
+          <InfoItem label="카카오톡 ID" value={member.kakao_id} />
+          <InfoItem label="학교/직장" value={member.school_or_work} />
+          <InfoItem label="세례입교" value={member.is_baptized ? "예" : "아니오"} />
           <InfoItem label="주소" value={member.address} />
           <InfoItem
             label="등록일"
@@ -140,6 +145,19 @@ export default function MemberDetail({
           </div>
         )}
       </div>
+
+      {/* 소그룹 소속 */}
+      {groupInfo && (
+        <div className="mt-4 rounded-lg border border-blue-100 bg-blue-50 p-4">
+          <h4 className="text-sm font-semibold text-blue-700">현재 소그룹</h4>
+          <div className="mt-2 flex items-center gap-3 text-sm text-blue-600">
+            <span className="font-medium">{groupInfo.group_name}</span>
+            {groupInfo.leader_name && (
+              <span className="text-blue-400">(리더: {groupInfo.leader_name})</span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* 휴적 관리 */}
       <div className="mt-6">

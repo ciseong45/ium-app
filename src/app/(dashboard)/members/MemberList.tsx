@@ -2,40 +2,75 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import type { Member } from "@/types/member";
+import type { MemberWithGroup } from "@/types/member";
 import { STATUS_LABELS, STATUS_COLORS } from "@/types/member";
+
+type FilterOptions = {
+  groups: { id: number; name: string }[];
+  schoolOptions: string[];
+  birthYears: string[];
+};
 
 export default function MemberList({
   members,
   currentSearch,
   currentStatus,
+  currentGroup,
+  currentSchool,
+  currentBirthYear,
+  filterOptions,
 }: {
-  members: Member[];
+  members: MemberWithGroup[];
   currentSearch?: string;
   currentStatus?: string;
+  currentGroup?: string;
+  currentSchool?: string;
+  currentBirthYear?: string;
+  filterOptions: FilterOptions;
 }) {
   const router = useRouter();
   const [search, setSearch] = useState(currentSearch || "");
 
+  const buildParams = (overrides: Record<string, string | undefined>) => {
+    const params = new URLSearchParams();
+    const values: Record<string, string | undefined> = {
+      search: search || undefined,
+      status: currentStatus,
+      group: currentGroup,
+      school: currentSchool,
+      birth_year: currentBirthYear,
+      ...overrides,
+    };
+    Object.entries(values).forEach(([key, val]) => {
+      if (val && val !== "all") params.set(key, val);
+    });
+    return params;
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    const params = new URLSearchParams();
-    if (search) params.set("search", search);
-    if (currentStatus && currentStatus !== "all")
-      params.set("status", currentStatus);
-    router.push(`/members?${params.toString()}`);
+    router.push(`/members?${buildParams({ search: search || undefined }).toString()}`);
   };
 
   const handleStatusFilter = (status: string) => {
-    const params = new URLSearchParams();
-    if (search) params.set("search", search);
-    if (status !== "all") params.set("status", status);
-    router.push(`/members?${params.toString()}`);
+    router.push(`/members?${buildParams({ status }).toString()}`);
+  };
+
+  const handleGroupFilter = (group: string) => {
+    router.push(`/members?${buildParams({ group }).toString()}`);
+  };
+
+  const handleSchoolFilter = (school: string) => {
+    router.push(`/members?${buildParams({ school }).toString()}`);
+  };
+
+  const handleBirthYearFilter = (birthYear: string) => {
+    router.push(`/members?${buildParams({ birth_year: birthYear }).toString()}`);
   };
 
   return (
     <div className="mt-6">
-      {/* 검색 + 필터 */}
+      {/* 검색 + 상태 필터 */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <form onSubmit={handleSearch} className="flex flex-1 gap-2">
           <input
@@ -77,6 +112,48 @@ export default function MemberList({
         </div>
       </div>
 
+      {/* 추가 필터 */}
+      <div className="mt-3 flex flex-wrap gap-2">
+        <select
+          value={currentGroup || "all"}
+          onChange={(e) => handleGroupFilter(e.target.value)}
+          className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-700 focus:border-blue-500 focus:outline-none"
+        >
+          <option value="all">소그룹 전체</option>
+          {filterOptions.groups.map((g) => (
+            <option key={g.id} value={String(g.id)}>
+              {g.name}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={currentSchool || "all"}
+          onChange={(e) => handleSchoolFilter(e.target.value)}
+          className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-700 focus:border-blue-500 focus:outline-none"
+        >
+          <option value="all">학교/직장 전체</option>
+          {filterOptions.schoolOptions.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={currentBirthYear || "all"}
+          onChange={(e) => handleBirthYearFilter(e.target.value)}
+          className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-700 focus:border-blue-500 focus:outline-none"
+        >
+          <option value="all">생년 전체</option>
+          {filterOptions.birthYears.map((y) => (
+            <option key={y} value={y}>
+              {y}년
+            </option>
+          ))}
+        </select>
+      </div>
+
       {/* 결과 수 */}
       <p className="mt-4 text-sm text-gray-500">
         총 {members.length}명
@@ -96,6 +173,9 @@ export default function MemberList({
               <tr className="border-b text-gray-500">
                 <th className="pb-3 pr-4 font-medium">이름</th>
                 <th className="pb-3 pr-4 font-medium">전화번호</th>
+                <th className="hidden pb-3 pr-4 font-medium md:table-cell">
+                  소그룹
+                </th>
                 <th className="hidden pb-3 pr-4 font-medium sm:table-cell">
                   성별
                 </th>
@@ -114,6 +194,11 @@ export default function MemberList({
                   </td>
                   <td className="py-3 pr-4 text-gray-600">
                     {member.phone || "—"}
+                  </td>
+                  <td className="hidden py-3 pr-4 text-gray-600 md:table-cell">
+                    {member.group_info
+                      ? member.group_info.group_name
+                      : "—"}
                   </td>
                   <td className="hidden py-3 pr-4 text-gray-600 sm:table-cell">
                     {member.gender === "M"

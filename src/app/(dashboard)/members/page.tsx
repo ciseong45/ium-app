@@ -1,4 +1,4 @@
-import { getMembers } from "./actions";
+import { getMembersWithGroups, getFilterOptions } from "./actions";
 import { requireAuth } from "@/lib/auth";
 import MemberList from "./MemberList";
 import CSVControls from "./CSVControls";
@@ -6,12 +6,25 @@ import CSVControls from "./CSVControls";
 export default async function MembersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ search?: string; status?: string }>;
+  searchParams: Promise<{
+    search?: string;
+    status?: string;
+    group?: string;
+    school?: string;
+    birth_year?: string;
+  }>;
 }) {
   const params = await searchParams;
-  const [members, { role }] = await Promise.all([
-    getMembers(params.search, params.status),
+  const [members, { role }, filterOptions] = await Promise.all([
+    getMembersWithGroups(
+      params.search,
+      params.status,
+      params.group,
+      params.school,
+      params.birth_year
+    ),
     requireAuth(),
+    getFilterOptions(),
   ]);
 
   return (
@@ -35,6 +48,10 @@ export default async function MembersPage({
         members={members}
         currentSearch={params.search}
         currentStatus={params.status}
+        currentGroup={params.group}
+        currentSchool={params.school}
+        currentBirthYear={params.birth_year}
+        filterOptions={filterOptions}
       />
     </div>
   );

@@ -8,6 +8,9 @@ export const memberSchema = z.object({
   birth_date: z.string().nullable(),
   address: z.string().max(200).nullable(),
   status: z.enum(["active", "attending", "inactive", "removed", "on_leave"]).default("active"),
+  kakao_id: z.string().max(50).nullable(),
+  is_baptized: z.preprocess((val) => val === "true" || val === true, z.boolean()).default(false),
+  school_or_work: z.string().max(100).nullable(),
   notes: z.string().max(1000).nullable(),
 });
 

@@ -19,11 +19,8 @@ export async function submitVisitorCard(formData: FormData): Promise<ActionResul
       previous_church: formData.get("previous_church") || null,
     });
 
-    // 메모에 추가 정보 합치기
+    const isBaptized = data.baptism === "성인세례" || data.baptism === "입교";
     const notesParts: string[] = [];
-    if (data.kakao_id) notesParts.push(`카카오톡: ${data.kakao_id}`);
-    if (data.baptism) notesParts.push(`세례/입교: ${data.baptism}`);
-    if (data.school_work) notesParts.push(`학교/직장: ${data.school_work}`);
     if (data.previous_church) notesParts.push(`이전 교회: ${data.previous_church}`);
     const notes = notesParts.length > 0 ? notesParts.join("\n") : null;
 
@@ -36,6 +33,9 @@ export async function submitVisitorCard(formData: FormData): Promise<ActionResul
         gender: data.gender,
         birth_date: data.birth_date,
         status: "active",
+        kakao_id: data.kakao_id,
+        is_baptized: isBaptized,
+        school_or_work: data.school_work,
         notes,
       })
       .select("id")
