@@ -57,6 +57,8 @@ export default function UpperRoomSection({
   const role = useRole();
   const [collapsed, setCollapsed] = useState(false);
   const [editingLeader, setEditingLeader] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [nameValue, setNameValue] = useState(upperRoom.name);
 
   const totalMembers = groups.reduce(
     (sum, g) => sum + (groupMembers[g.id]?.length || 0),
@@ -71,6 +73,20 @@ export default function UpperRoomSection({
     setEditingLeader(false);
   };
 
+  const handleNameSave = () => {
+    const trimmed = nameValue.trim();
+    if (!trimmed || trimmed === upperRoom.name) {
+      setNameValue(upperRoom.name);
+      setEditingName(false);
+      return;
+    }
+    const formData = new FormData();
+    formData.set("name", trimmed);
+    formData.set("leader_id", upperRoom.leader_id ? String(upperRoom.leader_id) : "");
+    onUpdateUpperRoom(upperRoom.id, formData);
+    setEditingName(false);
+  };
+
   return (
     <div className="rounded-2xl border border-gray-200 bg-gray-50/50">
       {/* 다락방 헤더 */}
@@ -83,9 +99,32 @@ export default function UpperRoomSection({
             {collapsed ? "▶" : "▼"}
           </span>
           <div>
-            <h3 className="text-lg font-bold text-gray-900">
-              {upperRoom.name}
-            </h3>
+            {editingName ? (
+              <input
+                autoFocus
+                value={nameValue}
+                onChange={(e) => setNameValue(e.target.value)}
+                onBlur={handleNameSave}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleNameSave();
+                  if (e.key === "Escape") { setNameValue(upperRoom.name); setEditingName(false); }
+                }}
+                onClick={(e) => e.stopPropagation()}
+                className="text-lg font-bold text-gray-900 border-b-2 border-blue-500 bg-transparent outline-none"
+              />
+            ) : (
+              <h3
+                className={`text-lg font-bold text-gray-900 ${role === "admin" ? "cursor-pointer hover:text-blue-600" : ""}`}
+                onClick={(e) => {
+                  if (role === "admin") {
+                    e.stopPropagation();
+                    setEditingName(true);
+                  }
+                }}
+              >
+                {upperRoom.name}
+              </h3>
+            )}
             <div className="flex items-center gap-2 text-sm text-gray-500">
               {upperRoom.leader ? (
                 <span>다락방장: {upperRoom.leader.name}</span>
