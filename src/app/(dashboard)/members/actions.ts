@@ -292,6 +292,18 @@ export async function deleteMember(id: number): Promise<ActionResult> {
   return { success: true };
 }
 
+export async function deleteMembers(ids: number[]): Promise<ActionResult> {
+  const { supabase, role } = await requireAuth();
+  if (role !== "admin") return { success: false, error: "권한이 없습니다." };
+  if (ids.length === 0) return { success: false, error: "삭제할 멤버가 없습니다." };
+
+  const { error } = await supabase.from("members").delete().in("id", ids);
+  if (error) return { success: false, error: "멤버 삭제에 실패했습니다." };
+
+  revalidatePath("/members");
+  return { success: true };
+}
+
 export async function getStatusLog(memberId: number) {
   const { supabase } = await requireAuth();
 

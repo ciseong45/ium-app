@@ -52,6 +52,7 @@ export default async function MembersPage({
         currentSchool={params.school}
         currentBirthYear={params.birth_year}
         filterOptions={filterOptions}
+        role={role}
       />
     </div>
   );

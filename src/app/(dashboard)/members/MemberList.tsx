@@ -1,9 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import type { MemberWithGroup } from "@/types/member";
 import { STATUS_LABELS, STATUS_COLORS } from "@/types/member";
+import { deleteMembers } from "./actions";
 
 type FilterOptions = {
   groups: { id: number; name: string }[];
@@ -19,6 +20,7 @@ export default function MemberList({
   currentSchool,
   currentBirthYear,
   filterOptions,
+  role,
 }: {
   members: MemberWithGroup[];
   currentSearch?: string;
@@ -27,9 +29,44 @@ export default function MemberList({
   currentSchool?: string;
   currentBirthYear?: string;
   filterOptions: FilterOptions;
+  role: string;
 }) {
   const router = useRouter();
   const [search, setSearch] = useState(currentSearch || "");
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [isPending, startTransition] = useTransition();
+  const isAdmin = role === "admin";
+
+  const toggleSelect = (id: number) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (selected.size === members.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(members.map((m) => m.id)));
+    }
+  };
+
+  const handleDeleteSelected = () => {
+    if (selected.size === 0) return;
+    if (!confirm(`선택한 ${selected.size}명의 멤버를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+    startTransition(async () => {
+      const result = await deleteMembers([...selected]);
+      if (result.success) {
+        setSelected(new Set());
+        router.refresh();
+      } else {
+        alert(result.error);
+      }
+    });
+  };
 
   const buildParams = (overrides: Record<string, string | undefined>) => {
     const params = new URLSearchParams();
@@ -154,10 +191,24 @@ export default function MemberList({
         </select>
       </div>
 
-      {/* 결과 수 */}
-      <p className="mt-4 text-sm text-gray-500">
-        총 {members.length}명
-      </p>
+      {/* 결과 수 + 선택 삭제 */}
+      <div className="mt-4 flex items-center justify-between">
+        <p className="text-sm text-gray-500">
+          총 {members.length}명
+          {isAdmin && selected.size > 0 && (
+            <span className="ml-2 text-blue-600">({selected.size}명 선택)</span>
+          )}
+        </p>
+        {isAdmin && selected.size > 0 && (
+          <button
+            onClick={handleDeleteSelected}
+            disabled={isPending}
+            className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50"
+          >
+            {isPending ? "삭제 중..." : `선택 삭제 (${selected.size})`}
+          </button>
+        )}
+      </div>
 
       {/* 멤버 테이블 */}
       {members.length === 0 ? (
@@ -171,6 +222,16 @@ export default function MemberList({
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b text-gray-500">
+                {isAdmin && (
+                  <th className="pb-3 pr-2 font-medium w-8">
+                    <input
+                      type="checkbox"
+                      checked={members.length > 0 && selected.size === members.length}
+                      onChange={toggleAll}
+                      className="h-4 w-4 rounded border-gray-300 text-blue-600"
+                    />
+                  </th>
+                )}
                 <th className="pb-3 pr-4 font-medium">이름</th>
                 <th className="pb-3 pr-4 font-medium">전화번호</th>
                 <th className="hidden pb-3 pr-4 font-medium md:table-cell">
@@ -189,6 +250,16 @@ export default function MemberList({
                   onClick={() => router.push(`/members/${member.id}`)}
                   className="cursor-pointer border-b transition-colors hover:bg-gray-50"
                 >
+                  {isAdmin && (
+                    <td className="py-3 pr-2" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selected.has(member.id)}
+                        onChange={() => toggleSelect(member.id)}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600"
+                      />
+                    </td>
+                  )}
                   <td className="py-3 pr-4 font-medium text-gray-900">
                     {member.name}
                   </td>
