@@ -12,6 +12,7 @@ export default async function MembersPage({
     group?: string;
     school?: string;
     birth_year?: string;
+    ministry_team?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -21,7 +22,8 @@ export default async function MembersPage({
       params.status,
       params.group,
       params.school,
-      params.birth_year
+      params.birth_year,
+      params.ministry_team
     ),
     requireAuth(),
     getFilterOptions(),
@@ -51,6 +53,7 @@ export default async function MembersPage({
         currentGroup={params.group}
         currentSchool={params.school}
         currentBirthYear={params.birth_year}
+        currentMinistryTeam={params.ministry_team}
         filterOptions={filterOptions}
         role={role}
       />

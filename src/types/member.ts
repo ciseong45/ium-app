@@ -23,8 +23,30 @@ export type MemberGroupInfo = {
   leader_name: string | null;
 };
 
+// --- Ministry Team Types ---
+
+export type MinistryTeamCategory = "worship" | "discipleship";
+
+export type MinistryTeam = {
+  id: number;
+  name: string;
+  category: MinistryTeamCategory;
+  display_order: number;
+};
+
+export const MINISTRY_CATEGORY_LABELS: Record<MinistryTeamCategory, string> = {
+  worship: "예배사역",
+  discipleship: "순사역",
+};
+
+export const MINISTRY_TEAM_COLORS: Record<MinistryTeamCategory, string> = {
+  worship: "bg-indigo-100 text-indigo-700",
+  discipleship: "bg-emerald-100 text-emerald-700",
+};
+
 export type MemberWithGroup = Member & {
   group_info?: MemberGroupInfo | null;
+  ministry_teams?: MinistryTeam[];
 };
 
 export const STATUS_LABELS: Record<MemberStatus, string> = {

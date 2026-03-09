@@ -3,7 +3,7 @@
 import { requireAuth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { memberSchema, type ActionResult } from "@/lib/validations";
-import type { MemberStatus, LeaveType, MemberWithGroup } from "@/types/member";
+import type { MemberStatus, LeaveType, MemberWithGroup, MinistryTeam } from "@/types/member";
 import { ZodError } from "zod";
 
 export async function getMembers(
@@ -87,52 +87,79 @@ export async function getMembersWithGroups(
   status?: string,
   groupId?: string,
   schoolOrWork?: string,
-  birthYear?: string
+  birthYear?: string,
+  ministryTeamId?: string
 ): Promise<MemberWithGroup[]> {
   const members = await getMembers(search, status, groupId, schoolOrWork, birthYear);
   if (members.length === 0) return [];
 
   const { supabase } = await requireAuth();
 
+  // 소그룹 정보
   const { data: activeSeason } = await supabase
     .from("small_group_seasons")
     .select("id")
     .eq("is_active", true)
     .single();
 
-  if (!activeSeason) return members.map((m) => ({ ...m, group_info: null }));
+  let memberGroupMap = new Map<number, { group_id: number; group_name: string; leader_name: string | null }>();
+  if (activeSeason) {
+    const { data: groups } = await supabase
+      .from("small_groups")
+      .select("id, name, leader:members!leader_id(name)")
+      .eq("season_id", activeSeason.id);
 
-  const { data: groups } = await supabase
-    .from("small_groups")
-    .select("id, name, leader:members!leader_id(name)")
-    .eq("season_id", activeSeason.id);
+    const { data: assignments } = await supabase
+      .from("small_group_members")
+      .select("member_id, group_id");
 
-  const { data: assignments } = await supabase
-    .from("small_group_members")
-    .select("member_id, group_id");
+    const activeGroupIds = new Set((groups || []).map((g: { id: number }) => g.id));
+    const groupMap = new Map<number, { id: number; name: string; leader: { name: string } | null }>();
+    (groups || []).forEach((g: any) => groupMap.set(g.id, g));
 
-  const activeGroupIds = new Set((groups || []).map((g: { id: number }) => g.id));
-  const groupMap = new Map<number, { id: number; name: string; leader: { name: string } | null }>();
-  (groups || []).forEach((g: any) => groupMap.set(g.id, g));
-
-  const memberGroupMap = new Map<number, { group_id: number; group_name: string; leader_name: string | null }>();
-  (assignments || []).forEach((a: any) => {
-    if (activeGroupIds.has(a.group_id)) {
-      const group = groupMap.get(a.group_id);
-      if (group) {
-        memberGroupMap.set(a.member_id, {
-          group_id: group.id,
-          group_name: group.name,
-          leader_name: group.leader?.name || null,
-        });
+    (assignments || []).forEach((a: any) => {
+      if (activeGroupIds.has(a.group_id)) {
+        const group = groupMap.get(a.group_id);
+        if (group) {
+          memberGroupMap.set(a.member_id, {
+            group_id: group.id,
+            group_name: group.name,
+            leader_name: group.leader?.name || null,
+          });
+        }
       }
-    }
+    });
+  }
+
+  // 사역팀 정보
+  const memberIds = members.map((m: { id: number }) => m.id);
+  const { data: mtAssignments } = await supabase
+    .from("member_ministry_teams")
+    .select("member_id, ministry_team:ministry_teams(*)")
+    .in("member_id", memberIds);
+
+  const memberTeamMap = new Map<number, MinistryTeam[]>();
+  (mtAssignments || []).forEach((a: any) => {
+    const list = memberTeamMap.get(a.member_id) || [];
+    if (a.ministry_team) list.push(a.ministry_team);
+    memberTeamMap.set(a.member_id, list);
   });
 
-  return members.map((m) => ({
+  let result = members.map((m: any) => ({
     ...m,
     group_info: memberGroupMap.get(m.id) || null,
+    ministry_teams: memberTeamMap.get(m.id) || [],
   }));
+
+  // 사역팀 필터 (client-side)
+  if (ministryTeamId && ministryTeamId !== "all") {
+    const teamId = Number(ministryTeamId);
+    result = result.filter((m) =>
+      m.ministry_teams?.some((t: MinistryTeam) => t.id === teamId)
+    );
+  }
+
+  return result;
 }
 
 export async function getFilterOptions() {
@@ -174,7 +201,12 @@ export async function getFilterOptions() {
     (birthData || []).map((m: { birth_date: string | null }) => m.birth_date?.substring(0, 4)).filter(Boolean)
   )] as string[];
 
-  return { groups, schoolOptions, birthYears };
+  const { data: ministryTeamsData } = await supabase
+    .from("ministry_teams")
+    .select("*")
+    .order("display_order");
+
+  return { groups, schoolOptions, birthYears, ministryTeams: (ministryTeamsData || []) as MinistryTeam[] };
 }
 
 export async function getMemberGroupInfo(memberId: number) {
@@ -518,6 +550,112 @@ export async function startLeave(
 
   revalidatePath("/members");
   revalidatePath(`/members/${memberId}`);
+  return { success: true };
+}
+
+// ===== 인라인 편집 =====
+
+export async function quickUpdateField(
+  memberId: number,
+  field: "gender" | "status" | "school_or_work",
+  value: string | null
+): Promise<ActionResult> {
+  const { supabase, user, role } = await requireAuth();
+  if (role === "viewer") return { success: false, error: "권한이 없습니다." };
+
+  if (field === "gender" && value !== null && value !== "M" && value !== "F") {
+    return { success: false, error: "잘못된 성별 값입니다." };
+  }
+
+  const validStatuses = ["active", "attending", "inactive", "removed", "on_leave", "new_family", "adjusting"];
+  if (field === "status" && value !== null && !validStatuses.includes(value)) {
+    return { success: false, error: "잘못된 상태 값입니다." };
+  }
+
+  if (field === "school_or_work" && value !== null && value.length > 100) {
+    return { success: false, error: "학교/직장명이 너무 깁니다." };
+  }
+
+  // 상태 변경 시 이력 기록 + 새가족 연동
+  if (field === "status") {
+    const { data: current } = await supabase
+      .from("members")
+      .select("status")
+      .eq("id", memberId)
+      .single();
+
+    if (current && current.status !== value) {
+      await supabase.from("member_status_log").insert({
+        member_id: memberId,
+        old_status: current.status,
+        new_status: value,
+        changed_by: user.id,
+      });
+
+      // 새가족 상태로 변경 시 new_family 엔트리 자동 생성
+      if (value === "new_family") {
+        const { data: existingNf } = await supabase
+          .from("new_family")
+          .select("id")
+          .eq("member_id", memberId)
+          .single();
+
+        if (!existingNf) {
+          const { data: activeSeason } = await supabase
+            .from("small_group_seasons")
+            .select("id")
+            .eq("is_active", true)
+            .single();
+
+          await supabase.from("new_family").insert({
+            member_id: memberId,
+            first_visit: new Date().toISOString().split("T")[0],
+            season_id: activeSeason?.id || null,
+          });
+          revalidatePath("/new-family");
+        }
+      }
+    }
+  }
+
+  const { error } = await supabase
+    .from("members")
+    .update({ [field]: value })
+    .eq("id", memberId);
+
+  if (error) return { success: false, error: "수정에 실패했습니다." };
+
+  revalidatePath("/members");
+  revalidatePath(`/members/${memberId}`);
+  return { success: true };
+}
+
+export async function updateMemberMinistryTeams(
+  memberId: number,
+  teamIds: number[]
+): Promise<ActionResult> {
+  const { supabase, role } = await requireAuth();
+  if (role === "viewer") return { success: false, error: "권한이 없습니다." };
+
+  const { error: deleteError } = await supabase
+    .from("member_ministry_teams")
+    .delete()
+    .eq("member_id", memberId);
+
+  if (deleteError) return { success: false, error: "사역팀 수정에 실패했습니다." };
+
+  if (teamIds.length > 0) {
+    const rows = teamIds.map((teamId) => ({
+      member_id: memberId,
+      ministry_team_id: teamId,
+    }));
+    const { error: insertError } = await supabase
+      .from("member_ministry_teams")
+      .insert(rows);
+    if (insertError) return { success: false, error: "사역팀 등록에 실패했습니다." };
+  }
+
+  revalidatePath("/members");
   return { success: true };
 }
 

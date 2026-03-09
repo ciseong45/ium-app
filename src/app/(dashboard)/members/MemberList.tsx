@@ -1,16 +1,22 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
-import type { MemberWithGroup } from "@/types/member";
-import { STATUS_LABELS, STATUS_COLORS } from "@/types/member";
-import { deleteMembers, moveMembersToGroup } from "./actions";
+import { useState, useTransition, useRef, useEffect } from "react";
+import type { MemberWithGroup, MinistryTeam } from "@/types/member";
+import { STATUS_LABELS, STATUS_COLORS, MINISTRY_TEAM_COLORS } from "@/types/member";
+import { deleteMembers, moveMembersToGroup, quickUpdateField, updateMemberMinistryTeams } from "./actions";
 
 type FilterOptions = {
   groups: { id: number; name: string }[];
   schoolOptions: string[];
   birthYears: string[];
+  ministryTeams: MinistryTeam[];
 };
+
+type EditingCell = {
+  memberId: number;
+  field: "gender" | "status" | "school_or_work";
+} | null;
 
 export default function MemberList({
   members,
@@ -19,6 +25,7 @@ export default function MemberList({
   currentGroup,
   currentSchool,
   currentBirthYear,
+  currentMinistryTeam,
   filterOptions,
   role,
 }: {
@@ -28,6 +35,7 @@ export default function MemberList({
   currentGroup?: string;
   currentSchool?: string;
   currentBirthYear?: string;
+  currentMinistryTeam?: string;
   filterOptions: FilterOptions;
   role: string;
 }) {
@@ -35,6 +43,10 @@ export default function MemberList({
   const [search, setSearch] = useState(currentSearch || "");
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [isPending, startTransition] = useTransition();
+  const [editingCell, setEditingCell] = useState<EditingCell>(null);
+  const [editingMinistryTeam, setEditingMinistryTeam] = useState<number | null>(null);
+  const [schoolCustomMode, setSchoolCustomMode] = useState(false);
+  const [schoolCustomValue, setSchoolCustomValue] = useState("");
   const isAdmin = role === "admin";
   const canEdit = role !== "viewer";
 
@@ -87,6 +99,39 @@ export default function MemberList({
     });
   };
 
+  // --- 인라인 편집 ---
+  const handleCellClick = (
+    e: React.MouseEvent,
+    memberId: number,
+    field: "gender" | "status" | "school_or_work",
+    currentValue: string | null
+  ) => {
+    if (!canEdit) return;
+    e.stopPropagation();
+    setEditingCell({ memberId, field });
+    setSchoolCustomMode(false);
+    setSchoolCustomValue(currentValue || "");
+  };
+
+  const handleFieldSave = async (
+    memberId: number,
+    field: "gender" | "status" | "school_or_work",
+    value: string | null
+  ) => {
+    setEditingCell(null);
+    const result = await quickUpdateField(memberId, field, value);
+    if (!result.success) alert(result.error);
+    router.refresh();
+  };
+
+  const handleMinistryTeamSave = async (memberId: number, teamIds: number[]) => {
+    setEditingMinistryTeam(null);
+    const result = await updateMemberMinistryTeams(memberId, teamIds);
+    if (!result.success) alert(result.error);
+    router.refresh();
+  };
+
+  // --- 필터 ---
   const buildParams = (overrides: Record<string, string | undefined>) => {
     const params = new URLSearchParams();
     const values: Record<string, string | undefined> = {
@@ -95,6 +140,7 @@ export default function MemberList({
       group: currentGroup,
       school: currentSchool,
       birth_year: currentBirthYear,
+      ministry_team: currentMinistryTeam,
       ...overrides,
     };
     Object.entries(values).forEach(([key, val]) => {
@@ -124,6 +170,10 @@ export default function MemberList({
     router.push(`/members?${buildParams({ birth_year: birthYear }).toString()}`);
   };
 
+  const handleMinistryTeamFilter = (teamId: string) => {
+    router.push(`/members?${buildParams({ ministry_team: teamId }).toString()}`);
+  };
+
   return (
     <div className="mt-6">
       {/* 검색 + 상태 필터 */}
@@ -144,7 +194,7 @@ export default function MemberList({
           </button>
         </form>
 
-        <div className="flex gap-1">
+        <div className="flex flex-wrap gap-1">
           {[
             { value: "all", label: "전체" },
             { value: "active", label: "재적" },
@@ -210,6 +260,30 @@ export default function MemberList({
             </option>
           ))}
         </select>
+
+        {filterOptions.ministryTeams.length > 0 && (
+          <select
+            value={currentMinistryTeam || "all"}
+            onChange={(e) => handleMinistryTeamFilter(e.target.value)}
+            className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-700 focus:border-blue-500 focus:outline-none"
+          >
+            <option value="all">사역팀 전체</option>
+            <optgroup label="예배사역">
+              {filterOptions.ministryTeams
+                .filter((t) => t.category === "worship")
+                .map((t) => (
+                  <option key={t.id} value={String(t.id)}>{t.name}</option>
+                ))}
+            </optgroup>
+            <optgroup label="순사역">
+              {filterOptions.ministryTeams
+                .filter((t) => t.category === "discipleship")
+                .map((t) => (
+                  <option key={t.id} value={String(t.id)}>{t.name}</option>
+                ))}
+            </optgroup>
+          </select>
+        )}
       </div>
 
       {/* 결과 수 + 선택 액션 */}
@@ -278,18 +352,11 @@ export default function MemberList({
                 )}
                 <th className="pb-3 pr-4 font-medium">이름</th>
                 <th className="pb-3 pr-4 font-medium">전화번호</th>
-                <th className="hidden pb-3 pr-4 font-medium md:table-cell">
-                  소그룹
-                </th>
-                <th className="hidden pb-3 pr-4 font-medium lg:table-cell">
-                  학교/직장
-                </th>
-                <th className="hidden pb-3 pr-4 font-medium lg:table-cell">
-                  생년
-                </th>
-                <th className="hidden pb-3 pr-4 font-medium sm:table-cell">
-                  성별
-                </th>
+                <th className="hidden pb-3 pr-4 font-medium sm:table-cell">성별</th>
+                <th className="hidden pb-3 pr-4 font-medium md:table-cell">소그룹</th>
+                <th className="hidden pb-3 pr-4 font-medium md:table-cell">학교/직장</th>
+                <th className="hidden pb-3 pr-4 font-medium lg:table-cell">사역팀</th>
+                <th className="hidden pb-3 pr-4 font-medium lg:table-cell">생년</th>
                 <th className="pb-3 pr-4 font-medium">상태</th>
               </tr>
             </thead>
@@ -298,7 +365,13 @@ export default function MemberList({
                 <tr
                   key={member.id}
                   onClick={() => router.push(`/members/${member.id}`)}
-                  className="cursor-pointer border-b transition-colors hover:bg-gray-50"
+                  className={`cursor-pointer border-b transition-colors ${
+                    member.gender === "M"
+                      ? "bg-blue-50/50 hover:bg-blue-100/60"
+                      : member.gender === "F"
+                        ? "bg-rose-50/50 hover:bg-rose-100/60"
+                        : "hover:bg-gray-50"
+                  }`}
                 >
                   {canEdit && (
                     <td className="py-3 pr-2" onClick={(e) => e.stopPropagation()}>
@@ -316,30 +389,150 @@ export default function MemberList({
                   <td className="py-3 pr-4 text-gray-600">
                     {member.phone || "—"}
                   </td>
+
+                  {/* 성별 (인라인 편집) */}
+                  <td
+                    className="hidden py-3 pr-4 text-gray-600 sm:table-cell"
+                    onClick={(e) => handleCellClick(e, member.id, "gender", member.gender)}
+                  >
+                    {editingCell?.memberId === member.id && editingCell.field === "gender" ? (
+                      <select
+                        autoFocus
+                        defaultValue={member.gender || ""}
+                        onChange={(e) => handleFieldSave(member.id, "gender", e.target.value || null)}
+                        onBlur={() => setEditingCell(null)}
+                        className="rounded border border-blue-300 px-1 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      >
+                        <option value="">-</option>
+                        <option value="M">남</option>
+                        <option value="F">여</option>
+                      </select>
+                    ) : (
+                      <span className={canEdit ? "cursor-pointer hover:text-blue-600" : ""}>
+                        {member.gender === "M" ? "남" : member.gender === "F" ? "여" : "—"}
+                      </span>
+                    )}
+                  </td>
+
+                  {/* 소그룹 */}
                   <td className="hidden py-3 pr-4 text-gray-600 md:table-cell">
-                    {member.group_info
-                      ? member.group_info.group_name
-                      : "—"}
+                    {member.group_info ? member.group_info.group_name : "—"}
                   </td>
-                  <td className="hidden py-3 pr-4 text-gray-600 lg:table-cell">
-                    {member.school_or_work || "—"}
+
+                  {/* 학교/직장 (인라인 편집) */}
+                  <td
+                    className="hidden py-3 pr-4 text-gray-600 md:table-cell"
+                    onClick={(e) => handleCellClick(e, member.id, "school_or_work", member.school_or_work)}
+                  >
+                    {editingCell?.memberId === member.id && editingCell.field === "school_or_work" ? (
+                      schoolCustomMode ? (
+                        <input
+                          autoFocus
+                          type="text"
+                          value={schoolCustomValue}
+                          onChange={(e) => setSchoolCustomValue(e.target.value)}
+                          onBlur={() => handleFieldSave(member.id, "school_or_work", schoolCustomValue || null)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleFieldSave(member.id, "school_or_work", schoolCustomValue || null);
+                            if (e.key === "Escape") setEditingCell(null);
+                          }}
+                          className="w-full min-w-[120px] rounded border border-blue-300 px-1 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          placeholder="학교/직장 입력"
+                        />
+                      ) : (
+                        <select
+                          autoFocus
+                          defaultValue={member.school_or_work || ""}
+                          onChange={(e) => {
+                            if (e.target.value === "__custom__") {
+                              setSchoolCustomMode(true);
+                              setSchoolCustomValue(member.school_or_work || "");
+                            } else {
+                              handleFieldSave(member.id, "school_or_work", e.target.value || null);
+                            }
+                          }}
+                          onBlur={() => setEditingCell(null)}
+                          className="rounded border border-blue-300 px-1 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        >
+                          <option value="">-</option>
+                          {filterOptions.schoolOptions.map((s) => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                          <option value="__custom__">직접 입력...</option>
+                        </select>
+                      )
+                    ) : (
+                      <span className={canEdit ? "cursor-pointer hover:text-blue-600" : ""}>
+                        {member.school_or_work || "—"}
+                      </span>
+                    )}
                   </td>
+
+                  {/* 사역팀 */}
+                  <td
+                    className="hidden py-3 pr-4 lg:table-cell relative"
+                    onClick={(e) => {
+                      if (!canEdit) return;
+                      e.stopPropagation();
+                      setEditingMinistryTeam(editingMinistryTeam === member.id ? null : member.id);
+                    }}
+                  >
+                    <div className="flex flex-wrap gap-1">
+                      {(member.ministry_teams ?? []).length > 0 ? (
+                        (member.ministry_teams ?? []).map((t) => (
+                          <span
+                            key={t.id}
+                            className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${MINISTRY_TEAM_COLORS[t.category]}`}
+                          >
+                            {t.name}
+                          </span>
+                        ))
+                      ) : (
+                        <span className={`text-gray-400 ${canEdit ? "cursor-pointer hover:text-blue-600" : ""}`}>
+                          —
+                        </span>
+                      )}
+                    </div>
+                    {editingMinistryTeam === member.id && (
+                      <MinistryTeamEditor
+                        memberId={member.id}
+                        currentTeamIds={(member.ministry_teams ?? []).map((t) => t.id)}
+                        allTeams={filterOptions.ministryTeams}
+                        onSave={handleMinistryTeamSave}
+                        onCancel={() => setEditingMinistryTeam(null)}
+                      />
+                    )}
+                  </td>
+
+                  {/* 생년 */}
                   <td className="hidden py-3 pr-4 text-gray-600 lg:table-cell">
                     {member.birth_date ? member.birth_date.substring(0, 4) : "—"}
                   </td>
-                  <td className="hidden py-3 pr-4 text-gray-600 sm:table-cell">
-                    {member.gender === "M"
-                      ? "남"
-                      : member.gender === "F"
-                        ? "여"
-                        : "—"}
-                  </td>
-                  <td className="py-3 pr-4">
-                    <span
-                      className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[member.status]}`}
-                    >
-                      {STATUS_LABELS[member.status]}
-                    </span>
+
+                  {/* 상태 (인라인 편집) */}
+                  <td
+                    className="py-3 pr-4"
+                    onClick={(e) => handleCellClick(e, member.id, "status", member.status)}
+                  >
+                    {editingCell?.memberId === member.id && editingCell.field === "status" ? (
+                      <select
+                        autoFocus
+                        defaultValue={member.status}
+                        onChange={(e) => handleFieldSave(member.id, "status", e.target.value)}
+                        onBlur={() => setEditingCell(null)}
+                        className="rounded border border-blue-300 px-1 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      >
+                        {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                          <option key={value} value={value}>{label}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span
+                        className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[member.status]} ${canEdit ? "cursor-pointer" : ""}`}
+                      >
+                        {STATUS_LABELS[member.status]}
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -347,6 +540,85 @@ export default function MemberList({
           </table>
         </div>
       )}
+    </div>
+  );
+}
+
+// --- 사역팀 멀티셀렉트 에디터 ---
+function MinistryTeamEditor({
+  memberId,
+  currentTeamIds,
+  allTeams,
+  onSave,
+  onCancel,
+}: {
+  memberId: number;
+  currentTeamIds: number[];
+  allTeams: MinistryTeam[];
+  onSave: (memberId: number, teamIds: number[]) => void;
+  onCancel: () => void;
+}) {
+  const [selected, setSelected] = useState<Set<number>>(new Set(currentTeamIds));
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        onCancel();
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [onCancel]);
+
+  const toggle = (teamId: number) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(teamId)) next.delete(teamId);
+      else next.add(teamId);
+      return next;
+    });
+  };
+
+  const worshipTeams = allTeams.filter((t) => t.category === "worship");
+  const discipleshipTeams = allTeams.filter((t) => t.category === "discipleship");
+
+  return (
+    <div
+      ref={ref}
+      className="absolute left-0 top-full z-20 mt-1 w-48 rounded-lg border bg-white p-2 shadow-lg"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="mb-1 text-xs font-semibold text-indigo-600">예배사역</div>
+      {worshipTeams.map((team) => (
+        <label key={team.id} className="flex items-center gap-2 rounded px-2 py-1 text-sm hover:bg-gray-50 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={selected.has(team.id)}
+            onChange={() => toggle(team.id)}
+            className="rounded border-gray-300"
+          />
+          {team.name}
+        </label>
+      ))}
+      <div className="mb-1 mt-2 text-xs font-semibold text-emerald-600">순사역</div>
+      {discipleshipTeams.map((team) => (
+        <label key={team.id} className="flex items-center gap-2 rounded px-2 py-1 text-sm hover:bg-gray-50 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={selected.has(team.id)}
+            onChange={() => toggle(team.id)}
+            className="rounded border-gray-300"
+          />
+          {team.name}
+        </label>
+      ))}
+      <button
+        onClick={() => onSave(memberId, Array.from(selected))}
+        className="mt-2 w-full rounded bg-blue-600 py-1 text-xs font-medium text-white hover:bg-blue-700"
+      >
+        저장
+      </button>
     </div>
   );
 }
