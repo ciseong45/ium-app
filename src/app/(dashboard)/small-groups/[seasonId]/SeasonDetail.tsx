@@ -11,6 +11,8 @@ import {
 import type { Member } from "@/types/member";
 import GroupCard from "./GroupCard";
 import { useRole } from "@/lib/RoleContext";
+import EmptyState from "@/components/ui/EmptyState";
+import { INPUT_CLASS } from "@/components/ui/constants";
 
 type Group = {
   id: number;
@@ -133,7 +135,7 @@ export default function SeasonDetail({
               name="name"
               required
               placeholder="예: 1조"
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className={INPUT_CLASS}
             />
           </div>
           <div className="flex gap-2">
@@ -157,9 +159,7 @@ export default function SeasonDetail({
 
       {/* 소그룹 목록 */}
       {groups.length === 0 ? (
-        <p className="mt-8 text-center text-gray-400">
-          소그룹이 없습니다. 소그룹을 추가해주세요.
-        </p>
+        <EmptyState message="소그룹이 없습니다. 소그룹을 추가해주세요." />
       ) : (
         <div className="mt-6 grid gap-4 lg:grid-cols-2">
           {groups.map((group) => (

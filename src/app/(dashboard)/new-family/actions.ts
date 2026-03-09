@@ -3,27 +3,8 @@
 import { requireAuth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/lib/validations";
-
-export type Season = {
-  id: number;
-  name: string;
-  is_active: boolean;
-  created_at: string;
-};
-
-export type NewFamilyEntry = {
-  id: number;
-  member_id: number;
-  first_visit: string;
-  step: number;
-  step_updated_at: string;
-  assigned_to: number | null;
-  season_id: number | null;
-  notes: string | null;
-  created_at: string;
-  member: { id: number; name: string; phone: string | null };
-  assignee: { id: number; name: string } | null;
-};
+import { insertStatusLog, fetchActiveMembers } from "@/lib/queries";
+import type { Season, NewFamilyEntry } from "@/types/new-family";
 
 export async function getSeasons() {
   const { supabase } = await requireAuth();
@@ -129,12 +110,7 @@ export async function updateStep(id: number, step: number): Promise<ActionResult
           .update({ status: "adjusting" })
           .eq("id", family.member_id);
 
-        await supabase.from("member_status_log").insert({
-          member_id: family.member_id,
-          old_status: member.status,
-          new_status: "adjusting",
-          changed_by: user.id,
-        });
+        await insertStatusLog(supabase, family.member_id, member.status, "adjusting", user.id);
       }
     }
   }
@@ -167,11 +143,5 @@ export async function deleteNewFamily(id: number): Promise<ActionResult> {
 
 export async function getActiveMembers() {
   const { supabase } = await requireAuth();
-  const { data, error } = await supabase
-    .from("members")
-    .select("id, name")
-    .in("status", ["active", "attending", "adjusting"])
-    .order("name");
-  if (error) return [];
-  return data;
+  return fetchActiveMembers(supabase, ["active", "attending", "adjusting"]);
 }

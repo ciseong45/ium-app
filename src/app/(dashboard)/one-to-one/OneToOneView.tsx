@@ -7,9 +7,12 @@ import {
   updateOneToOneStatus,
   deleteOneToOne,
 } from "./actions";
-import type { OneToOneEntry, OneToOneStatus } from "./actions";
+import type { OneToOneEntry, OneToOneStatus } from "@/types/one-to-one";
 import OneToOneCard from "./OneToOneCard";
 import { useRole } from "@/lib/RoleContext";
+import FilterPill from "@/components/ui/FilterPill";
+import EmptyState from "@/components/ui/EmptyState";
+import { INPUT_CLASS } from "@/components/ui/constants";
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: "all", label: "전체" },
@@ -91,21 +94,16 @@ export default function OneToOneView({
       {/* 필터 */}
       <div className="mt-4 flex gap-1">
         {STATUS_OPTIONS.map((option) => (
-          <button
+          <FilterPill
             key={option.value}
+            label={option.label}
+            active={currentStatus === option.value}
             onClick={() =>
               router.push(
                 `/one-to-one${option.value !== "all" ? `?status=${option.value}` : ""}`
               )
             }
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-              currentStatus === option.value
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            {option.label}
-          </button>
+          />
         ))}
       </div>
 
@@ -123,7 +121,7 @@ export default function OneToOneView({
               <select
                 name="mentor_id"
                 required
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className={INPUT_CLASS}
               >
                 <option value="">선택</option>
                 {members.map((m) => (
@@ -140,7 +138,7 @@ export default function OneToOneView({
               <select
                 name="mentee_id"
                 required
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className={INPUT_CLASS}
               >
                 <option value="">선택</option>
                 {members.map((m) => (
@@ -159,7 +157,7 @@ export default function OneToOneView({
               name="started_at"
               type="date"
               defaultValue={new Date().toISOString().split("T")[0]}
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:w-auto"
+              className={`${INPUT_CLASS} sm:w-auto`}
             />
           </div>
           <div className="flex gap-2">
@@ -183,9 +181,7 @@ export default function OneToOneView({
 
       {/* 양육 목록 */}
       {entries.length === 0 ? (
-        <p className="mt-8 text-center text-gray-400">
-          등록된 양육이 없습니다.
-        </p>
+        <EmptyState message="등록된 양육이 없습니다." />
       ) : (
         <div className="mt-6 space-y-4">
           {entries.map((entry) => (

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSessions, addSession, deleteSession } from "./actions";
-import type { OneToOneEntry, OneToOneStatus, SessionEntry } from "./actions";
+import type { OneToOneEntry, OneToOneStatus, SessionEntry } from "@/types/one-to-one";
 import { useRole } from "@/lib/RoleContext";
 
 const STATUS_LABELS: Record<OneToOneStatus, string> = {

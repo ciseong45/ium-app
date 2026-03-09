@@ -2,25 +2,18 @@
 
 import { requireAuth } from "@/lib/auth";
 import type { UserRole } from "@/lib/auth";
-
-export type UserEntry = {
-  id: string;
-  email: string;
-  name: string | null;
-  role: UserRole;
-  created_at: string;
-};
+import type { UserEntry } from "@/types/settings";
 
 export async function getUsers(): Promise<UserEntry[]> {
   const { supabase, role } = await requireAuth();
-  if (role !== "admin") throw new Error("권한이 없습니다.");
+  if (role !== "admin") return [];
 
   const { data, error } = await supabase
     .from("profiles")
     .select("id, email, name, role, created_at")
     .order("created_at", { ascending: true });
 
-  if (error) throw new Error(error.message);
+  if (error) return [];
   return (data ?? []) as UserEntry[];
 }
 

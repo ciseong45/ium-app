@@ -3,8 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { saveAttendance } from "./actions";
-import type { AttendanceStatus, AttendanceRecord } from "./actions";
+import type { AttendanceStatus, AttendanceRecord } from "@/types/attendance";
 import { useRole } from "@/lib/RoleContext";
+import FilterPill from "@/components/ui/FilterPill";
 
 type Member = { id: number; name: string; status: string };
 
@@ -42,19 +43,14 @@ export default function AttendanceView({
           { value: "check", label: "출석 체크" },
           { value: "history", label: "출석 현황" },
         ].map((t) => (
-          <button
+          <FilterPill
             key={t.value}
+            label={t.label}
+            active={tab === t.value}
             onClick={() =>
               router.push(`/attendance?tab=${t.value}&date=${selectedDate}`)
             }
-            className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-              tab === t.value
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            {t.label}
-          </button>
+          />
         ))}
       </div>
 

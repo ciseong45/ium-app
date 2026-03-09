@@ -12,6 +12,8 @@ import {
   getSubStatus,
 } from "@/types/member";
 import { deleteMembers, moveMembersToGroup, quickUpdateField, updateMemberMinistryTeams } from "./actions";
+import FilterPill from "@/components/ui/FilterPill";
+import EmptyState from "@/components/ui/EmptyState";
 
 type FilterOptions = {
   groups: { id: number; name: string }[];
@@ -258,17 +260,12 @@ export default function MemberList({
             { value: "on_leave", label: "휴적" },
             { value: "removed", label: "제적" },
           ].map((option) => (
-            <button
+            <FilterPill
               key={option.value}
+              label={option.label}
+              active={(currentStatus || "all") === option.value}
               onClick={() => handleStatusFilter(option.value)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                (currentStatus || "all") === option.value
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-            >
-              {option.label}
-            </button>
+            />
           ))}
         </div>
       </div>
@@ -381,11 +378,9 @@ export default function MemberList({
 
       {/* 멤버 테이블 */}
       {members.length === 0 ? (
-        <div className="mt-8 text-center text-gray-400">
-          {currentSearch || currentStatus
-            ? "검색 결과가 없습니다."
-            : "등록된 멤버가 없습니다."}
-        </div>
+        <EmptyState
+          message={currentSearch || currentStatus ? "검색 결과가 없습니다." : "등록된 멤버가 없습니다."}
+        />
       ) : (
         <div className="mt-4 overflow-x-auto">
           <table className="w-full text-left text-sm">

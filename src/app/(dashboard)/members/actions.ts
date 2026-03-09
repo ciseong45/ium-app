@@ -3,8 +3,9 @@
 import { requireAuth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { memberSchema, type ActionResult } from "@/lib/validations";
-import type { MemberStatus, LeaveType, MemberWithGroup, MinistryTeam } from "@/types/member";
+import { STATUS_LABELS, type MemberStatus, type LeaveType, type MemberWithGroup, type MinistryTeam } from "@/types/member";
 import { ZodError } from "zod";
+import { expireAdjustingMembers, insertStatusLog, ensureNewFamilyEntry, getActiveSeason } from "@/lib/queries";
 
 export async function getMembers(
   search?: string,
@@ -44,34 +45,14 @@ export async function getMembers(
   const { data, error } = await query;
   if (error) return [];
 
-  // Lazy expiry: 적응중 상태가 3개월 지나면 자동으로 출석 전환
+  // Lazy expiry: 적응중 상태가 3개월 지나면 자동으로 출석 전환 (batch 처리)
   const adjustingMembers = (data ?? []).filter((m: { status: string }) => m.status === "adjusting");
   if (adjustingMembers.length > 0) {
     const ids = adjustingMembers.map((m: { id: number }) => m.id);
-    const { data: nfEntries } = await supabase
-      .from("new_family")
-      .select("member_id, step_updated_at")
-      .in("member_id", ids)
-      .eq("step", 3);
-
-    const threeMonthsAgo = new Date();
-    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-
-    for (const nf of nfEntries ?? []) {
-      if (new Date(nf.step_updated_at) < threeMonthsAgo) {
-        await supabase
-          .from("members")
-          .update({ status: "attending" })
-          .eq("id", nf.member_id);
-        await supabase.from("member_status_log").insert({
-          member_id: nf.member_id,
-          old_status: "adjusting",
-          new_status: "attending",
-          changed_by: null,
-        });
-        const member = data?.find((m: { id: number }) => m.id === nf.member_id);
-        if (member) member.status = "attending";
-      }
+    const expiredIds = await expireAdjustingMembers(supabase, ids);
+    for (const expId of expiredIds) {
+      const member = data?.find((m: { id: number }) => m.id === expId);
+      if (member) member.status = "attending";
     }
   }
 
@@ -170,12 +151,15 @@ export async function getMembersWithGroups(
 export async function getFilterOptions() {
   const { supabase } = await requireAuth();
 
-  const { data: activeSeason } = await supabase
-    .from("small_group_seasons")
-    .select("id")
-    .eq("is_active", true)
-    .single();
+  // 병렬 실행: 독립적인 쿼리들 동시 처리
+  const [activeSeason, schoolResult, birthResult, ministryResult] = await Promise.all([
+    getActiveSeason(supabase),
+    supabase.from("members").select("school_or_work").not("school_or_work", "is", null).order("school_or_work"),
+    supabase.from("members").select("birth_date").not("birth_date", "is", null).order("birth_date", { ascending: false }),
+    supabase.from("ministry_teams").select("*").order("display_order"),
+  ]);
 
+  // 시즌 의존 쿼리
   let groups: { id: number; name: string }[] = [];
   if (activeSeason) {
     const { data } = await supabase
@@ -186,32 +170,15 @@ export async function getFilterOptions() {
     groups = data || [];
   }
 
-  const { data: schoolData } = await supabase
-    .from("members")
-    .select("school_or_work")
-    .not("school_or_work", "is", null)
-    .order("school_or_work");
-
   const schoolOptions = [...new Set(
-    (schoolData || []).map((m: { school_or_work: string | null }) => m.school_or_work).filter(Boolean)
+    (schoolResult.data || []).map((m: { school_or_work: string | null }) => m.school_or_work).filter(Boolean)
   )] as string[];
-
-  const { data: birthData } = await supabase
-    .from("members")
-    .select("birth_date")
-    .not("birth_date", "is", null)
-    .order("birth_date", { ascending: false });
 
   const birthYears = [...new Set(
-    (birthData || []).map((m: { birth_date: string | null }) => m.birth_date?.substring(0, 4)).filter(Boolean)
+    (birthResult.data || []).map((m: { birth_date: string | null }) => m.birth_date?.substring(0, 4)).filter(Boolean)
   )] as string[];
 
-  const { data: ministryTeamsData } = await supabase
-    .from("ministry_teams")
-    .select("*")
-    .order("display_order");
-
-  return { groups, schoolOptions, birthYears, ministryTeams: (ministryTeamsData || []) as MinistryTeam[] };
+  return { groups, schoolOptions, birthYears, ministryTeams: (ministryResult.data || []) as MinistryTeam[] };
 }
 
 export async function getMemberGroupInfo(memberId: number) {
@@ -261,32 +228,11 @@ export async function getMember(id: number) {
 
   if (error || !data) return null;
 
-  // Lazy expiry: 적응중 3개월 만료 체크
+  // Lazy expiry: 적응중 3개월 만료 체크 (batch 헬퍼 재사용)
   if (data.status === "adjusting") {
-    const { data: nfEntry } = await supabase
-      .from("new_family")
-      .select("step, step_updated_at")
-      .eq("member_id", id)
-      .eq("step", 3)
-      .single();
-
-    if (nfEntry) {
-      const threeMonthsAgo = new Date();
-      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-
-      if (new Date(nfEntry.step_updated_at) < threeMonthsAgo) {
-        await supabase
-          .from("members")
-          .update({ status: "attending" })
-          .eq("id", id);
-        await supabase.from("member_status_log").insert({
-          member_id: id,
-          old_status: "adjusting",
-          new_status: "attending",
-          changed_by: null,
-        });
-        data.status = "attending";
-      }
+    const expiredIds = await expireAdjustingMembers(supabase, [id]);
+    if (expiredIds.includes(id)) {
+      data.status = "attending";
     }
   }
 
@@ -360,37 +306,20 @@ export async function updateMember(id: number, formData: FormData): Promise<Acti
 
     // 상태가 변경되었으면 이력 기록
     if (current && current.status !== member.status) {
-      await supabase.from("member_status_log").insert({
-        member_id: id,
-        old_status: current.status,
-        new_status: member.status,
-        changed_by: user.id,
-      });
+      await insertStatusLog(supabase, id, current.status, member.status, user.id);
 
       // 새가족 상태로 변경 시 new_family 엔트리 자동 생성
       if (member.status === "new_family") {
-        const { data: existingNf } = await supabase
-          .from("new_family")
-          .select("id")
-          .eq("member_id", id)
-          .single();
-
-        if (!existingNf) {
-          const { data: activeSeason } = await supabase
-            .from("small_group_seasons")
-            .select("id")
-            .eq("is_active", true)
-            .single();
-
-          const today = new Date().toISOString().split("T")[0];
-          await supabase.from("new_family").insert({
-            member_id: id,
-            first_visit: today,
-            season_id: activeSeason?.id || null,
-          });
-          revalidatePath("/new-family");
-        }
+        await ensureNewFamilyEntry(supabase, id);
+        revalidatePath("/new-family");
       }
+
+      // 새가족에서 다른 상태로 변경 시에도 /new-family 갱신
+      if (current.status === "new_family" && member.status !== "new_family") {
+        revalidatePath("/new-family");
+      }
+
+      revalidatePath("/");
     }
 
     revalidatePath("/members");
@@ -412,6 +341,9 @@ export async function deleteMember(id: number): Promise<ActionResult> {
   if (error) return { success: false, error: "멤버 삭제에 실패했습니다." };
 
   revalidatePath("/members");
+  revalidatePath("/");
+  revalidatePath("/new-family");
+  revalidatePath("/attendance");
   return { success: true };
 }
 
@@ -424,6 +356,11 @@ export async function deleteMembers(ids: number[]): Promise<ActionResult> {
   if (error) return { success: false, error: "멤버 삭제에 실패했습니다." };
 
   revalidatePath("/members");
+  revalidatePath("/");
+  revalidatePath("/new-family");
+  revalidatePath("/attendance");
+  revalidatePath("/one-to-one");
+  revalidatePath("/small-groups");
   return { success: true };
 }
 
@@ -464,6 +401,7 @@ export async function moveMembersToGroup(
   // targetGroupId가 null이면 배정 해제만
   if (targetGroupId === null) {
     revalidatePath("/members");
+    revalidatePath("/small-groups");
     return { success: true };
   }
 
@@ -480,6 +418,7 @@ export async function moveMembersToGroup(
   if (insertError) return { success: false, error: "소그룹 배정에 실패했습니다." };
 
   revalidatePath("/members");
+  revalidatePath("/small-groups");
   return { success: true };
 }
 
@@ -546,15 +485,11 @@ export async function startLeave(
   if (updateError) return { success: false, error: "상태 변경에 실패했습니다." };
 
   // 상태 변경 이력 기록
-  await supabase.from("member_status_log").insert({
-    member_id: memberId,
-    old_status: member.status,
-    new_status: "on_leave",
-    changed_by: user.id,
-  });
+  await insertStatusLog(supabase, memberId, member.status, "on_leave", user.id);
 
   revalidatePath("/members");
   revalidatePath(`/members/${memberId}`);
+  revalidatePath("/");
   return { success: true };
 }
 
@@ -589,37 +524,21 @@ export async function quickUpdateField(
       .eq("id", memberId)
       .single();
 
-    if (current && current.status !== value) {
-      await supabase.from("member_status_log").insert({
-        member_id: memberId,
-        old_status: current.status,
-        new_status: value,
-        changed_by: user.id,
-      });
+    if (current && value && current.status !== value) {
+      await insertStatusLog(supabase, memberId, current.status, value, user.id);
 
       // 새가족 상태로 변경 시 new_family 엔트리 자동 생성
       if (value === "new_family") {
-        const { data: existingNf } = await supabase
-          .from("new_family")
-          .select("id")
-          .eq("member_id", memberId)
-          .single();
-
-        if (!existingNf) {
-          const { data: activeSeason } = await supabase
-            .from("small_group_seasons")
-            .select("id")
-            .eq("is_active", true)
-            .single();
-
-          await supabase.from("new_family").insert({
-            member_id: memberId,
-            first_visit: new Date().toISOString().split("T")[0],
-            season_id: activeSeason?.id || null,
-          });
-          revalidatePath("/new-family");
-        }
+        await ensureNewFamilyEntry(supabase, memberId);
+        revalidatePath("/new-family");
       }
+
+      // 새가족에서 다른 상태로 변경 시에도 /new-family 갱신
+      if (current.status === "new_family" && value !== "new_family") {
+        revalidatePath("/new-family");
+      }
+
+      revalidatePath("/");
     }
   }
 
@@ -671,25 +590,13 @@ const CSV_HEADERS = ["이름", "전화번호", "이메일", "성별", "생년월
 const GENDER_KR: Record<string, string> = { M: "남", F: "여" };
 const GENDER_EN: Record<string, string> = { 남: "M", 여: "F" };
 
-const STATUS_LABEL_TO_EN: Record<string, MemberStatus> = {
-  재적: "active",
-  출석: "attending",
-  미출석: "inactive",
-  제적: "removed",
-  휴적: "on_leave",
-  새가족: "new_family",
-  적응중: "adjusting",
-};
+// STATUS_LABELS에서 파생: 한글 → 영문 매핑
+const STATUS_LABEL_TO_EN: Record<string, MemberStatus> = Object.fromEntries(
+  Object.entries(STATUS_LABELS).map(([k, v]) => [v, k as MemberStatus])
+) as Record<string, MemberStatus>;
 
-const STATUS_EN_TO_KR: Record<MemberStatus, string> = {
-  active: "재적",
-  attending: "출석",
-  inactive: "미출석",
-  removed: "제적",
-  on_leave: "휴적",
-  new_family: "새가족",
-  adjusting: "적응중",
-};
+// STATUS_LABELS 그대로 사용 (영문 → 한글)
+const STATUS_EN_TO_KR = STATUS_LABELS;
 
 function escapeCsvField(value: string): string {
   if (value.includes(",") || value.includes('"') || value.includes("\n")) {
@@ -913,14 +820,10 @@ export async function returnFromLeave(memberId: number, leaveId: number): Promis
   if (updateError) return { success: false, error: "상태 변경에 실패했습니다." };
 
   // 상태 변경 이력 기록
-  await supabase.from("member_status_log").insert({
-    member_id: memberId,
-    old_status: "on_leave",
-    new_status: "attending",
-    changed_by: user.id,
-  });
+  await insertStatusLog(supabase, memberId, "on_leave", "attending", user.id);
 
   revalidatePath("/members");
   revalidatePath(`/members/${memberId}`);
+  revalidatePath("/");
   return { success: true };
 }

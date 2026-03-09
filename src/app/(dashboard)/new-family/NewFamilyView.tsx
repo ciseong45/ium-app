@@ -7,8 +7,11 @@ import {
   updateStep,
   deleteNewFamily,
 } from "./actions";
-import type { NewFamilyEntry, Season } from "./actions";
+import type { NewFamilyEntry, Season } from "@/types/new-family";
 import { useRole } from "@/lib/RoleContext";
+import FilterPill from "@/components/ui/FilterPill";
+import EmptyState from "@/components/ui/EmptyState";
+import { INPUT_CLASS } from "@/components/ui/constants";
 
 const STEPS = [
   { step: 1, label: "1주차 방문", color: "bg-gray-100 text-gray-700" },
@@ -111,29 +114,18 @@ export default function NewFamilyView({
       {/* 시즌 필터 */}
       {seasons.length > 0 && (
         <div className="mt-4 flex gap-1.5 overflow-x-auto pb-1">
-          <button
+          <FilterPill
+            label="전체"
+            active={!currentSeasonId}
             onClick={() => handleSeasonFilter("all")}
-            className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-              !currentSeasonId
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            전체
-          </button>
+          />
           {seasons.map((season) => (
-            <button
+            <FilterPill
               key={season.id}
+              label={`${season.name}${season.is_active ? " (현재)" : ""}`}
+              active={currentSeasonId === season.id}
               onClick={() => handleSeasonFilter(String(season.id))}
-              className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                currentSeasonId === season.id
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-            >
-              {season.name}
-              {season.is_active && " (현재)"}
-            </button>
+            />
           ))}
         </div>
       )}
@@ -195,7 +187,7 @@ export default function NewFamilyView({
               <input
                 name="name"
                 required
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className={INPUT_CLASS}
               />
             </div>
             <div>
@@ -206,7 +198,7 @@ export default function NewFamilyView({
                 name="phone"
                 type="tel"
                 placeholder="010-0000-0000"
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className={INPUT_CLASS}
               />
             </div>
             <div>
@@ -218,7 +210,7 @@ export default function NewFamilyView({
                 type="date"
                 required
                 defaultValue={new Date().toISOString().split("T")[0]}
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className={INPUT_CLASS}
               />
             </div>
             <div>
@@ -227,7 +219,7 @@ export default function NewFamilyView({
               </label>
               <select
                 name="assigned_to"
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className={INPUT_CLASS}
               >
                 <option value="">선택 안 함</option>
                 {members.map((m) => (
@@ -259,9 +251,7 @@ export default function NewFamilyView({
 
       {/* 새가족 목록 */}
       {families.length === 0 ? (
-        <p className="mt-8 text-center text-gray-400">
-          등록된 새가족이 없습니다.
-        </p>
+        <EmptyState message="등록된 새가족이 없습니다." />
       ) : (
         <div className="mt-6 space-y-3">
           {families.map((family) => (

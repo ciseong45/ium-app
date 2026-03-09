@@ -3,25 +3,8 @@
 import { requireAuth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/lib/validations";
-
-export type OneToOneStatus = "active" | "completed" | "paused";
-
-export type OneToOneEntry = {
-  id: number;
-  mentor: { id: number; name: string };
-  mentee: { id: number; name: string };
-  status: OneToOneStatus;
-  started_at: string;
-  completed_at: string | null;
-};
-
-export type SessionEntry = {
-  id: number;
-  one_to_one_id: number;
-  session_date: string;
-  session_number: number;
-  notes: string | null;
-};
+import { fetchActiveMembers } from "@/lib/queries";
+import type { OneToOneStatus, OneToOneEntry, SessionEntry } from "@/types/one-to-one";
 
 export async function getOneToOnes(status?: string) {
   const { supabase } = await requireAuth();
@@ -139,11 +122,5 @@ export async function deleteSession(sessionId: number): Promise<ActionResult> {
 
 export async function getActiveMembers() {
   const { supabase } = await requireAuth();
-  const { data, error } = await supabase
-    .from("members")
-    .select("id, name")
-    .in("status", ["active", "attending"])
-    .order("name");
-  if (error) return [];
-  return data;
+  return fetchActiveMembers(supabase, ["active", "attending"]);
 }

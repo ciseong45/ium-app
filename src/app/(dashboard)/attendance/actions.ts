@@ -3,15 +3,8 @@
 import { requireAuth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/lib/validations";
-
-export type AttendanceStatus = "present" | "absent" | "online";
-
-export type AttendanceRecord = {
-  id: number;
-  member_id: number;
-  week_date: string;
-  status: AttendanceStatus;
-};
+import { fetchActiveMembers } from "@/lib/queries";
+import type { AttendanceStatus, AttendanceRecord } from "@/types/attendance";
 
 // 특정 주의 출석 데이터 가져오기
 export async function getAttendanceByWeek(weekDate: string) {
@@ -24,7 +17,7 @@ export async function getAttendanceByWeek(weekDate: string) {
   return data as AttendanceRecord[];
 }
 
-// 활동 멤버 목록 (재적 + 출석)
+// 활동 멤버 목록 (재적 + 출석) — 출석부는 status 포함 필요
 export async function getActiveMembers() {
   const { supabase } = await requireAuth();
   const { data, error } = await supabase
@@ -33,7 +26,7 @@ export async function getActiveMembers() {
     .in("status", ["active", "attending"])
     .order("name");
   if (error) return [];
-  return data;
+  return data as { id: number; name: string; status: string }[];
 }
 
 // 출석 일괄 저장 (upsert)

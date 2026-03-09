@@ -38,8 +38,8 @@ export const groupSchema = z.object({
 });
 
 export const oneToOneSchema = z.object({
-  mentor_id: z.number({ error: "멘토를 선택해주세요." }),
-  mentee_id: z.number({ error: "멘티를 선택해주세요." }),
+  mentor_id: z.number({ invalid_type_error: "멘토를 선택해주세요." }),
+  mentee_id: z.number({ invalid_type_error: "멘티를 선택해주세요." }),
   started_at: z.string(),
 }).refine((data) => data.mentor_id !== data.mentee_id, {
   message: "멘토와 멘티는 다른 사람이어야 합니다.",

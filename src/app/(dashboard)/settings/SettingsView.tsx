@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { updateUserRole } from "./actions";
-import type { UserEntry } from "./actions";
+import type { UserEntry } from "@/types/settings";
 import type { UserRole } from "@/lib/auth";
 
 const ROLE_OPTIONS: { value: UserRole; label: string }[] = [

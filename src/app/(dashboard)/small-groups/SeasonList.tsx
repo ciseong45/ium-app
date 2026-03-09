@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createSeason, deleteSeason } from "./actions";
 import { useRole } from "@/lib/RoleContext";
+import EmptyState from "@/components/ui/EmptyState";
+import { INPUT_CLASS } from "@/components/ui/constants";
 
 type Season = {
   id: number;
@@ -70,7 +72,7 @@ export default function SeasonList({ seasons }: { seasons: Season[] }) {
               name="name"
               required
               placeholder="예: 2026년 상반기"
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className={INPUT_CLASS}
             />
           </div>
           <div className="flex gap-3">
@@ -81,7 +83,7 @@ export default function SeasonList({ seasons }: { seasons: Season[] }) {
               <input
                 name="start_date"
                 type="date"
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className={INPUT_CLASS}
               />
             </div>
             <div className="flex-1">
@@ -91,7 +93,7 @@ export default function SeasonList({ seasons }: { seasons: Season[] }) {
               <input
                 name="end_date"
                 type="date"
-                className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className={INPUT_CLASS}
               />
             </div>
           </div>
@@ -120,9 +122,7 @@ export default function SeasonList({ seasons }: { seasons: Season[] }) {
 
       {/* 시즌 목록 */}
       {seasons.length === 0 ? (
-        <p className="mt-8 text-center text-gray-400">
-          등록된 시즌이 없습니다. 새 시즌을 만들어주세요.
-        </p>
+        <EmptyState message="등록된 시즌이 없습니다. 새 시즌을 만들어주세요." />
       ) : (
         <div className="mt-4 space-y-3">
           {seasons.map((season) => (

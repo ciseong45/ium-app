@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createMember, updateMember } from "./actions";
 import type { Member } from "@/types/member";
+import { INPUT_CLASS } from "@/components/ui/constants";
 
 export default function MemberForm({ member }: { member?: Member }) {
   const router = useRouter();
@@ -19,10 +20,14 @@ export default function MemberForm({ member }: { member?: Member }) {
     const formData = new FormData(e.currentTarget);
 
     try {
-      if (isEdit) {
-        await updateMember(member.id, formData);
-      } else {
-        await createMember(formData);
+      const result = isEdit
+        ? await updateMember(member.id, formData)
+        : await createMember(formData);
+
+      if (!result.success) {
+        setError(result.error);
+        setLoading(false);
+        return;
       }
       router.push("/members");
       router.refresh();
@@ -44,7 +49,7 @@ export default function MemberForm({ member }: { member?: Member }) {
           type="text"
           required
           defaultValue={member?.name}
-          className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className={INPUT_CLASS}
         />
       </div>
 
@@ -58,7 +63,7 @@ export default function MemberForm({ member }: { member?: Member }) {
           type="tel"
           defaultValue={member?.phone || ""}
           placeholder="010-0000-0000"
-          className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className={INPUT_CLASS}
         />
       </div>
 
@@ -71,7 +76,7 @@ export default function MemberForm({ member }: { member?: Member }) {
           name="email"
           type="email"
           defaultValue={member?.email || ""}
-          className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className={INPUT_CLASS}
         />
       </div>
 
@@ -84,7 +89,7 @@ export default function MemberForm({ member }: { member?: Member }) {
           name="kakao_id"
           type="text"
           defaultValue={member?.kakao_id || ""}
-          className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className={INPUT_CLASS}
         />
       </div>
 
@@ -94,7 +99,7 @@ export default function MemberForm({ member }: { member?: Member }) {
         <select
           name="gender"
           defaultValue={member?.gender || ""}
-          className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className={INPUT_CLASS}
         >
           <option value="">선택 안 함</option>
           <option value="M">남</option>
@@ -111,7 +116,7 @@ export default function MemberForm({ member }: { member?: Member }) {
           name="birth_date"
           type="date"
           defaultValue={member?.birth_date || ""}
-          className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className={INPUT_CLASS}
         />
       </div>
 
@@ -124,7 +129,7 @@ export default function MemberForm({ member }: { member?: Member }) {
           name="school_or_work"
           type="text"
           defaultValue={member?.school_or_work || ""}
-          className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className={INPUT_CLASS}
         />
       </div>
 
@@ -164,7 +169,7 @@ export default function MemberForm({ member }: { member?: Member }) {
           name="address"
           type="text"
           defaultValue={member?.address || ""}
-          className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className={INPUT_CLASS}
         />
       </div>
 
@@ -174,7 +179,7 @@ export default function MemberForm({ member }: { member?: Member }) {
         <select
           name="status"
           defaultValue={member?.status || "active"}
-          className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className={INPUT_CLASS}
         >
           <option value="active">재적</option>
           <option value="attending">출석</option>
@@ -193,7 +198,7 @@ export default function MemberForm({ member }: { member?: Member }) {
           name="notes"
           rows={3}
           defaultValue={member?.notes || ""}
-          className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className={INPUT_CLASS}
         />
       </div>
 
