@@ -1,4 +1,4 @@
-import { getMember, getStatusLog, getMemberLeaves, getMemberGroupInfo } from "../actions";
+import { getMember, getStatusLog, getMemberLeaves, getMemberGroupInfo, getNewFamilyEntry } from "../actions";
 import MemberDetail from "./MemberDetail";
 
 export default async function MemberDetailPage({
@@ -8,11 +8,12 @@ export default async function MemberDetailPage({
 }) {
   const { id } = await params;
   const memberId = Number(id);
-  const [member, statusLog, leaves, groupInfo] = await Promise.all([
+  const [member, statusLog, leaves, groupInfo, newFamilyEntry] = await Promise.all([
     getMember(memberId),
     getStatusLog(memberId),
     getMemberLeaves(memberId),
     getMemberGroupInfo(memberId),
+    getNewFamilyEntry(memberId),
   ]);
 
   return (
@@ -21,6 +22,7 @@ export default async function MemberDetailPage({
       statusLog={statusLog}
       leaves={leaves}
       groupInfo={groupInfo}
+      newFamilyEntry={newFamilyEntry}
     />
   );
 }

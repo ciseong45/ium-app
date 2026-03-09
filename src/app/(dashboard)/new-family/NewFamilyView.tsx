@@ -59,7 +59,7 @@ export default function NewFamilyView({
 
   const handleStepChange = async (id: number, step: number) => {
     if (step === 3) {
-      if (!confirm("3주차 교육을 완료하면 출석 멤버로 자동 등록됩니다. 진행하시겠습니까?")) return;
+      if (!confirm("3주차 교육을 완료하면 '적응중' 상태로 변경됩니다. 3개월 후 자동으로 출석 멤버가 됩니다. 진행하시겠습니까?")) return;
     }
     const result = await updateStep(id, step);
     if (result.success) {

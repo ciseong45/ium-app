@@ -32,7 +32,7 @@ export async function submitVisitorCard(formData: FormData): Promise<ActionResul
         phone: data.phone,
         gender: data.gender,
         birth_date: data.birth_date,
-        status: "active",
+        status: "new_family",
         kakao_id: data.kakao_id,
         is_baptized: isBaptized,
         school_or_work: data.school_work,

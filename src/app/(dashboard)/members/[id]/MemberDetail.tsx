@@ -15,16 +15,23 @@ type StatusLogEntry = {
   profiles: { name: string } | null;
 };
 
+type NewFamilyInfo = {
+  step: number;
+  step_updated_at: string;
+} | null;
+
 export default function MemberDetail({
   member,
   statusLog,
   leaves,
   groupInfo,
+  newFamilyEntry,
 }: {
   member: Member;
   statusLog: StatusLogEntry[];
   leaves: MemberLeave[];
   groupInfo: MemberGroupInfo | null;
+  newFamilyEntry?: NewFamilyInfo;
 }) {
   const router = useRouter();
   const role = useRole();
@@ -159,6 +166,25 @@ export default function MemberDetail({
         </div>
       )}
 
+      {/* 적응중 기간 표시 */}
+      {member.status === "adjusting" && newFamilyEntry?.step_updated_at && (() => {
+        const completedDate = new Date(newFamilyEntry.step_updated_at);
+        const expiryDate = new Date(completedDate);
+        expiryDate.setMonth(expiryDate.getMonth() + 3);
+        const today = new Date();
+        const remainingDays = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        return (
+          <div className="mt-4 rounded-lg border border-teal-200 bg-teal-50 p-4">
+            <h4 className="text-sm font-semibold text-teal-700">적응 기간</h4>
+            <p className="mt-1 text-sm text-teal-600">
+              {remainingDays > 0
+                ? `${remainingDays}일 후 자동으로 출석 멤버로 전환됩니다.`
+                : "적응 기간이 만료되었습니다. 다음 페이지 로드 시 출석 멤버로 전환됩니다."}
+            </p>
+          </div>
+        );
+      })()}
+
       {/* 휴적 관리 */}
       <div className="mt-6">
         <div className="flex items-center justify-between">
@@ -171,7 +197,7 @@ export default function MemberDetail({
               >
                 복귀 처리
               </button>
-            ) : member.status !== "on_leave" && member.status !== "removed" ? (
+            ) : member.status !== "on_leave" && member.status !== "removed" && member.status !== "new_family" ? (
               <button
                 onClick={() => setShowLeaveForm(!showLeaveForm)}
                 className="rounded-lg border border-orange-300 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50"

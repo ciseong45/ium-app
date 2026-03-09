@@ -1,4 +1,4 @@
-export type MemberStatus = "active" | "attending" | "inactive" | "removed" | "on_leave";
+export type MemberStatus = "active" | "attending" | "inactive" | "removed" | "on_leave" | "new_family" | "adjusting";
 
 export type Member = {
   id: number;
@@ -33,6 +33,8 @@ export const STATUS_LABELS: Record<MemberStatus, string> = {
   inactive: "미출석",
   removed: "제적",
   on_leave: "휴적",
+  new_family: "새가족",
+  adjusting: "적응중",
 };
 
 export const STATUS_COLORS: Record<MemberStatus, string> = {
@@ -41,6 +43,8 @@ export const STATUS_COLORS: Record<MemberStatus, string> = {
   inactive: "bg-yellow-100 text-yellow-700",
   removed: "bg-red-100 text-red-700",
   on_leave: "bg-orange-100 text-orange-700",
+  new_family: "bg-purple-100 text-purple-700",
+  adjusting: "bg-teal-100 text-teal-700",
 };
 
 export type LeaveType = "military" | "academic_leave" | "study_abroad" | "other";

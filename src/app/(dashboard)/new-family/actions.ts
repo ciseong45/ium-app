@@ -70,7 +70,7 @@ export async function createNewFamily(formData: FormData): Promise<ActionResult>
   // 먼저 멤버 등록
   const { data: member, error: memberError } = await supabase
     .from("members")
-    .insert({ name, phone, status: "active" })
+    .insert({ name, phone, status: "new_family" })
     .select("id")
     .single();
 
@@ -108,7 +108,7 @@ export async function updateStep(id: number, step: number): Promise<ActionResult
     .eq("id", id);
   if (error) return { success: false, error: "단계 변경에 실패했습니다." };
 
-  // 3주차 교육 완료 시 멤버 상태를 attending(출석)으로 자동 전환
+  // 3주차 교육 완료 시 멤버 상태를 adjusting(적응중)으로 자동 전환
   if (step === 3) {
     const { data: family } = await supabase
       .from("new_family")
@@ -123,16 +123,16 @@ export async function updateStep(id: number, step: number): Promise<ActionResult
         .eq("id", family.member_id)
         .single();
 
-      if (member && member.status !== "attending") {
+      if (member && member.status === "new_family") {
         await supabase
           .from("members")
-          .update({ status: "attending" })
+          .update({ status: "adjusting" })
           .eq("id", family.member_id);
 
         await supabase.from("member_status_log").insert({
           member_id: family.member_id,
           old_status: member.status,
-          new_status: "attending",
+          new_status: "adjusting",
           changed_by: user.id,
         });
       }
@@ -170,7 +170,7 @@ export async function getActiveMembers() {
   const { data, error } = await supabase
     .from("members")
     .select("id, name")
-    .in("status", ["active", "attending"])
+    .in("status", ["active", "attending", "adjusting"])
     .order("name");
   if (error) return [];
   return data;

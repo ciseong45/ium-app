@@ -39,6 +39,37 @@ export async function getMembers(
   const { data, error } = await query;
   if (error) return [];
 
+  // Lazy expiry: 적응중 상태가 3개월 지나면 자동으로 출석 전환
+  const adjustingMembers = (data ?? []).filter((m: { status: string }) => m.status === "adjusting");
+  if (adjustingMembers.length > 0) {
+    const ids = adjustingMembers.map((m: { id: number }) => m.id);
+    const { data: nfEntries } = await supabase
+      .from("new_family")
+      .select("member_id, step_updated_at")
+      .in("member_id", ids)
+      .eq("step", 3);
+
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+
+    for (const nf of nfEntries ?? []) {
+      if (new Date(nf.step_updated_at) < threeMonthsAgo) {
+        await supabase
+          .from("members")
+          .update({ status: "attending" })
+          .eq("id", nf.member_id);
+        await supabase.from("member_status_log").insert({
+          member_id: nf.member_id,
+          old_status: "adjusting",
+          new_status: "attending",
+          changed_by: null,
+        });
+        const member = data?.find((m: { id: number }) => m.id === nf.member_id);
+        if (member) member.status = "attending";
+      }
+    }
+  }
+
   if (groupId && groupId !== "all") {
     const { data: groupMembers } = await supabase
       .from("small_group_members")
@@ -191,7 +222,37 @@ export async function getMember(id: number) {
     .eq("id", id)
     .single();
 
-  if (error) return null;
+  if (error || !data) return null;
+
+  // Lazy expiry: 적응중 3개월 만료 체크
+  if (data.status === "adjusting") {
+    const { data: nfEntry } = await supabase
+      .from("new_family")
+      .select("step, step_updated_at")
+      .eq("member_id", id)
+      .eq("step", 3)
+      .single();
+
+    if (nfEntry) {
+      const threeMonthsAgo = new Date();
+      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+
+      if (new Date(nfEntry.step_updated_at) < threeMonthsAgo) {
+        await supabase
+          .from("members")
+          .update({ status: "attending" })
+          .eq("id", id);
+        await supabase.from("member_status_log").insert({
+          member_id: id,
+          old_status: "adjusting",
+          new_status: "attending",
+          changed_by: null,
+        });
+        data.status = "attending";
+      }
+    }
+  }
+
   return data;
 }
 
@@ -268,6 +329,31 @@ export async function updateMember(id: number, formData: FormData): Promise<Acti
         new_status: member.status,
         changed_by: user.id,
       });
+
+      // 새가족 상태로 변경 시 new_family 엔트리 자동 생성
+      if (member.status === "new_family") {
+        const { data: existingNf } = await supabase
+          .from("new_family")
+          .select("id")
+          .eq("member_id", id)
+          .single();
+
+        if (!existingNf) {
+          const { data: activeSeason } = await supabase
+            .from("small_group_seasons")
+            .select("id")
+            .eq("is_active", true)
+            .single();
+
+          const today = new Date().toISOString().split("T")[0];
+          await supabase.from("new_family").insert({
+            member_id: id,
+            first_visit: today,
+            season_id: activeSeason?.id || null,
+          });
+          revalidatePath("/new-family");
+        }
+      }
     }
 
     revalidatePath("/members");
@@ -448,6 +534,8 @@ const STATUS_LABEL_TO_EN: Record<string, MemberStatus> = {
   미출석: "inactive",
   제적: "removed",
   휴적: "on_leave",
+  새가족: "new_family",
+  적응중: "adjusting",
 };
 
 const STATUS_EN_TO_KR: Record<MemberStatus, string> = {
@@ -456,6 +544,8 @@ const STATUS_EN_TO_KR: Record<MemberStatus, string> = {
   inactive: "미출석",
   removed: "제적",
   on_leave: "휴적",
+  new_family: "새가족",
+  adjusting: "적응중",
 };
 
 function escapeCsvField(value: string): string {
@@ -589,7 +679,7 @@ export async function importMembersCSV(
 
     const gender = GENDER_EN[genderRaw] ?? (["M", "F"].includes(genderRaw) ? genderRaw : null);
     const status = STATUS_LABEL_TO_EN[statusRaw] ??
-      (["active", "attending", "inactive", "removed", "on_leave"].includes(statusRaw) ? statusRaw : "active");
+      (["active", "attending", "inactive", "removed", "on_leave", "new_family", "adjusting"].includes(statusRaw) ? statusRaw : "active");
 
     const emailRaw = headerMap["email"] !== undefined ? fields[headerMap["email"]] ?? "" : "";
     if (emailRaw && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailRaw)) {
@@ -639,6 +729,16 @@ export async function importMembersCSV(
 
 export async function downloadCSVTemplate(): Promise<string> {
   return "\uFEFF" + CSV_HEADERS.join(",") + "\n홍길동,010-1234-5678,hong@email.com,남,1995-03-15,서울시 강남구,출석,hong_kakao,O,한국대학교,";
+}
+
+export async function getNewFamilyEntry(memberId: number) {
+  const { supabase } = await requireAuth();
+  const { data } = await supabase
+    .from("new_family")
+    .select("step, step_updated_at")
+    .eq("member_id", memberId)
+    .single();
+  return data;
 }
 
 export async function returnFromLeave(memberId: number, leaveId: number): Promise<ActionResult> {

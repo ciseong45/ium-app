@@ -149,6 +149,8 @@ export default function MemberList({
             { value: "all", label: "전체" },
             { value: "active", label: "재적" },
             { value: "attending", label: "출석" },
+            { value: "new_family", label: "새가족" },
+            { value: "adjusting", label: "적응중" },
             { value: "on_leave", label: "휴적" },
             { value: "inactive", label: "미출석" },
             { value: "removed", label: "제적" },

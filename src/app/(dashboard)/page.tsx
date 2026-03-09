@@ -15,7 +15,7 @@ export default async function DashboardPage() {
     supabase
       .from("members")
       .select("id", { count: "exact", head: true })
-      .in("status", ["active", "attending"]),
+      .in("status", ["active", "attending", "adjusting"]),
     // 현재 활성 시즌
     supabase
       .from("small_group_seasons")
@@ -89,7 +89,7 @@ export default async function DashboardPage() {
         <DashboardCard
           title="멤버"
           value={`${memberCount}명`}
-          description="재적 + 출석 멤버"
+          description="재적 + 출석 + 적응중 멤버"
         />
         <DashboardCard
           title="소그룹"
