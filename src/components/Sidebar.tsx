@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useRole } from "@/lib/RoleContext";
 
 const menuItems = [
   { href: "/", label: "대시보드", icon: "🏠" },
@@ -20,6 +21,7 @@ export default function Sidebar({
   onClose: () => void;
 }) {
   const pathname = usePathname();
+  const role = useRole();
 
   return (
     <>
@@ -60,6 +62,20 @@ export default function Sidebar({
               </Link>
             );
           })}
+          {role === "admin" && (
+            <Link
+              href="/settings"
+              onClick={onClose}
+              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                pathname === "/settings"
+                  ? "bg-blue-50 text-blue-700"
+                  : "text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              <span className="text-lg">&#x2699;&#xFE0F;</span>
+              설정
+            </Link>
+          )}
         </nav>
       </aside>
     </>

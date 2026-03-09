@@ -1,4 +1,6 @@
 import { getMember } from "../../actions";
+import { requireAuth } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import MemberForm from "../../MemberForm";
 
 export default async function EditMemberPage({
@@ -7,7 +9,11 @@ export default async function EditMemberPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const member = await getMember(Number(id));
+  const [member, { role }] = await Promise.all([
+    getMember(Number(id)),
+    requireAuth(),
+  ]);
+  if (role === "viewer") redirect("/members");
 
   return (
     <div>

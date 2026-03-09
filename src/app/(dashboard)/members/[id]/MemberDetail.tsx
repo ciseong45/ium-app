@@ -5,6 +5,7 @@ import { useState } from "react";
 import { deleteMember, startLeave, returnFromLeave } from "../actions";
 import type { Member, MemberLeave, LeaveType } from "@/types/member";
 import { STATUS_LABELS, STATUS_COLORS, LEAVE_TYPE_LABELS } from "@/types/member";
+import { useRole } from "@/lib/RoleContext";
 
 type StatusLogEntry = {
   id: number;
@@ -24,6 +25,7 @@ export default function MemberDetail({
   leaves: MemberLeave[];
 }) {
   const router = useRouter();
+  const role = useRole();
   const [deleting, setDeleting] = useState(false);
   const [showLeaveForm, setShowLeaveForm] = useState(false);
   const [leaveLoading, setLeaveLoading] = useState(false);
@@ -87,19 +89,23 @@ export default function MemberDetail({
           </span>
         </div>
         <div className="flex gap-2">
-          <button
-            onClick={() => router.push(`/members/${member.id}/edit`)}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            수정
-          </button>
-          <button
-            onClick={handleDelete}
-            disabled={deleting}
-            className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
-          >
-            삭제
-          </button>
+          {role !== "viewer" && (
+            <button
+              onClick={() => router.push(`/members/${member.id}/edit`)}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            >
+              수정
+            </button>
+          )}
+          {role === "admin" && (
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+            >
+              삭제
+            </button>
+          )}
         </div>
       </div>
 
@@ -139,21 +145,23 @@ export default function MemberDetail({
       <div className="mt-6">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-gray-900">휴적 관리</h3>
-          {member.status === "on_leave" && activeLeave ? (
-            <button
-              onClick={handleReturn}
-              className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
-            >
-              복귀 처리
-            </button>
-          ) : member.status !== "on_leave" && member.status !== "removed" ? (
-            <button
-              onClick={() => setShowLeaveForm(!showLeaveForm)}
-              className="rounded-lg border border-orange-300 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50"
-            >
-              휴적 등록
-            </button>
-          ) : null}
+          {role !== "viewer" && (
+            member.status === "on_leave" && activeLeave ? (
+              <button
+                onClick={handleReturn}
+                className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+              >
+                복귀 처리
+              </button>
+            ) : member.status !== "on_leave" && member.status !== "removed" ? (
+              <button
+                onClick={() => setShowLeaveForm(!showLeaveForm)}
+                className="rounded-lg border border-orange-300 px-4 py-2 text-sm font-medium text-orange-600 hover:bg-orange-50"
+              >
+                휴적 등록
+              </button>
+            ) : null
+          )}
         </div>
 
         {/* 현재 휴적 중 알림 */}

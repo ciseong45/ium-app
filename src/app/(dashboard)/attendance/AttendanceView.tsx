@@ -1,9 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { saveAttendance } from "./actions";
 import type { AttendanceStatus, AttendanceRecord } from "./actions";
+import { useRole } from "@/lib/RoleContext";
 
 type Member = { id: number; name: string; status: string };
 
@@ -86,6 +87,7 @@ function AttendanceCheck({
   selectedDate: string;
 }) {
   const router = useRouter();
+  const role = useRole();
 
   // 기존 출석 데이터로 초기값 설정
   const initialStatuses: Record<number, AttendanceStatus | ""> = {};
@@ -114,12 +116,12 @@ function AttendanceCheck({
         status: status as AttendanceStatus,
       }));
 
-    try {
-      await saveAttendance(selectedDate, records);
+    const result = await saveAttendance(selectedDate, records);
+    if (result.success) {
       router.refresh();
       alert("저장되었습니다.");
-    } catch {
-      alert("저장에 실패했습니다.");
+    } else {
+      alert(result.error);
     }
     setSaving(false);
   };
@@ -213,15 +215,17 @@ function AttendanceCheck({
       </div>
 
       {/* 저장 버튼 */}
-      <div className="mt-6 sticky bottom-4">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="w-full rounded-lg bg-blue-600 py-3 text-sm font-medium text-white shadow-lg hover:bg-blue-700 disabled:opacity-50"
-        >
-          {saving ? "저장 중..." : "출석 저장"}
-        </button>
-      </div>
+      {role !== "viewer" && (
+        <div className="mt-6 sticky bottom-4">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="w-full rounded-lg bg-blue-600 py-3 text-sm font-medium text-white shadow-lg hover:bg-blue-700 disabled:opacity-50"
+          >
+            {saving ? "저장 중..." : "출석 저장"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -242,31 +246,32 @@ function AttendanceHistory({
   const { records, dates } = recentData;
 
   // 멤버별 최근 출석 데이터 매핑
-  const memberAttendance = members.map((member) => {
-    const memberRecords = records.filter((r) => r.member_id === member.id);
-    const weekData = dates.map((date) => {
-      const record = memberRecords.find((r) => r.week_date === date);
-      return record ? record.status : null;
+  const memberAttendance = useMemo(() => {
+    const result = members.map((member) => {
+      const memberRecords = records.filter((r) => r.member_id === member.id);
+      const weekData = dates.map((date) => {
+        const record = memberRecords.find((r) => r.week_date === date);
+        return record ? record.status : null;
+      });
+
+      let consecutiveAbsent = 0;
+      for (const status of weekData) {
+        if (status === "absent" || status === null) {
+          consecutiveAbsent++;
+        } else {
+          break;
+        }
+      }
+
+      return { member, weekData, consecutiveAbsent };
     });
 
-    // 연속 결석 수 계산
-    let consecutiveAbsent = 0;
-    for (const status of weekData) {
-      if (status === "absent" || status === null) {
-        consecutiveAbsent++;
-      } else {
-        break;
-      }
-    }
-
-    return { member, weekData, consecutiveAbsent };
-  });
-
-  // 연속 결석 많은 순으로 정렬
-  memberAttendance.sort((a, b) => b.consecutiveAbsent - a.consecutiveAbsent);
+    result.sort((a, b) => b.consecutiveAbsent - a.consecutiveAbsent);
+    return result;
+  }, [members, records, dates]);
 
   // 주간 출석률 계산
-  const weeklyStats = dates.map((date) => {
+  const weeklyStats = useMemo(() => dates.map((date) => {
     const weekRecords = records.filter((r) => r.week_date === date);
     const present = weekRecords.filter(
       (r) => r.status === "present" || r.status === "online"
@@ -277,7 +282,7 @@ function AttendanceHistory({
       present,
       rate: weekRecords.length > 0 ? Math.round((present / weekRecords.length) * 100) : 0,
     };
-  });
+  }), [records, dates]);
 
   const statusIcon = (status: string | null) => {
     switch (status) {

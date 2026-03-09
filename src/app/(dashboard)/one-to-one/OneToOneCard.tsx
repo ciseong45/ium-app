@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSessions, addSession, deleteSession } from "./actions";
 import type { OneToOneEntry, OneToOneStatus, SessionEntry } from "./actions";
+import { useRole } from "@/lib/RoleContext";
 
 const STATUS_LABELS: Record<OneToOneStatus, string> = {
   active: "진행 중",
@@ -27,6 +28,7 @@ export default function OneToOneCard({
   onDelete: (id: number) => void;
 }) {
   const router = useRouter();
+  const role = useRole();
   const [expanded, setExpanded] = useState(false);
   const [sessions, setSessions] = useState<SessionEntry[]>([]);
   const [loadingSessions, setLoadingSessions] = useState(false);
@@ -36,36 +38,42 @@ export default function OneToOneCard({
   useEffect(() => {
     if (expanded) {
       setLoadingSessions(true);
-      getSessions(entry.id).then((data) => {
-        setSessions(data);
-        setLoadingSessions(false);
-      });
+      getSessions(entry.id)
+        .then((data) => {
+          setSessions(data);
+        })
+        .catch(() => {
+          setSessions([]);
+        })
+        .finally(() => {
+          setLoadingSessions(false);
+        });
     }
   }, [expanded, entry.id]);
 
   const handleAddSession = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSaving(true);
-    try {
-      await addSession(entry.id, new FormData(e.currentTarget));
+    const result = await addSession(entry.id, new FormData(e.currentTarget));
+    if (result.success) {
       const updated = await getSessions(entry.id);
       setSessions(updated);
       setShowSessionForm(false);
       router.refresh();
-    } catch {
-      alert("세션 추가에 실패했습니다.");
+    } else {
+      alert(result.error);
     }
     setSaving(false);
   };
 
   const handleDeleteSession = async (sessionId: number) => {
     if (!confirm("이 세션을 삭제하시겠습니까?")) return;
-    try {
-      await deleteSession(sessionId);
+    const result = await deleteSession(sessionId);
+    if (result.success) {
       const updated = await getSessions(entry.id);
       setSessions(updated);
-    } catch {
-      alert("삭제에 실패했습니다.");
+    } else {
+      alert(result.error);
     }
   };
 
@@ -93,38 +101,42 @@ export default function OneToOneCard({
           </p>
         </div>
 
-        <div className="flex gap-1">
-          {entry.status === "active" && (
-            <>
+        {role !== "viewer" && (
+          <div className="flex gap-1">
+            {entry.status === "active" && (
+              <>
+                <button
+                  onClick={() => onStatusChange(entry.id, "paused")}
+                  className="rounded px-2 py-1 text-xs text-yellow-600 hover:bg-yellow-50"
+                >
+                  일시정지
+                </button>
+                <button
+                  onClick={() => onStatusChange(entry.id, "completed")}
+                  className="rounded px-2 py-1 text-xs text-green-600 hover:bg-green-50"
+                >
+                  완료
+                </button>
+              </>
+            )}
+            {entry.status === "paused" && (
               <button
-                onClick={() => onStatusChange(entry.id, "paused")}
-                className="rounded px-2 py-1 text-xs text-yellow-600 hover:bg-yellow-50"
+                onClick={() => onStatusChange(entry.id, "active")}
+                className="rounded px-2 py-1 text-xs text-blue-600 hover:bg-blue-50"
               >
-                일시정지
+                재개
               </button>
+            )}
+            {role === "admin" && (
               <button
-                onClick={() => onStatusChange(entry.id, "completed")}
-                className="rounded px-2 py-1 text-xs text-green-600 hover:bg-green-50"
+                onClick={() => onDelete(entry.id)}
+                className="rounded px-2 py-1 text-xs text-red-400 hover:text-red-600"
               >
-                완료
+                삭제
               </button>
-            </>
-          )}
-          {entry.status === "paused" && (
-            <button
-              onClick={() => onStatusChange(entry.id, "active")}
-              className="rounded px-2 py-1 text-xs text-blue-600 hover:bg-blue-50"
-            >
-              재개
-            </button>
-          )}
-          <button
-            onClick={() => onDelete(entry.id)}
-            className="rounded px-2 py-1 text-xs text-red-400 hover:text-red-600"
-          >
-            삭제
-          </button>
-        </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* 세션 목록 (펼침) */}
@@ -134,7 +146,7 @@ export default function OneToOneCard({
             <h4 className="text-sm font-semibold text-gray-700">
               세션 기록 ({sessions.length}회)
             </h4>
-            {entry.status === "active" && (
+            {role !== "viewer" && entry.status === "active" && (
               <button
                 onClick={() => setShowSessionForm(!showSessionForm)}
                 className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200"
@@ -210,12 +222,14 @@ export default function OneToOneCard({
                       </p>
                     )}
                   </div>
-                  <button
-                    onClick={() => handleDeleteSession(session.id)}
-                    className="text-xs text-gray-400 hover:text-red-500"
-                  >
-                    삭제
-                  </button>
+                  {role === "admin" && (
+                    <button
+                      onClick={() => handleDeleteSession(session.id)}
+                      className="text-xs text-gray-400 hover:text-red-500"
+                    >
+                      삭제
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

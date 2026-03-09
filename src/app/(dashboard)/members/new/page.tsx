@@ -1,6 +1,11 @@
+import { requireAuth } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import MemberForm from "../MemberForm";
 
-export default function NewMemberPage() {
+export default async function NewMemberPage() {
+  const { role } = await requireAuth();
+  if (role === "viewer") redirect("/members");
+
   return (
     <div>
       <h2 className="text-2xl font-bold text-gray-900">멤버 등록</h2>

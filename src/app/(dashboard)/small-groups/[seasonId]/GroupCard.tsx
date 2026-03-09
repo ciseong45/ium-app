@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { getGroupMembers } from "../actions";
 import type { Member } from "@/types/member";
+import { useRole } from "@/lib/RoleContext";
 
 type Group = {
   id: number;
@@ -34,6 +35,7 @@ export default function GroupCard({
   onUnassign: (memberId: number) => void;
   onDelete: () => void;
 }) {
+  const role = useRole();
   const [members, setMembers] = useState<GroupMemberEntry[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
 
@@ -55,22 +57,26 @@ export default function GroupCard({
           )}
         </div>
         <div className="flex gap-2">
-          <button
-            onClick={onStartAssign}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-              isAssigning
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            {isAssigning ? "닫기" : "+ 배정"}
-          </button>
-          <button
-            onClick={onDelete}
-            className="rounded-lg px-3 py-1.5 text-xs text-red-400 hover:text-red-600"
-          >
-            삭제
-          </button>
+          {role !== "viewer" && (
+            <button
+              onClick={onStartAssign}
+              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                isAssigning
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              {isAssigning ? "닫기" : "+ 배정"}
+            </button>
+          )}
+          {role === "admin" && (
+            <button
+              onClick={onDelete}
+              className="rounded-lg px-3 py-1.5 text-xs text-red-400 hover:text-red-600"
+            >
+              삭제
+            </button>
+          )}
         </div>
       </div>
 
@@ -114,12 +120,14 @@ export default function GroupCard({
                 <span className="text-sm text-gray-700">
                   {entry.member.name}
                 </span>
-                <button
-                  onClick={() => onUnassign(entry.member.id)}
-                  className="text-xs text-gray-400 hover:text-red-500"
-                >
-                  해제
-                </button>
+                {role !== "viewer" && (
+                  <button
+                    onClick={() => onUnassign(entry.member.id)}
+                    className="text-xs text-gray-400 hover:text-red-500"
+                  >
+                    해제
+                  </button>
+                )}
               </div>
             ))}
             <p className="mt-1 text-xs text-gray-400">

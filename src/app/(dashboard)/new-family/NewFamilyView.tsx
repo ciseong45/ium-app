@@ -1,13 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   createNewFamily,
   updateStep,
   deleteNewFamily,
 } from "./actions";
 import type { NewFamilyEntry, Season } from "./actions";
+import { useRole } from "@/lib/RoleContext";
 
 const STEPS = [
   { step: 1, label: "1주차 방문", color: "bg-gray-100 text-gray-700" },
@@ -29,6 +30,7 @@ export default function NewFamilyView({
   currentSeasonId?: number;
 }) {
   const router = useRouter();
+  const role = useRole();
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -45,12 +47,12 @@ export default function NewFamilyView({
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-    try {
-      await createNewFamily(new FormData(e.currentTarget));
+    const result = await createNewFamily(new FormData(e.currentTarget));
+    if (result.success) {
       setShowForm(false);
       router.refresh();
-    } catch {
-      alert("등록에 실패했습니다.");
+    } else {
+      alert(result.error);
     }
     setLoading(false);
   };
@@ -59,47 +61,51 @@ export default function NewFamilyView({
     if (step === 3) {
       if (!confirm("3주차 교육을 완료하면 출석 멤버로 자동 등록됩니다. 진행하시겠습니까?")) return;
     }
-    try {
-      await updateStep(id, step);
+    const result = await updateStep(id, step);
+    if (result.success) {
       router.refresh();
-    } catch {
-      alert("단계 변경에 실패했습니다.");
+    } else {
+      alert(result.error);
     }
   };
 
   const handleDelete = async (id: number, name: string) => {
     if (!confirm(`${name}님을 새가족 목록에서 삭제하시겠습니까?`)) return;
-    try {
-      await deleteNewFamily(id);
+    const result = await deleteNewFamily(id);
+    if (result.success) {
       router.refresh();
-    } catch {
-      alert("삭제에 실패했습니다.");
+    } else {
+      alert(result.error);
     }
   };
 
   // 단계별 통계
-  const stepCounts = STEPS.map((s) => ({
+  const stepCounts = useMemo(() => STEPS.map((s) => ({
     ...s,
     count: families.filter((f) => f.step === s.step).length,
-  }));
+  })), [families]);
 
   // 2주 이상 단계 변화 없는 새가족
-  const twoWeeksAgo = new Date();
-  twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-  const stalled = families.filter(
-    (f) => f.step < 3 && new Date(f.step_updated_at) < twoWeeksAgo
-  );
+  const stalled = useMemo(() => {
+    const twoWeeksAgo = new Date();
+    twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+    return families.filter(
+      (f) => f.step < 3 && new Date(f.step_updated_at) < twoWeeksAgo
+    );
+  }, [families]);
 
   return (
     <div>
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-900">새가족</h2>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          + 새가족 등록
-        </button>
+        {role !== "viewer" && (
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            + 새가족 등록
+          </button>
+        )}
       </div>
 
       {/* 시즌 필터 */}
@@ -291,32 +297,36 @@ export default function NewFamilyView({
                     )}
                   </div>
                 </div>
-                <button
-                  onClick={() =>
-                    handleDelete(family.id, family.member.name)
-                  }
-                  className="text-xs text-red-400 hover:text-red-600"
-                >
-                  삭제
-                </button>
+                {role === "admin" && (
+                  <button
+                    onClick={() =>
+                      handleDelete(family.id, family.member.name)
+                    }
+                    className="text-xs text-red-400 hover:text-red-600"
+                  >
+                    삭제
+                  </button>
+                )}
               </div>
 
               {/* 단계 버튼 */}
-              <div className="mt-3 flex gap-1.5">
-                {STEPS.map((s) => (
-                  <button
-                    key={s.step}
-                    onClick={() => handleStepChange(family.id, s.step)}
-                    className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                      family.step >= s.step
-                        ? s.color
-                        : "bg-gray-50 text-gray-400 hover:bg-gray-100"
-                    }`}
-                  >
-                    {s.step}. {s.label}
-                  </button>
-                ))}
-              </div>
+              {role !== "viewer" && (
+                <div className="mt-3 flex gap-1.5">
+                  {STEPS.map((s) => (
+                    <button
+                      key={s.step}
+                      onClick={() => handleStepChange(family.id, s.step)}
+                      className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                        family.step >= s.step
+                          ? s.color
+                          : "bg-gray-50 text-gray-400 hover:bg-gray-100"
+                      }`}
+                    >
+                      {s.step}. {s.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>

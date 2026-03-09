@@ -10,6 +10,7 @@ import {
 } from "../actions";
 import type { Member } from "@/types/member";
 import GroupCard from "./GroupCard";
+import { useRole } from "@/lib/RoleContext";
 
 type Group = {
   id: number;
@@ -34,6 +35,7 @@ export default function SeasonDetail({
   unassignedMembers: Member[];
 }) {
   const router = useRouter();
+  const role = useRole();
   const [showGroupForm, setShowGroupForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [assigningTo, setAssigningTo] = useState<number | null>(null);
@@ -107,14 +109,16 @@ export default function SeasonDetail({
       </div>
 
       {/* 소그룹 추가 */}
-      <div className="mt-6">
-        <button
-          onClick={() => setShowGroupForm(!showGroupForm)}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          + 소그룹 추가
-        </button>
-      </div>
+      {role === "admin" && (
+        <div className="mt-6">
+          <button
+            onClick={() => setShowGroupForm(!showGroupForm)}
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            + 소그룹 추가
+          </button>
+        </div>
+      )}
 
       {showGroupForm && (
         <form

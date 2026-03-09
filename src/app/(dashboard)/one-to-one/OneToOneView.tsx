@@ -9,6 +9,7 @@ import {
 } from "./actions";
 import type { OneToOneEntry, OneToOneStatus } from "./actions";
 import OneToOneCard from "./OneToOneCard";
+import { useRole } from "@/lib/RoleContext";
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: "all", label: "전체" },
@@ -29,45 +30,40 @@ export default function OneToOneView({
   currentStatus: string;
 }) {
   const router = useRouter();
+  const role = useRole();
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-    const formData = new FormData(e.currentTarget);
-    if (formData.get("mentor_id") === formData.get("mentee_id")) {
-      alert("멘토와 멘티는 다른 사람이어야 합니다.");
-      setLoading(false);
-      return;
-    }
-    try {
-      await createOneToOne(formData);
+    const result = await createOneToOne(new FormData(e.currentTarget));
+    if (result.success) {
       setShowForm(false);
       router.refresh();
-    } catch {
-      alert("등록에 실패했습니다.");
+    } else {
+      alert(result.error);
     }
     setLoading(false);
   };
 
   const handleStatusChange = async (id: number, status: OneToOneStatus) => {
-    try {
-      await updateOneToOneStatus(id, status);
+    const result = await updateOneToOneStatus(id, status);
+    if (result.success) {
       router.refresh();
-    } catch {
-      alert("상태 변경에 실패했습니다.");
+    } else {
+      alert(result.error);
     }
   };
 
   const handleDelete = async (id: number) => {
     if (!confirm("이 양육 관계를 삭제하시겠습니까? 세션 기록도 모두 삭제됩니다."))
       return;
-    try {
-      await deleteOneToOne(id);
+    const result = await deleteOneToOne(id);
+    if (result.success) {
       router.refresh();
-    } catch {
-      alert("삭제에 실패했습니다.");
+    } else {
+      alert(result.error);
     }
   };
 
@@ -82,12 +78,14 @@ export default function OneToOneView({
             진행 중 {activeCount}건
           </p>
         </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          + 양육 매칭
-        </button>
+        {role !== "viewer" && (
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            + 양육 매칭
+          </button>
+        )}
       </div>
 
       {/* 필터 */}

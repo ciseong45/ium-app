@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createSeason, deleteSeason } from "./actions";
+import { useRole } from "@/lib/RoleContext";
 
 type Season = {
   id: number;
@@ -15,6 +16,7 @@ type Season = {
 
 export default function SeasonList({ seasons }: { seasons: Season[] }) {
   const router = useRouter();
+  const role = useRole();
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -45,12 +47,14 @@ export default function SeasonList({ seasons }: { seasons: Season[] }) {
 
   return (
     <div className="mt-6">
-      <button
-        onClick={() => setShowForm(!showForm)}
-        className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-      >
-        + 새 시즌
-      </button>
+      {role === "admin" && (
+        <button
+          onClick={() => setShowForm(!showForm)}
+          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+        >
+          + 새 시즌
+        </button>
+      )}
 
       {/* 시즌 생성 폼 */}
       {showForm && (
@@ -144,12 +148,14 @@ export default function SeasonList({ seasons }: { seasons: Season[] }) {
                   </p>
                 )}
               </div>
-              <button
-                onClick={() => handleDelete(season.id, season.name)}
-                className="ml-4 text-sm text-red-400 hover:text-red-600"
-              >
-                삭제
-              </button>
+              {role === "admin" && (
+                <button
+                  onClick={() => handleDelete(season.id, season.name)}
+                  className="ml-4 text-sm text-red-400 hover:text-red-600"
+                >
+                  삭제
+                </button>
+              )}
             </div>
           ))}
         </div>

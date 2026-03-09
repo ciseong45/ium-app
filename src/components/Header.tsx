@@ -3,15 +3,21 @@
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useRole } from "@/lib/RoleContext";
+
+const ROLE_LABELS = { admin: "관리자", leader: "리더", viewer: "뷰어" } as const;
 
 export default function Header({ onMenuClick }: { onMenuClick: () => void }) {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const router = useRouter();
+  const role = useRole();
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUserEmail(user?.email ?? null);
+    supabase.auth.getUser().then((res) => {
+      setUserEmail(res.data.user?.email ?? null);
+    }).catch(() => {
+      setUserEmail(null);
     });
   }, []);
 
@@ -49,6 +55,9 @@ export default function Header({ onMenuClick }: { onMenuClick: () => void }) {
         {userEmail && (
           <span className="hidden text-sm text-gray-500 sm:block">
             {userEmail}
+            <span className="ml-1.5 rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-400">
+              {ROLE_LABELS[role]}
+            </span>
           </span>
         )}
         <button
