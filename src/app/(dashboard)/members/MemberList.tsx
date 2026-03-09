@@ -279,6 +279,12 @@ export default function MemberList({
                 <th className="hidden pb-3 pr-4 font-medium md:table-cell">
                   소그룹
                 </th>
+                <th className="hidden pb-3 pr-4 font-medium lg:table-cell">
+                  학교/직장
+                </th>
+                <th className="hidden pb-3 pr-4 font-medium lg:table-cell">
+                  생년
+                </th>
                 <th className="hidden pb-3 pr-4 font-medium sm:table-cell">
                   성별
                 </th>
@@ -312,6 +318,12 @@ export default function MemberList({
                     {member.group_info
                       ? member.group_info.group_name
                       : "—"}
+                  </td>
+                  <td className="hidden py-3 pr-4 text-gray-600 lg:table-cell">
+                    {member.school_or_work || "—"}
+                  </td>
+                  <td className="hidden py-3 pr-4 text-gray-600 lg:table-cell">
+                    {member.birth_date ? member.birth_date.substring(0, 4) : "—"}
                   </td>
                   <td className="hidden py-3 pr-4 text-gray-600 sm:table-cell">
                     {member.gender === "M"
