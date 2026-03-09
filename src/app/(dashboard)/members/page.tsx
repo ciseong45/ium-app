@@ -16,10 +16,11 @@ export default async function MembersPage({
   }>;
 }) {
   const params = await searchParams;
+  const effectiveStatus = params.status || "active";
   const [members, { role }, filterOptions] = await Promise.all([
     getMembersWithGroups(
       params.search,
-      params.status,
+      effectiveStatus,
       params.group,
       params.school,
       params.birth_year,
@@ -49,7 +50,7 @@ export default async function MembersPage({
       <MemberList
         members={members}
         currentSearch={params.search}
-        currentStatus={params.status}
+        currentStatus={effectiveStatus}
         currentGroup={params.group}
         currentSchool={params.school}
         currentBirthYear={params.birth_year}
