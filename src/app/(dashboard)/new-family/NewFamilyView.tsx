@@ -168,7 +168,7 @@ export default function NewFamilyView({
       {!activeSeason && (
         <div className="mt-4 rounded-lg border border-orange-200 bg-orange-50 p-4">
           <p className="text-sm text-orange-700">
-            활성 시즌이 없습니다. 소그룹 관리에서 시즌을 생성하고 활성화해주세요.
+            활성 시즌이 없습니다. 순관리에서 시즌을 생성하고 활성화해주세요.
           </p>
         </div>
       )}

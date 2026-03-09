@@ -239,7 +239,7 @@ export default function MemberDetail({
         </div>
       </div>
 
-      {/* ========== 소그룹 & 사역팀 카드 ========== */}
+      {/* ========== 순 & 사역팀 카드 ========== */}
       {(groupInfo || (ministryTeams && ministryTeams.length > 0)) && (
         <div className="rounded-2xl border bg-white p-5 shadow-sm">
           <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
@@ -247,7 +247,7 @@ export default function MemberDetail({
           </h4>
 
           <div className="space-y-3">
-            {/* 소그룹 */}
+            {/* 순 */}
             {groupInfo && (
               <div className="flex items-center gap-3">
                 <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 text-sm font-bold text-blue-600">

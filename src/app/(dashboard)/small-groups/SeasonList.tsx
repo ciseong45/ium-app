@@ -37,7 +37,7 @@ export default function SeasonList({ seasons }: { seasons: Season[] }) {
   };
 
   const handleDelete = async (id: number, name: string) => {
-    if (!confirm(`"${name}" 시즌을 삭제하시겠습니까? 소속 소그룹도 모두 삭제됩니다.`))
+    if (!confirm(`"${name}" 시즌을 삭제하시겠습니까? 소속 순도 모두 삭제됩니다.`))
       return;
     try {
       await deleteSeason(id);

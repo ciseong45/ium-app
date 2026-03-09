@@ -81,7 +81,7 @@ export async function getMembersWithGroups(
 
   const { supabase } = await requireAuth();
 
-  // 소그룹 정보
+  // 순 정보
   const { data: activeSeason } = await supabase
     .from("small_group_seasons")
     .select("id")
@@ -424,16 +424,16 @@ export async function moveMembersToGroup(
     .eq("season_id", activeSeason.id);
 
   const seasonGroupIds = (seasonGroups || []).map((g: { id: number }) => g.id);
-  if (seasonGroupIds.length === 0) return { success: false, error: "활성 시즌에 소그룹이 없습니다." };
+  if (seasonGroupIds.length === 0) return { success: false, error: "활성 시즌에 순이 없습니다." };
 
-  // 기존 배정 삭제 (활성 시즌 소그룹만)
+  // 기존 배정 삭제 (활성 시즌 순만)
   const { error: deleteError } = await supabase
     .from("small_group_members")
     .delete()
     .in("member_id", memberIds)
     .in("group_id", seasonGroupIds);
 
-  if (deleteError) return { success: false, error: "기존 소그룹 배정 해제에 실패했습니다." };
+  if (deleteError) return { success: false, error: "기존 순 배정 해제에 실패했습니다." };
 
   // targetGroupId가 null이면 배정 해제만
   if (targetGroupId === null) {
@@ -452,7 +452,7 @@ export async function moveMembersToGroup(
     .from("small_group_members")
     .insert(rows);
 
-  if (insertError) return { success: false, error: "소그룹 배정에 실패했습니다." };
+  if (insertError) return { success: false, error: "순 배정에 실패했습니다." };
 
   revalidatePath("/members");
   revalidatePath("/small-groups");

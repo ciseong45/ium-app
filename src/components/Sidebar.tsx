@@ -7,7 +7,7 @@ import { useRole } from "@/lib/RoleContext";
 const menuItems = [
   { href: "/", label: "대시보드", icon: "🏠" },
   { href: "/members", label: "멤버 관리", icon: "👥" },
-  { href: "/small-groups", label: "소그룹", icon: "📋" },
+  { href: "/small-groups", label: "순관리", icon: "📋" },
   { href: "/attendance", label: "출석 관리", icon: "✅" },
   { href: "/new-family", label: "새가족", icon: "🤝" },
   { href: "/one-to-one", label: "1:1 양육", icon: "📖" },

@@ -134,7 +134,7 @@ export default function MemberList({
     if (selected.size === 0 || groupId === "") return;
     const targetId = groupId === "none" ? null : Number(groupId);
     const label = targetId === null
-      ? "소그룹 배정 해제"
+      ? "순 배정 해제"
       : (() => {
         const g = filterOptions.groups.find((g) => g.id === targetId);
         const displayName = g ? (g.upper_room_name ? `${g.upper_room_name} > ${g.name}` : g.name) : "";
@@ -281,7 +281,7 @@ export default function MemberList({
           onChange={(e) => handleGroupFilter(e.target.value)}
           className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-700 focus:border-blue-500 focus:outline-none"
         >
-          <option value="all">소그룹 전체</option>
+          <option value="all">순 전체</option>
           {filterOptions.groups.map((g) => (
             <option key={g.id} value={String(g.id)}>
               {g.upper_room_name ? `${g.upper_room_name} > ${g.name}` : g.name}
@@ -358,7 +358,7 @@ export default function MemberList({
                 disabled={isPending}
                 className="rounded-lg border border-gray-300 px-2 py-1.5 text-xs text-gray-700 focus:border-blue-500 focus:outline-none disabled:opacity-50"
               >
-                <option value="" disabled>소그룹 이동</option>
+                <option value="" disabled>순 이동</option>
                 <option value="none">배정 해제</option>
                 {filterOptions.groups.map((g) => (
                   <option key={g.id} value={String(g.id)}>
@@ -403,7 +403,7 @@ export default function MemberList({
                 <SortableHeader label="이름" sortKey="name" currentKey={sortKey} dir={sortDir} onSort={handleSort} />
                 <SortableHeader label="전화번호" sortKey="phone" currentKey={sortKey} dir={sortDir} onSort={handleSort} />
                 <SortableHeader label="성별" sortKey="gender" currentKey={sortKey} dir={sortDir} onSort={handleSort} className="hidden sm:table-cell" />
-                <SortableHeader label="소그룹" sortKey="group" currentKey={sortKey} dir={sortDir} onSort={handleSort} className="hidden md:table-cell" />
+                <SortableHeader label="순" sortKey="group" currentKey={sortKey} dir={sortDir} onSort={handleSort} className="hidden md:table-cell" />
                 <SortableHeader label="학교" sortKey="school" currentKey={sortKey} dir={sortDir} onSort={handleSort} className="hidden md:table-cell" />
                 <SortableHeader label="사역팀" sortKey="ministry" currentKey={sortKey} dir={sortDir} onSort={handleSort} className="hidden lg:table-cell" />
                 <SortableHeader label="생년" sortKey="birth_year" currentKey={sortKey} dir={sortDir} onSort={handleSort} className="hidden lg:table-cell" />
@@ -471,7 +471,7 @@ export default function MemberList({
                     )}
                   </td>
 
-                  {/* 소그룹 (인라인 편집) */}
+                  {/* 순 (인라인 편집) */}
                   <td
                     className="hidden py-3 pr-4 text-gray-600 md:table-cell"
                     onClick={(e) => handleCellClick(e, member.id, "group", member.group_info?.group_name || null)}

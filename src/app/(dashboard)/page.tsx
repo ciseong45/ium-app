@@ -92,7 +92,7 @@ export default async function DashboardPage() {
           description="재적 + 출석 + 적응중 멤버"
         />
         <DashboardCard
-          title="소그룹"
+          title="순"
           value={`${groupCount}개`}
           description={seasonName}
         />

@@ -133,7 +133,7 @@ export async function updateUpperRoom(
   return { success: true };
 }
 
-// ===== 소그룹(순) =====
+// ===== 순 =====
 
 export async function getGroupsBySeason(seasonId: number) {
   const { supabase } = await requireAuth();

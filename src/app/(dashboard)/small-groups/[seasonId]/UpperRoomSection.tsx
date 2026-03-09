@@ -224,7 +224,7 @@ export default function UpperRoomSection({
         </form>
       )}
 
-      {/* 소그룹(순) 목록 */}
+      {/* 순 목록 */}
       {!collapsed && (
         <div className="px-5 pb-4">
           {groups.length === 0 ? (
