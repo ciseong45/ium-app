@@ -22,6 +22,7 @@ export default function UpperRoomSection({
   assigningTo,
   unassignedMembers,
   allMembers,
+  allUpperRooms,
   seasonId,
   showGroupForm,
   onToggleGroupForm,
@@ -31,6 +32,7 @@ export default function UpperRoomSection({
   onDeleteGroup,
   onCreateGroup,
   onUpdateUpperRoom,
+  onMoveGroupToUpperRoom,
   loading,
 }: {
   upperRoom: UpperRoom;
@@ -39,6 +41,7 @@ export default function UpperRoomSection({
   assigningTo: number | null;
   unassignedMembers: Member[];
   allMembers: Member[];
+  allUpperRooms: UpperRoom[];
   seasonId: number;
   showGroupForm: number | null;
   onToggleGroupForm: (upperRoomId: number | null) => void;
@@ -48,6 +51,7 @@ export default function UpperRoomSection({
   onDeleteGroup: (groupId: number, groupName: string) => void;
   onCreateGroup: (upperRoomId: number, formData: FormData) => void;
   onUpdateUpperRoom: (id: number, formData: FormData) => void;
+  onMoveGroupToUpperRoom: (groupId: number, upperRoomId: number) => void;
   loading: boolean;
 }) {
   const role = useRole();
@@ -195,6 +199,7 @@ export default function UpperRoomSection({
                   members={groupMembers[group.id] || []}
                   isAssigning={assigningTo === group.id}
                   unassignedMembers={unassignedMembers}
+                  upperRooms={allUpperRooms}
                   onStartAssign={() =>
                     onSetAssigningTo(
                       assigningTo === group.id ? null : group.id
@@ -203,6 +208,9 @@ export default function UpperRoomSection({
                   onAssign={(memberId) => onAssign(group.id, memberId)}
                   onUnassign={(memberId) => onUnassign(group.id, memberId)}
                   onDelete={() => onDeleteGroup(group.id, group.name)}
+                  onMoveToUpperRoom={(upperRoomId) =>
+                    onMoveGroupToUpperRoom(group.id, upperRoomId)
+                  }
                 />
               ))}
             </div>

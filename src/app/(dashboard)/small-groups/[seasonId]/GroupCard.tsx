@@ -1,12 +1,13 @@
 "use client";
 
 import type { Member } from "@/types/member";
-import type { GroupMemberEntry } from "@/types/small-group";
+import type { GroupMemberEntry, UpperRoom } from "@/types/small-group";
 import { useRole } from "@/lib/RoleContext";
 
 type Group = {
   id: number;
   name: string;
+  upper_room_id: number;
   leader: { id: number; name: string } | null;
 };
 
@@ -15,19 +16,23 @@ export default function GroupCard({
   members,
   isAssigning,
   unassignedMembers,
+  upperRooms,
   onStartAssign,
   onAssign,
   onUnassign,
   onDelete,
+  onMoveToUpperRoom,
 }: {
   group: Group;
   members: GroupMemberEntry[];
   isAssigning: boolean;
   unassignedMembers: Member[];
+  upperRooms: UpperRoom[];
   onStartAssign: () => void;
   onAssign: (memberId: number) => void;
   onUnassign: (memberId: number) => void;
   onDelete: () => void;
+  onMoveToUpperRoom: (upperRoomId: number) => void;
 }) {
   const role = useRole();
 
@@ -55,12 +60,31 @@ export default function GroupCard({
             </button>
           )}
           {role === "admin" && (
-            <button
-              onClick={onDelete}
-              className="rounded-lg px-3 py-1.5 text-xs text-red-400 hover:text-red-600"
-            >
-              삭제
-            </button>
+            <>
+              <select
+                value=""
+                onChange={(e) => {
+                  const targetId = Number(e.target.value);
+                  if (targetId) onMoveToUpperRoom(targetId);
+                }}
+                className="rounded-lg border border-gray-200 px-2 py-1 text-xs text-gray-500 focus:border-blue-500 focus:outline-none"
+              >
+                <option value="" disabled>이동</option>
+                {upperRooms
+                  .filter((ur) => ur.id !== group.upper_room_id)
+                  .map((ur) => (
+                    <option key={ur.id} value={ur.id}>
+                      → {ur.name}
+                    </option>
+                  ))}
+              </select>
+              <button
+                onClick={onDelete}
+                className="rounded-lg px-3 py-1.5 text-xs text-red-400 hover:text-red-600"
+              >
+                삭제
+              </button>
+            </>
           )}
         </div>
       </div>

@@ -8,6 +8,7 @@ import {
   assignMember,
   unassignMember,
   updateUpperRoom,
+  moveGroupToUpperRoom,
 } from "../actions";
 import type { Member } from "@/types/member";
 import type { UpperRoom, GroupMemberEntry } from "@/types/small-group";
@@ -149,6 +150,20 @@ export default function SeasonDetail({
     }
   };
 
+  const handleMoveGroupToUpperRoom = async (groupId: number, upperRoomId: number) => {
+    const group = groups.find((g) => g.id === groupId);
+    const targetRoom = upperRooms.find((ur) => ur.id === upperRoomId);
+    if (!group || !targetRoom) return;
+    if (!confirm(`"${group.name}"을(를) ${targetRoom.name}(으)로 이동하시겠습니까?`)) return;
+
+    const result = await moveGroupToUpperRoom(groupId, upperRoomId, season.id);
+    if (!result.success) {
+      alert(result.error);
+    } else {
+      router.refresh();
+    }
+  };
+
   const handleUpdateUpperRoom = async (id: number, formData: FormData) => {
     const result = await updateUpperRoom(id, season.id, formData);
     if (!result.success) {
@@ -202,6 +217,7 @@ export default function SeasonDetail({
             assigningTo={assigningTo}
             unassignedMembers={localUnassigned}
             allMembers={allMembers}
+            allUpperRooms={upperRooms}
             seasonId={season.id}
             showGroupForm={showGroupForm}
             onToggleGroupForm={setShowGroupForm}
@@ -211,6 +227,7 @@ export default function SeasonDetail({
             onDeleteGroup={handleDeleteGroup}
             onCreateGroup={handleCreateGroup}
             onUpdateUpperRoom={handleUpdateUpperRoom}
+            onMoveGroupToUpperRoom={handleMoveGroupToUpperRoom}
             loading={loading}
           />
         ))}
