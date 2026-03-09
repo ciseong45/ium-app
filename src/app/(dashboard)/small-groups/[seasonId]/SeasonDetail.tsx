@@ -27,20 +27,32 @@ type Season = {
   is_active: boolean;
 };
 
+export type GroupMemberEntry = {
+  id: number;
+  group_id: number;
+  member: Member;
+};
+
 export default function SeasonDetail({
   season,
   groups,
   unassignedMembers,
+  initialGroupMembers,
 }: {
   season: Season;
   groups: Group[];
   unassignedMembers: Member[];
+  initialGroupMembers: Record<number, GroupMemberEntry[]>;
 }) {
   const router = useRouter();
   const role = useRole();
   const [showGroupForm, setShowGroupForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [assigningTo, setAssigningTo] = useState<number | null>(null);
+
+  // 로컬 상태 — optimistic update 용
+  const [localUnassigned, setLocalUnassigned] = useState(unassignedMembers);
+  const [groupMembers, setGroupMembers] = useState(initialGroupMembers);
 
   const handleCreateGroup = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -67,20 +79,65 @@ export default function SeasonDetail({
   };
 
   const handleAssign = async (groupId: number, memberId: number) => {
-    try {
-      await assignMember(groupId, memberId, season.id);
-      router.refresh();
-    } catch {
-      alert("배정에 실패했습니다.");
+    const member = localUnassigned.find((m) => m.id === memberId);
+    if (!member) return;
+
+    // Optimistic: 미배정에서 제거 → 그룹에 추가
+    setLocalUnassigned((prev) => prev.filter((m) => m.id !== memberId));
+    setGroupMembers((prev) => ({
+      ...prev,
+      [groupId]: [
+        ...(prev[groupId] || []),
+        { id: Date.now(), group_id: groupId, member },
+      ],
+    }));
+
+    const result = await assignMember(groupId, memberId, season.id);
+    if (!result.success) {
+      // 롤백
+      setLocalUnassigned((prev) =>
+        [...prev, member].sort((a, b) => a.name.localeCompare(b.name, "ko"))
+      );
+      setGroupMembers((prev) => ({
+        ...prev,
+        [groupId]: (prev[groupId] || []).filter(
+          (e) => e.member.id !== memberId
+        ),
+      }));
+      alert(result.error);
     }
   };
 
   const handleUnassign = async (groupId: number, memberId: number) => {
-    try {
-      await unassignMember(groupId, memberId, season.id);
-      router.refresh();
-    } catch {
-      alert("배정 해제에 실패했습니다.");
+    const entry = (groupMembers[groupId] || []).find(
+      (e) => e.member.id === memberId
+    );
+    if (!entry) return;
+
+    // Optimistic: 그룹에서 제거 → 미배정에 추가
+    setGroupMembers((prev) => ({
+      ...prev,
+      [groupId]: (prev[groupId] || []).filter(
+        (e) => e.member.id !== memberId
+      ),
+    }));
+    setLocalUnassigned((prev) =>
+      [...prev, entry.member].sort((a, b) =>
+        a.name.localeCompare(b.name, "ko")
+      )
+    );
+
+    const result = await unassignMember(groupId, memberId, season.id);
+    if (!result.success) {
+      // 롤백
+      setGroupMembers((prev) => ({
+        ...prev,
+        [groupId]: [...(prev[groupId] || []), entry],
+      }));
+      setLocalUnassigned((prev) =>
+        prev.filter((m) => m.id !== memberId)
+      );
+      alert(result.error);
     }
   };
 
@@ -107,7 +164,7 @@ export default function SeasonDetail({
       {/* 요약 */}
       <div className="mt-4 flex gap-4 text-sm text-gray-500">
         <span>소그룹 {groups.length}개</span>
-        <span>미배정 {unassignedMembers.length}명</span>
+        <span>미배정 {localUnassigned.length}명</span>
       </div>
 
       {/* 소그룹 추가 */}
@@ -166,9 +223,9 @@ export default function SeasonDetail({
             <GroupCard
               key={group.id}
               group={group}
-              seasonId={season.id}
+              members={groupMembers[group.id] || []}
               isAssigning={assigningTo === group.id}
-              unassignedMembers={unassignedMembers}
+              unassignedMembers={localUnassigned}
               onStartAssign={() =>
                 setAssigningTo(assigningTo === group.id ? null : group.id)
               }
@@ -181,13 +238,13 @@ export default function SeasonDetail({
       )}
 
       {/* 미배정 멤버 */}
-      {unassignedMembers.length > 0 && (
+      {localUnassigned.length > 0 && (
         <div className="mt-8">
           <h3 className="text-lg font-semibold text-gray-900">
-            미배정 멤버 ({unassignedMembers.length}명)
+            미배정 멤버 ({localUnassigned.length}명)
           </h3>
           <div className="mt-3 flex flex-wrap gap-2">
-            {unassignedMembers.map((member) => (
+            {localUnassigned.map((member) => (
               <span
                 key={member.id}
                 className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-600"

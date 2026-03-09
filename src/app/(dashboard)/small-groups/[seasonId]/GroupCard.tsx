@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { getGroupMembers } from "../actions";
 import type { Member } from "@/types/member";
 import { useRole } from "@/lib/RoleContext";
+import type { GroupMemberEntry } from "./SeasonDetail";
 
 type Group = {
   id: number;
@@ -11,14 +10,9 @@ type Group = {
   leader: { id: number; name: string } | null;
 };
 
-type GroupMemberEntry = {
-  id: number;
-  member: Member;
-};
-
 export default function GroupCard({
   group,
-  seasonId,
+  members,
   isAssigning,
   unassignedMembers,
   onStartAssign,
@@ -27,7 +21,7 @@ export default function GroupCard({
   onDelete,
 }: {
   group: Group;
-  seasonId: number;
+  members: GroupMemberEntry[];
   isAssigning: boolean;
   unassignedMembers: Member[];
   onStartAssign: () => void;
@@ -36,15 +30,6 @@ export default function GroupCard({
   onDelete: () => void;
 }) {
   const role = useRole();
-  const [members, setMembers] = useState<GroupMemberEntry[]>([]);
-  const [loadingMembers, setLoadingMembers] = useState(true);
-
-  useEffect(() => {
-    getGroupMembers(group.id).then((data) => {
-      setMembers(data as GroupMemberEntry[]);
-      setLoadingMembers(false);
-    });
-  }, [group.id, seasonId]);
 
   return (
     <div className="rounded-xl border bg-white p-4">
@@ -106,9 +91,7 @@ export default function GroupCard({
 
       {/* 소속 멤버 목록 */}
       <div className="mt-3">
-        {loadingMembers ? (
-          <p className="text-xs text-gray-400">불러오는 중...</p>
-        ) : members.length === 0 ? (
+        {members.length === 0 ? (
           <p className="text-xs text-gray-400">소속 멤버가 없습니다.</p>
         ) : (
           <div className="space-y-1">

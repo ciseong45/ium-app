@@ -153,6 +153,32 @@ export async function getGroupMembers(groupId: number) {
   return data;
 }
 
+// 시즌 내 모든 그룹의 멤버를 한 번에 조회 (N+1 쿼리 방지)
+export async function getAllGroupMembersForSeason(seasonId: number) {
+  const { supabase } = await requireAuth();
+
+  const { data: groups } = await supabase
+    .from("small_groups")
+    .select("id")
+    .eq("season_id", seasonId);
+
+  if (!groups || groups.length === 0) return [];
+
+  const groupIds = groups.map((g: { id: number }) => g.id);
+  const { data, error } = await supabase
+    .from("small_group_members")
+    .select("id, group_id, member:members(*)")
+    .in("group_id", groupIds)
+    .order("created_at");
+
+  if (error) return [];
+  return (data ?? []).map((d: any) => ({
+    id: d.id as number,
+    group_id: d.group_id as number,
+    member: d.member as import("@/types/member").Member,
+  }));
+}
+
 export async function getUnassignedMembers(seasonId: number) {
   const { supabase } = await requireAuth();
 
