@@ -309,23 +309,23 @@ export default function MemberDetail({
 
       {/* ========== 적응중 배너 ========== */}
       {adjustingInfo && (
-        <div className="rounded-xl border border-teal-200/60 bg-teal-50/50 p-5 shadow-[var(--shadow-card)]">
+        <div className="rounded-xl border border-[#c8ddd5]/60 bg-[#edf5f3]/50 p-5 shadow-[var(--shadow-card)]">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-teal-700">적응 기간</h4>
-            <span className="text-xs font-medium text-teal-600">
+            <h4 className="text-sm font-semibold text-[#3d6b5d]">적응 기간</h4>
+            <span className="text-xs font-medium text-[#4a8272]">
               {adjustingInfo.expired
                 ? "만료됨"
                 : `${adjustingInfo.remainingDays}일 남음`}
             </span>
           </div>
           {/* 프로그레스 바 */}
-          <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-teal-100">
+          <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-[#d5e8e2]">
             <div
-              className="h-full rounded-full bg-teal-500 transition-all"
+              className="h-full rounded-full bg-[#4a8272] transition-all"
               style={{ width: `${adjustingInfo.progress}%` }}
             />
           </div>
-          <p className="mt-2 text-xs text-teal-500">
+          <p className="mt-2 text-xs text-[#6b9e8d]">
             {adjustingInfo.expired
               ? "적응 기간이 만료되었습니다. 다음 로드 시 출석 멤버로 전환됩니다."
               : "3개월 적응 기간 후 자동으로 출석 멤버로 전환됩니다."}
@@ -335,11 +335,11 @@ export default function MemberDetail({
 
       {/* ========== 현재 휴적 중 알림 ========== */}
       {activeLeave && (
-        <div className="rounded-xl border border-orange-200/60 bg-orange-50/50 p-5 shadow-[var(--shadow-card)]">
+        <div className="rounded-xl border border-[#e5d3c0]/60 bg-[#fef3e8]/50 p-5 shadow-[var(--shadow-card)]">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-orange-700">현재 휴적 중</span>
-              <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">
+              <span className="text-sm font-semibold text-[#b05a20]">현재 휴적 중</span>
+              <span className="rounded-full bg-[#fde8d5] px-2 py-0.5 text-xs font-medium text-[#b05a20]">
                 {LEAVE_TYPE_LABELS[activeLeave.leave_type]}
               </span>
             </div>
@@ -352,7 +352,7 @@ export default function MemberDetail({
               </button>
             )}
           </div>
-          <div className="mt-2 space-y-1 text-sm text-orange-600">
+          <div className="mt-2 space-y-1 text-sm text-[#c47030]">
             <p>시작일: {activeLeave.start_date}</p>
             {activeLeave.expected_return && (
               <p>예상 복귀일: {activeLeave.expected_return}</p>

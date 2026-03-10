@@ -371,7 +371,7 @@ export default function MemberList({
               <button
                 onClick={handleDeleteSelected}
                 disabled={isPending}
-                className="rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-rose-700 disabled:opacity-50 transition-all duration-300"
+                className="rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-50/50 disabled:opacity-50 transition-all duration-300"
               >
                 {isPending ? "처리 중..." : `선택 삭제 (${selected.size})`}
               </button>

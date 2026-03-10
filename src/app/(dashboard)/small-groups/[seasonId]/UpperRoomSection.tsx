@@ -95,9 +95,15 @@ export default function UpperRoomSection({
         onClick={() => setCollapsed(!collapsed)}
       >
         <div className="flex items-center gap-3">
-          <span className="text-lg">
-            {collapsed ? "▶" : "▼"}
-          </span>
+          <svg
+            className={`h-4 w-4 text-[var(--color-warm-muted)] transition-transform duration-300 ${collapsed ? "-rotate-90" : ""}`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={1.2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
           <div>
             {editingName ? (
               <input
@@ -110,11 +116,11 @@ export default function UpperRoomSection({
                   if (e.key === "Escape") { setNameValue(upperRoom.name); setEditingName(false); }
                 }}
                 onClick={(e) => e.stopPropagation()}
-                className="text-lg font-bold text-[var(--color-warm-text)] border-b-2 border-[var(--color-warm-text)] bg-transparent outline-none"
+                className="text-lg font-semibold text-[var(--color-warm-text)] border-b-2 border-[var(--color-warm-text)] bg-transparent outline-none"
               />
             ) : (
               <h3
-                className={`text-lg font-bold text-[var(--color-warm-text)] ${role === "admin" ? "cursor-pointer hover:text-[#333]" : ""}`}
+                className={`text-lg font-semibold text-[var(--color-warm-text)] ${role === "admin" ? "cursor-pointer hover:text-[#333]" : ""}`}
                 onClick={(e) => {
                   if (role === "admin") {
                     e.stopPropagation();

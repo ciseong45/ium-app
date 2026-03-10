@@ -85,7 +85,7 @@ export default function CSVControls({ role }: { role: UserRole }) {
       <button
         onClick={handleExport}
         disabled={exporting}
-        className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+        className="rounded-lg border border-[var(--color-warm-border)] px-3 py-2 text-sm text-[var(--color-warm-text)] hover:bg-[var(--color-warm-bg)] disabled:opacity-50 transition-all duration-300"
       >
         {exporting ? "내보내는 중..." : "CSV 내보내기"}
       </button>
@@ -97,7 +97,7 @@ export default function CSVControls({ role }: { role: UserRole }) {
             setImportResult(null);
             setImportError(null);
           }}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+          className="rounded-lg border border-[var(--color-warm-border)] px-3 py-2 text-sm text-[var(--color-warm-text)] hover:bg-[var(--color-warm-bg)] transition-all duration-300"
         >
           CSV 가져오기
         </button>
@@ -106,11 +106,11 @@ export default function CSVControls({ role }: { role: UserRole }) {
       {/* 가져오기 모달 */}
       {showImportModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="mx-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-bold text-gray-900">
+          <div className="mx-4 w-full max-w-md rounded-xl border border-[var(--color-warm-border)] bg-white p-6 shadow-[var(--shadow-elevated)]">
+            <h3 className="font-serif text-lg font-light text-[var(--color-warm-text)]">
               CSV 멤버 가져오기
             </h3>
-            <p className="mt-2 text-sm text-gray-500">
+            <p className="mt-2 text-sm text-[var(--color-warm-muted)]">
               CSV 파일에서 멤버를 대량 등록합니다. 기존 멤버와 중복 여부는
               확인하지 않으므로 주의하세요.
             </p>
@@ -118,15 +118,15 @@ export default function CSVControls({ role }: { role: UserRole }) {
             {/* 템플릿 다운로드 */}
             <button
               onClick={handleTemplate}
-              className="mt-4 text-sm font-medium text-blue-600 hover:text-blue-700"
+              className="mt-4 text-sm font-medium text-[var(--color-warm-text)] underline decoration-[var(--color-warm-border)] underline-offset-4 hover:decoration-[var(--color-warm-text)] transition-all duration-300"
             >
               템플릿 CSV 다운로드
             </button>
 
             {/* CSV 형식 안내 */}
-            <div className="mt-3 rounded-lg bg-gray-50 p-3">
-              <p className="text-xs font-medium text-gray-700">CSV 열 형식:</p>
-              <p className="mt-1 text-xs text-gray-500">
+            <div className="mt-3 rounded-lg bg-[var(--color-warm-bg)] border border-[var(--color-warm-border-light)] p-3">
+              <p className="text-xs font-medium text-[var(--color-warm-text)]">CSV 열 형식:</p>
+              <p className="mt-1 text-xs text-[var(--color-warm-muted)]">
                 이름, 전화번호, 이메일, 성별(남/여), 생년월일(YYYY-MM-DD), 주소, 상태(재적/출석/미출석/제적/휴적), 메모
               </p>
             </div>
@@ -139,18 +139,18 @@ export default function CSVControls({ role }: { role: UserRole }) {
                 accept=".csv,text/csv"
                 onChange={handleFileSelect}
                 disabled={importing}
-                className="block w-full text-sm text-gray-500 file:mr-3 file:rounded-lg file:border file:border-gray-300 file:bg-white file:px-3 file:py-2 file:text-sm file:font-medium file:text-gray-700 hover:file:bg-gray-50 disabled:opacity-50"
+                className="block w-full text-sm text-[var(--color-warm-muted)] file:mr-3 file:rounded-lg file:border file:border-[var(--color-warm-border)] file:bg-white file:px-3 file:py-2 file:text-sm file:font-medium file:text-[var(--color-warm-text)] hover:file:bg-[var(--color-warm-bg)] disabled:opacity-50 transition-all duration-300"
               />
             </div>
 
             {/* 진행 중 */}
             {importing && (
-              <p className="mt-3 text-sm text-blue-600">가져오는 중...</p>
+              <p className="mt-3 text-sm text-[var(--color-warm-muted)]">가져오는 중...</p>
             )}
 
             {/* 에러 */}
             {importError && (
-              <div className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+              <div className="mt-3 rounded-lg bg-rose-50 border border-rose-200/60 p-3 text-sm text-rose-600">
                 {importError}
               </div>
             )}
@@ -158,15 +158,15 @@ export default function CSVControls({ role }: { role: UserRole }) {
             {/* 결과 */}
             {importResult && (
               <div className="mt-3 space-y-2">
-                <div className="rounded-lg bg-green-50 p-3 text-sm text-green-700">
+                <div className="rounded-lg bg-[#edf5ed] border border-[#d4e8d4] p-3 text-sm text-[#3d6b3d]">
                   {importResult.imported}명을 성공적으로 등록했습니다.
                 </div>
                 {importResult.skipped.length > 0 && (
-                  <div className="rounded-lg bg-yellow-50 p-3">
-                    <p className="text-sm font-medium text-yellow-700">
+                  <div className="rounded-lg bg-[#fdfbf5] border border-[#e5dfd3] p-3">
+                    <p className="text-sm font-medium text-[#8a7a56]">
                       건너뛴 행 ({importResult.skipped.length}건):
                     </p>
-                    <ul className="mt-1 max-h-32 space-y-0.5 overflow-y-auto text-xs text-yellow-600">
+                    <ul className="mt-1 max-h-32 space-y-0.5 overflow-y-auto text-xs text-[#a08e64]">
                       {importResult.skipped.map((s, i) => (
                         <li key={i}>
                           {s.row}행: {s.name} — {s.error}
@@ -182,7 +182,7 @@ export default function CSVControls({ role }: { role: UserRole }) {
             <div className="mt-5 flex justify-end">
               <button
                 onClick={() => setShowImportModal(false)}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                className="rounded-lg border border-[var(--color-warm-border)] px-4 py-2 text-sm text-[var(--color-warm-text)] hover:bg-[var(--color-warm-bg)] transition-all duration-300"
               >
                 닫기
               </button>

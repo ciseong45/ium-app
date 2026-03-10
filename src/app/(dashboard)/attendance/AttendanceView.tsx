@@ -10,8 +10,8 @@ import FilterPill from "@/components/ui/FilterPill";
 type Member = { id: number; name: string };
 
 const STATUS_OPTIONS: { value: AttendanceStatus; label: string; color: string }[] = [
-  { value: "present", label: "출석", color: "bg-green-100 text-green-700" },
-  { value: "absent", label: "결석", color: "bg-red-100 text-red-700" },
+  { value: "present", label: "출석", color: "bg-[#edf5ed] text-[#3d6b3d]" },
+  { value: "absent", label: "결석", color: "bg-rose-50 text-rose-600" },
 ];
 
 export default function AttendanceView({
@@ -318,7 +318,7 @@ function AttendanceCheck({
             </div>
             {/* 기도필요 사유 입력 (펼침) */}
             {prayerFlags[member.id] && (
-              <div className="border-t px-4 py-2">
+              <div className="border-t border-[var(--color-warm-border-light)] px-4 py-2">
                 <input
                   type="text"
                   value={prayerNotes[member.id] ?? ""}
@@ -435,9 +435,9 @@ function AttendanceHistory({
     if (!record) return "text-[var(--color-warm-subtle)]";
     switch (record.status) {
       case "present":
-        return "text-green-500";
+        return "text-[#3d6b3d]";
       case "absent":
-        return "text-red-400";
+        return "text-rose-400";
       default:
         return "text-[var(--color-warm-subtle)]";
     }
@@ -461,7 +461,7 @@ function AttendanceHistory({
                     day: "numeric",
                   })}
                 </span>
-                <span className="mt-1 text-lg font-bold text-[var(--color-warm-text)]">
+                <span className="mt-1 text-lg font-semibold text-[var(--color-warm-text)]">
                   {week.rate}%
                 </span>
                 <span className="text-xs text-[var(--color-warm-muted)]">
@@ -494,8 +494,8 @@ function AttendanceHistory({
 
       {/* 연속 결석 경고 */}
       {memberAttendance.filter((m) => m.consecutiveAbsent >= 3).length > 0 && (
-        <div className="mb-6 rounded-xl border border-red-200/60 bg-red-50/50 p-4">
-          <h3 className="text-sm font-semibold text-red-700">
+        <div className="mb-6 rounded-xl border border-rose-200/60 bg-rose-50/50 p-4">
+          <h3 className="text-sm font-semibold text-rose-700">
             3주 이상 연속 결석
           </h3>
           <div className="mt-2 flex flex-wrap gap-2">
@@ -504,7 +504,7 @@ function AttendanceHistory({
               .map((m) => (
                 <span
                   key={m.member.id}
-                  className="rounded-full bg-red-100 px-3 py-1 text-sm font-medium text-red-700"
+                  className="rounded-full bg-rose-100 px-3 py-1 text-sm font-medium text-rose-700"
                 >
                   {m.member.name} ({m.consecutiveAbsent}주)
                 </span>
@@ -541,7 +541,7 @@ function AttendanceHistory({
               {memberAttendance.map(({ member, weekData, consecutiveAbsent }) => (
                 <tr
                   key={member.id}
-                  className={`border-b border-[var(--color-warm-border-light)] transition-colors duration-300 ${consecutiveAbsent >= 3 ? "bg-red-50/50" : "hover:bg-[var(--color-warm-bg)]"}`}
+                  className={`border-b border-[var(--color-warm-border-light)] transition-colors duration-300 ${consecutiveAbsent >= 3 ? "bg-rose-50/50" : "hover:bg-[var(--color-warm-bg)]"}`}
                 >
                   <td className="sticky left-0 bg-inherit py-2.5 pr-4 font-medium text-[var(--color-warm-text)]">
                     {member.name}
@@ -564,10 +564,10 @@ function AttendanceHistory({
       {/* 범례 */}
       <div className="mt-4 flex gap-4 text-xs text-[var(--color-warm-muted)]">
         <span>
-          <span className="text-green-500">●</span> 출석
+          <span className="text-[#3d6b3d]">●</span> 출석
         </span>
         <span>
-          <span className="text-red-400">○</span> 결석
+          <span className="text-rose-400">○</span> 결석
         </span>
         <span>
           <span className="text-[var(--color-warm-subtle)]">—</span> 미체크

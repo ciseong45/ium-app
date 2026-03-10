@@ -42,8 +42,8 @@ export const MINISTRY_CATEGORY_LABELS: Record<MinistryTeamCategory, string> = {
 };
 
 export const MINISTRY_TEAM_COLORS: Record<MinistryTeamCategory, string> = {
-  worship: "bg-indigo-100 text-indigo-700",
-  discipleship: "bg-emerald-100 text-emerald-700",
+  worship: "bg-[#ede8f5] text-[#5b47a0]",
+  discipleship: "bg-[#edf5ed] text-[#3d6b3d]",
 };
 
 export type MemberWithGroup = Member & {
@@ -62,13 +62,13 @@ export const STATUS_LABELS: Record<MemberStatus, string> = {
 };
 
 export const STATUS_COLORS: Record<MemberStatus, string> = {
-  active: "bg-green-100 text-green-700",
-  attending: "bg-blue-100 text-blue-700",
-  inactive: "bg-yellow-100 text-yellow-700",
-  removed: "bg-red-100 text-red-700",
-  on_leave: "bg-orange-100 text-orange-700",
-  new_family: "bg-purple-100 text-purple-700",
-  adjusting: "bg-teal-100 text-teal-700",
+  active: "bg-[#edf5ed] text-[#3d6b3d]",
+  attending: "bg-[var(--color-warm-bg)] text-[var(--color-warm-text)]",
+  inactive: "bg-[#f5f0e0] text-[#8a7a56]",
+  removed: "bg-rose-50 text-rose-600",
+  on_leave: "bg-[#fef3e8] text-[#b05a20]",
+  new_family: "bg-[#f0edf8] text-[#6b4fa5]",
+  adjusting: "bg-[#edf5f3] text-[#3d6b5d]",
 };
 
 // --- 메인/보조 상태 체계 ---

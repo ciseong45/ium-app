@@ -33,13 +33,13 @@ export default async function MembersPage({
   return (
     <div>
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-900">멤버 관리</h2>
+        <h2 className="font-serif text-2xl font-light tracking-tight text-[var(--color-warm-text)]">멤버 관리</h2>
         <div className="flex items-center gap-2">
           <CSVControls role={role} />
           {role !== "group_leader" && (
             <a
               href="/members/new"
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              className="rounded-lg bg-[#1a1a1a] px-5 py-2.5 text-sm font-medium text-white transition-all duration-300 hover:bg-[#333]"
             >
               + 멤버 등록
             </a>
