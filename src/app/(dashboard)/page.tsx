@@ -194,6 +194,7 @@ export default async function DashboardPage() {
             value={`${memberCount}`}
             unit="명"
             description="재적 + 출석 + 적응중"
+            href="/members"
           />
           <DashboardCard
             label="Groups"
@@ -201,6 +202,7 @@ export default async function DashboardPage() {
             value={`${groupCount}`}
             unit="개"
             description={seasonName}
+            href="/small-groups"
           />
           <DashboardCard
             label="Attendance"
@@ -209,6 +211,7 @@ export default async function DashboardPage() {
             unit={totalChecked > 0 ? "%" : ""}
             description={totalChecked > 0 ? `이번 주 ${presentCount}/${totalChecked}명` : "이번 주 기록 없음"}
             progress={totalChecked > 0 ? attendanceRate : undefined}
+            href="/attendance"
           />
           <DashboardCard
             label="New Family"
@@ -216,6 +219,7 @@ export default async function DashboardPage() {
             value={`${newFamilyCount}`}
             unit="명"
             description="진행 중"
+            href="/new-family"
           />
           <DashboardCard
             label="Discipleship"
@@ -223,6 +227,7 @@ export default async function DashboardPage() {
             value={`${oneToOneCount}`}
             unit="건"
             description="진행 중"
+            href="/one-to-one"
           />
         </div>
       </section>
@@ -237,6 +242,7 @@ function DashboardCard({
   unit,
   description,
   progress,
+  href,
 }: {
   label: string;
   title: string;
@@ -244,9 +250,10 @@ function DashboardCard({
   unit: string;
   description: string;
   progress?: number;
+  href?: string;
 }) {
-  return (
-    <div className="rounded-xl border border-[var(--color-warm-border)] bg-white p-6 hover-lift">
+  const content = (
+    <>
       <p className="text-[9px] font-medium uppercase tracking-[0.2em] text-[var(--color-warm-subtle)]">
         {label}
       </p>
@@ -263,6 +270,23 @@ function DashboardCard({
           />
         </div>
       )}
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className="block rounded-xl border border-[var(--color-warm-border)] bg-white p-6 hover-lift"
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-[var(--color-warm-border)] bg-white p-6 hover-lift">
+      {content}
     </div>
   );
 }
