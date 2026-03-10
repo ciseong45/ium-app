@@ -2,71 +2,141 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { saveAttendance } from "./actions";
+import { saveGroupAttendance } from "./actions";
+import type { GroupOption } from "./actions";
 import type { AttendanceStatus, AttendanceRecord } from "@/types/attendance";
-import { useRole } from "@/lib/RoleContext";
 import FilterPill from "@/components/ui/FilterPill";
 
-type Member = { id: number; name: string; status: string };
+type Member = { id: number; name: string };
 
 const STATUS_OPTIONS: { value: AttendanceStatus; label: string; color: string }[] = [
   { value: "present", label: "출석", color: "bg-green-100 text-green-700" },
-  { value: "online", label: "온라인", color: "bg-blue-100 text-blue-700" },
   { value: "absent", label: "결석", color: "bg-red-100 text-red-700" },
 ];
 
 export default function AttendanceView({
+  groups,
+  selectedGroupId,
   members,
   attendance,
   recentData,
-  attendanceDates,
   selectedDate,
   currentTab,
 }: {
+  groups: GroupOption[];
+  selectedGroupId: number | null;
   members: Member[];
   attendance: AttendanceRecord[];
   recentData: { records: AttendanceRecord[]; dates: string[] };
-  attendanceDates: string[];
   selectedDate: string;
   currentTab: string;
 }) {
   const router = useRouter();
   const tab = currentTab;
 
+  const buildUrl = (params: Record<string, string | number | null>) => {
+    const base: Record<string, string> = {};
+    if (selectedGroupId) base.group = String(selectedGroupId);
+    base.date = selectedDate;
+    base.tab = tab;
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== null && v !== undefined) base[k] = String(v);
+    });
+    const qs = new URLSearchParams(base).toString();
+    return `/attendance?${qs}`;
+  };
+
   return (
     <div>
       <h2 className="text-2xl font-bold text-gray-900">출석 관리</h2>
 
-      {/* 탭 */}
-      <div className="mt-4 flex gap-1">
-        {[
-          { value: "check", label: "출석 체크" },
-          { value: "history", label: "출석 현황" },
-        ].map((t) => (
-          <FilterPill
-            key={t.value}
-            label={t.label}
-            active={tab === t.value}
-            onClick={() =>
-              router.push(`/attendance?tab=${t.value}&date=${selectedDate}`)
-            }
-          />
-        ))}
-      </div>
+      {/* 순 선택 */}
+      {groups.length > 1 && (
+        <div className="mt-4">
+          <select
+            value={selectedGroupId ?? ""}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val) {
+                router.push(`/attendance?group=${val}&date=${selectedDate}&tab=${tab}`);
+              } else {
+                router.push(`/attendance?date=${selectedDate}&tab=${tab}`);
+              }
+            }}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          >
+            <option value="">순을 선택하세요</option>
+            {groups.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.name} ({g.upper_room_name}){g.leader_name ? ` - ${g.leader_name}` : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
-      {tab === "check" ? (
-        <AttendanceCheck
-          members={members}
-          attendance={attendance}
-          selectedDate={selectedDate}
-        />
-      ) : (
-        <AttendanceHistory
-          members={members}
-          recentData={recentData}
-          attendanceDates={attendanceDates}
-          selectedDate={selectedDate}
-        />
+      {/* 순 하나만 있으면 순 이름 표시 */}
+      {groups.length === 1 && (
+        <p className="mt-2 text-sm text-gray-500">
+          {groups[0].name} ({groups[0].upper_room_name})
+        </p>
+      )}
+
+      {/* 순 미선택 시 안내 */}
+      {!selectedGroupId && groups.length > 1 && (
+        <div className="mt-12 text-center text-gray-400">
+          <p className="text-4xl">👆</p>
+          <p className="mt-2">순을 선택하면 출석을 관리할 수 있습니다.</p>
+        </div>
+      )}
+
+      {/* 순 없음 */}
+      {groups.length === 0 && (
+        <div className="mt-12 text-center text-gray-400">
+          <p className="text-4xl">🚫</p>
+          <p className="mt-2">접근 가능한 순이 없습니다.</p>
+          <p className="text-xs mt-1">관리자에게 문의하세요.</p>
+        </div>
+      )}
+
+      {/* 순 선택된 경우 */}
+      {selectedGroupId && (
+        <>
+          {/* 탭 */}
+          <div className="mt-4 flex gap-1">
+            {[
+              { value: "check", label: "출석 체크" },
+              { value: "history", label: "출석 현황" },
+            ].map((t) => (
+              <FilterPill
+                key={t.value}
+                label={t.label}
+                active={tab === t.value}
+                onClick={() =>
+                  router.push(
+                    `/attendance?group=${selectedGroupId}&tab=${t.value}&date=${selectedDate}`
+                  )
+                }
+              />
+            ))}
+          </div>
+
+          {tab === "check" ? (
+            <AttendanceCheck
+              groupId={selectedGroupId}
+              members={members}
+              attendance={attendance}
+              selectedDate={selectedDate}
+            />
+          ) : (
+            <AttendanceHistory
+              members={members}
+              recentData={recentData}
+              selectedDate={selectedDate}
+              groupId={selectedGroupId}
+            />
+          )}
+        </>
       )}
     </div>
   );
@@ -74,26 +144,34 @@ export default function AttendanceView({
 
 // ===== 출석 체크 탭 =====
 function AttendanceCheck({
+  groupId,
   members,
   attendance,
   selectedDate,
 }: {
+  groupId: number;
   members: Member[];
   attendance: AttendanceRecord[];
   selectedDate: string;
 }) {
   const router = useRouter();
-  const role = useRole();
 
   // 기존 출석 데이터로 초기값 설정
   const initialStatuses: Record<number, AttendanceStatus | ""> = {};
+  const initialPrayer: Record<number, boolean> = {};
+  const initialPrayerNotes: Record<number, string> = {};
+
   members.forEach((m) => {
     const record = attendance.find((a) => a.member_id === m.id);
     initialStatuses[m.id] = record ? record.status : "";
+    initialPrayer[m.id] = record ? record.prayer_request : false;
+    initialPrayerNotes[m.id] = record?.prayer_note ?? "";
   });
 
   const [statuses, setStatuses] =
     useState<Record<number, AttendanceStatus | "">>(initialStatuses);
+  const [prayerFlags, setPrayerFlags] = useState<Record<number, boolean>>(initialPrayer);
+  const [prayerNotes, setPrayerNotes] = useState<Record<number, string>>(initialPrayerNotes);
   const [saving, setSaving] = useState(false);
 
   const handleStatusChange = (memberId: number, status: AttendanceStatus) => {
@@ -103,16 +181,35 @@ function AttendanceCheck({
     }));
   };
 
+  const handlePrayerToggle = (memberId: number) => {
+    setPrayerFlags((prev) => ({
+      ...prev,
+      [memberId]: !prev[memberId],
+    }));
+    // 기도필요 해제 시 노트 초기화
+    if (prayerFlags[memberId]) {
+      setPrayerNotes((prev) => ({ ...prev, [memberId]: "" }));
+    }
+  };
+
   const handleSave = async () => {
     setSaving(true);
-    const records = Object.entries(statuses)
-      .filter(([, status]) => status !== "")
-      .map(([memberId, status]) => ({
-        member_id: Number(memberId),
-        status: status as AttendanceStatus,
+    const records = members
+      .filter((m) => statuses[m.id] !== "")
+      .map((m) => ({
+        member_id: m.id,
+        status: statuses[m.id] as AttendanceStatus,
+        prayer_request: prayerFlags[m.id] ?? false,
+        prayer_note: prayerFlags[m.id] ? prayerNotes[m.id] || null : null,
       }));
 
-    const result = await saveAttendance(selectedDate, records);
+    if (records.length === 0) {
+      alert("출석 체크된 멤버가 없습니다.");
+      setSaving(false);
+      return;
+    }
+
+    const result = await saveGroupAttendance(groupId, selectedDate, records);
     if (result.success) {
       router.refresh();
       alert("저장되었습니다.");
@@ -132,12 +229,8 @@ function AttendanceCheck({
   };
 
   const checkedCount = Object.values(statuses).filter((s) => s !== "").length;
-  const presentCount = Object.values(statuses).filter(
-    (s) => s === "present"
-  ).length;
-  const onlineCount = Object.values(statuses).filter(
-    (s) => s === "online"
-  ).length;
+  const presentCount = Object.values(statuses).filter((s) => s === "present").length;
+  const absentCount = Object.values(statuses).filter((s) => s === "absent").length;
 
   return (
     <div className="mt-6">
@@ -146,7 +239,11 @@ function AttendanceCheck({
         <input
           type="date"
           value={selectedDate}
-          onChange={(e) => router.push(`/attendance?tab=check&date=${e.target.value}`)}
+          onChange={(e) =>
+            router.push(
+              `/attendance?group=${groupId}&tab=check&date=${e.target.value}`
+            )
+          }
           className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
         <span className="text-sm text-gray-500">
@@ -162,8 +259,7 @@ function AttendanceCheck({
       {/* 요약 + 전체 선택 */}
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <span className="text-sm text-gray-500">
-          {checkedCount}/{members.length}명 체크 (출석 {presentCount}, 온라인{" "}
-          {onlineCount})
+          {checkedCount}/{members.length}명 체크 (출석 {presentCount}, 결석 {absentCount})
         </span>
         <div className="flex gap-1">
           <button
@@ -184,44 +280,73 @@ function AttendanceCheck({
       {/* 멤버별 출석 체크 */}
       <div className="mt-4 space-y-2">
         {members.map((member) => (
-          <div
-            key={member.id}
-            className="flex items-center justify-between rounded-lg border bg-white px-4 py-3"
-          >
-            <span className="text-sm font-medium text-gray-900">
-              {member.name}
-            </span>
-            <div className="flex gap-1.5">
-              {STATUS_OPTIONS.map((option) => (
+          <div key={member.id} className="rounded-lg border bg-white">
+            <div className="flex items-center justify-between px-4 py-3">
+              <span className="text-sm font-medium text-gray-900">
+                {member.name}
+              </span>
+              <div className="flex items-center gap-2">
+                {/* 출석/결석 버튼 */}
+                <div className="flex gap-1.5">
+                  {STATUS_OPTIONS.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => handleStatusChange(member.id, option.value)}
+                      className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                        statuses[member.id] === option.value
+                          ? option.color
+                          : "bg-gray-50 text-gray-400 hover:bg-gray-100"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+                {/* 기도필요 토글 */}
                 <button
-                  key={option.value}
-                  onClick={() => handleStatusChange(member.id, option.value)}
-                  className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                    statuses[member.id] === option.value
-                      ? option.color
-                      : "bg-gray-50 text-gray-400 hover:bg-gray-100"
+                  onClick={() => handlePrayerToggle(member.id)}
+                  className={`rounded-full px-2 py-1 text-xs transition-colors ${
+                    prayerFlags[member.id]
+                      ? "bg-amber-100 text-amber-700"
+                      : "bg-gray-50 text-gray-400 hover:bg-amber-50"
                   }`}
+                  title="기도필요"
                 >
-                  {option.label}
+                  🙏
                 </button>
-              ))}
+              </div>
             </div>
+            {/* 기도필요 사유 입력 (펼침) */}
+            {prayerFlags[member.id] && (
+              <div className="border-t px-4 py-2">
+                <input
+                  type="text"
+                  value={prayerNotes[member.id] ?? ""}
+                  onChange={(e) =>
+                    setPrayerNotes((prev) => ({
+                      ...prev,
+                      [member.id]: e.target.value,
+                    }))
+                  }
+                  placeholder="기도 사유를 간단히 입력하세요"
+                  className="w-full rounded border border-gray-200 px-3 py-1.5 text-sm text-gray-700 placeholder-gray-400 focus:border-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-400"
+                />
+              </div>
+            )}
           </div>
         ))}
       </div>
 
-      {/* 저장 버튼 */}
-      {role !== "viewer" && (
-        <div className="mt-6 sticky bottom-4">
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="w-full rounded-lg bg-blue-600 py-3 text-sm font-medium text-white shadow-lg hover:bg-blue-700 disabled:opacity-50"
-          >
-            {saving ? "저장 중..." : "출석 저장"}
-          </button>
-        </div>
-      )}
+      {/* 저장 버튼 — 모든 역할에서 표시 */}
+      <div className="mt-6 sticky bottom-4">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="w-full rounded-lg bg-blue-600 py-3 text-sm font-medium text-white shadow-lg hover:bg-blue-700 disabled:opacity-50"
+        >
+          {saving ? "저장 중..." : "출석 저장"}
+        </button>
+      </div>
     </div>
   );
 }
@@ -230,13 +355,13 @@ function AttendanceCheck({
 function AttendanceHistory({
   members,
   recentData,
-  attendanceDates,
   selectedDate,
+  groupId,
 }: {
   members: Member[];
   recentData: { records: AttendanceRecord[]; dates: string[] };
-  attendanceDates: string[];
   selectedDate: string;
+  groupId: number;
 }) {
   const router = useRouter();
   const { records, dates } = recentData;
@@ -247,12 +372,12 @@ function AttendanceHistory({
       const memberRecords = records.filter((r) => r.member_id === member.id);
       const weekData = dates.map((date) => {
         const record = memberRecords.find((r) => r.week_date === date);
-        return record ? record.status : null;
+        return record ?? null;
       });
 
       let consecutiveAbsent = 0;
-      for (const status of weekData) {
-        if (status === "absent" || status === null) {
+      for (const rec of weekData) {
+        if (!rec || rec.status === "absent") {
           consecutiveAbsent++;
         } else {
           break;
@@ -267,38 +392,50 @@ function AttendanceHistory({
   }, [members, records, dates]);
 
   // 주간 출석률 계산
-  const weeklyStats = useMemo(() => dates.map((date) => {
-    const weekRecords = records.filter((r) => r.week_date === date);
-    const present = weekRecords.filter(
-      (r) => r.status === "present" || r.status === "online"
-    ).length;
-    return {
-      date,
-      total: weekRecords.length,
-      present,
-      rate: weekRecords.length > 0 ? Math.round((present / weekRecords.length) * 100) : 0,
-    };
-  }), [records, dates]);
+  const weeklyStats = useMemo(
+    () =>
+      dates.map((date) => {
+        const weekRecords = records.filter((r) => r.week_date === date);
+        const present = weekRecords.filter((r) => r.status === "present").length;
+        return {
+          date,
+          total: weekRecords.length,
+          present,
+          rate:
+            weekRecords.length > 0
+              ? Math.round((present / weekRecords.length) * 100)
+              : 0,
+        };
+      }),
+    [records, dates]
+  );
 
-  const statusIcon = (status: string | null) => {
-    switch (status) {
-      case "present":
-        return "●";
-      case "online":
-        return "◐";
-      case "absent":
-        return "○";
-      default:
-        return "—";
-    }
+  // 기도필요 멤버 (가장 최근 날짜 기준)
+  const prayerMembers = useMemo(() => {
+    if (dates.length === 0) return [];
+    const latestDate = dates[0]; // 가장 최근 날짜
+    return records
+      .filter((r) => r.week_date === latestDate && r.prayer_request)
+      .map((r) => {
+        const member = members.find((m) => m.id === r.member_id);
+        return {
+          name: member?.name ?? "알 수 없음",
+          note: r.prayer_note,
+        };
+      });
+  }, [records, dates, members]);
+
+  const statusIcon = (record: AttendanceRecord | null) => {
+    if (!record) return "—";
+    const icon = record.status === "present" ? "●" : "○";
+    return record.prayer_request ? `${icon}🙏` : icon;
   };
 
-  const statusColor = (status: string | null) => {
-    switch (status) {
+  const statusColor = (record: AttendanceRecord | null) => {
+    if (!record) return "text-gray-300";
+    switch (record.status) {
       case "present":
         return "text-green-500";
-      case "online":
-        return "text-blue-500";
       case "absent":
         return "text-red-400";
       default:
@@ -330,6 +467,25 @@ function AttendanceHistory({
                 <span className="text-xs text-gray-400">
                   {week.present}/{week.total}
                 </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 기도필요 목록 */}
+      {prayerMembers.length > 0 && (
+        <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <h3 className="text-sm font-semibold text-amber-700">
+            🙏 기도필요 ({prayerMembers.length}명)
+          </h3>
+          <div className="mt-2 space-y-1.5">
+            {prayerMembers.map((pm, idx) => (
+              <div key={idx} className="flex items-start gap-2 text-sm">
+                <span className="font-medium text-amber-800">{pm.name}</span>
+                {pm.note && (
+                  <span className="text-amber-600">— {pm.note}</span>
+                )}
               </div>
             ))}
           </div>
@@ -390,12 +546,12 @@ function AttendanceHistory({
                   <td className="sticky left-0 bg-inherit py-2.5 pr-4 font-medium text-gray-900">
                     {member.name}
                   </td>
-                  {weekData.map((status, i) => (
+                  {weekData.map((record, i) => (
                     <td
                       key={dates[i]}
-                      className={`py-2.5 px-2 text-center ${statusColor(status)}`}
+                      className={`py-2.5 px-2 text-center ${statusColor(record)}`}
                     >
-                      {statusIcon(status)}
+                      {statusIcon(record)}
                     </td>
                   ))}
                 </tr>
@@ -411,14 +567,12 @@ function AttendanceHistory({
           <span className="text-green-500">●</span> 출석
         </span>
         <span>
-          <span className="text-blue-500">◐</span> 온라인
-        </span>
-        <span>
           <span className="text-red-400">○</span> 결석
         </span>
         <span>
           <span className="text-gray-300">—</span> 미체크
         </span>
+        <span>🙏 기도필요</span>
       </div>
     </div>
   );

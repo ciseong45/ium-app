@@ -37,7 +37,7 @@ export async function getNewFamilies(seasonId?: number) {
 
 export async function createNewFamily(formData: FormData): Promise<ActionResult> {
   const { supabase, role } = await requireAuth();
-  if (role === "viewer") return { success: false, error: "권한이 없습니다." };
+  if (role === "group_leader") return { success: false, error: "권한이 없습니다." };
 
   const name = (formData.get("name") as string)?.trim();
   if (!name) return { success: false, error: "이름은 필수입니다." };
@@ -79,7 +79,7 @@ export async function createNewFamily(formData: FormData): Promise<ActionResult>
 
 export async function updateStep(id: number, step: number): Promise<ActionResult> {
   const { supabase, user, role } = await requireAuth();
-  if (role === "viewer") return { success: false, error: "권한이 없습니다." };
+  if (role === "group_leader") return { success: false, error: "권한이 없습니다." };
 
   if (step < 1 || step > 3) return { success: false, error: "잘못된 단계입니다." };
 
@@ -122,7 +122,7 @@ export async function updateStep(id: number, step: number): Promise<ActionResult
 
 export async function updateAssignee(id: number, assignedTo: number | null): Promise<ActionResult> {
   const { supabase, role } = await requireAuth();
-  if (role === "viewer") return { success: false, error: "권한이 없습니다." };
+  if (role === "group_leader") return { success: false, error: "권한이 없습니다." };
   const { error } = await supabase
     .from("new_family")
     .update({ assigned_to: assignedTo })

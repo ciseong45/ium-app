@@ -1,7 +1,9 @@
 import { requireAuth } from "@/lib/auth";
+import { getActiveSeason } from "@/lib/queries";
+import Link from "next/link";
 
 export default async function DashboardPage() {
-  const { supabase, user } = await requireAuth();
+  const { supabase, user, role, linkedMemberId } = await requireAuth();
 
   // 병렬로 모든 통계 데이터 가져오기
   const [
@@ -66,7 +68,7 @@ export default async function DashboardPage() {
   const attendanceRecords = attendanceRes.data ?? [];
   const totalChecked = attendanceRecords.length;
   const presentCount = attendanceRecords.filter(
-    (r) => r.status === "present" || r.status === "online"
+    (r) => r.status === "present"
   ).length;
   const attendanceRate = totalChecked > 0
     ? Math.round((presentCount / totalChecked) * 100)
@@ -78,12 +80,108 @@ export default async function DashboardPage() {
   // 양육 수
   const oneToOneCount = oneToOneRes.count ?? 0;
 
+  // 내 순/다락방 정보 (순장, 다락방장용)
+  type MyGroupInfo = {
+    id: number;
+    name: string;
+    upper_room_name: string;
+    member_count: number;
+  };
+  let myGroups: MyGroupInfo[] = [];
+
+  if (linkedMemberId && activeSeasonRes.data) {
+    const seasonId = activeSeasonRes.data.id;
+
+    if (role === "group_leader") {
+      // 순장: 자기가 리더인 순
+      const { data: groups } = await supabase
+        .from("small_groups")
+        .select("id, name, upper_room:upper_rooms!upper_room_id(name)")
+        .eq("leader_id", linkedMemberId)
+        .eq("season_id", seasonId);
+
+      if (groups) {
+        for (const g of groups) {
+          const { count } = await supabase
+            .from("small_group_members")
+            .select("id", { count: "exact", head: true })
+            .eq("group_id", g.id);
+          myGroups.push({
+            id: g.id,
+            name: g.name,
+            upper_room_name: (g.upper_room as any)?.name ?? "",
+            member_count: count ?? 0,
+          });
+        }
+      }
+    } else if (role === "upper_room_leader") {
+      // 다락방장: 자기 다락방의 모든 순
+      const { data: myUpperRooms } = await supabase
+        .from("upper_rooms")
+        .select("id, name")
+        .eq("leader_id", linkedMemberId)
+        .eq("season_id", seasonId);
+
+      if (myUpperRooms) {
+        const urIds = myUpperRooms.map((ur) => ur.id);
+        if (urIds.length > 0) {
+          const { data: groups } = await supabase
+            .from("small_groups")
+            .select("id, name, upper_room:upper_rooms!upper_room_id(name)")
+            .in("upper_room_id", urIds)
+            .order("name");
+
+          if (groups) {
+            for (const g of groups) {
+              const { count } = await supabase
+                .from("small_group_members")
+                .select("id", { count: "exact", head: true })
+                .eq("group_id", g.id);
+              myGroups.push({
+                id: g.id,
+                name: g.name,
+                upper_room_name: (g.upper_room as any)?.name ?? "",
+                member_count: count ?? 0,
+              });
+            }
+          }
+        }
+      }
+    }
+  }
+
   return (
     <div>
       <h2 className="text-2xl font-bold text-gray-900">대시보드</h2>
       <p className="mt-2 text-gray-600">
         환영합니다{user?.email ? `, ${user.email}` : ""} 님
       </p>
+
+      {/* 내 순 바로가기 (순장/다락방장) */}
+      {myGroups.length > 0 && (
+        <div className="mt-6">
+          <h3 className="text-sm font-semibold text-gray-700">
+            {role === "upper_room_leader" ? "내 다락방 순" : "내 순"}
+          </h3>
+          <div className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {myGroups.map((g) => (
+              <Link
+                key={g.id}
+                href={`/attendance?group=${g.id}`}
+                className="flex items-center justify-between rounded-xl border bg-white p-4 shadow-sm transition-colors hover:border-blue-300 hover:bg-blue-50"
+              >
+                <div>
+                  <p className="font-medium text-gray-900">{g.name}</p>
+                  <p className="text-xs text-gray-400">
+                    {g.upper_room_name} · {g.member_count}명
+                  </p>
+                </div>
+                <span className="text-sm text-blue-600">출석 체크 →</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <DashboardCard

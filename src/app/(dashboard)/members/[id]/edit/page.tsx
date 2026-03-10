@@ -13,7 +13,7 @@ export default async function EditMemberPage({
     getMember(Number(id)),
     requireAuth(),
   ]);
-  if (role === "viewer") redirect("/members");
+  if (role === "group_leader") redirect("/members");
 
   return (
     <div>

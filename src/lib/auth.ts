@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 
-export type UserRole = "admin" | "leader" | "viewer";
+export type UserRole = "admin" | "upper_room_leader" | "group_leader";
 
 export async function requireAuth() {
   const supabase = await createClient();
@@ -15,11 +15,12 @@ export async function requireAuth() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, linked_member_id")
     .eq("id", user.id)
     .single();
 
-  const role: UserRole = (profile?.role as UserRole) || "viewer";
+  const role: UserRole = (profile?.role as UserRole) || "group_leader";
+  const linkedMemberId: number | null = (profile?.linked_member_id as number) ?? null;
 
-  return { supabase, user, role };
+  return { supabase, user, role, linkedMemberId };
 }

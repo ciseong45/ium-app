@@ -61,7 +61,7 @@ export default function MemberList({
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const isAdmin = role === "admin";
-  const canEdit = role !== "viewer";
+  const canEdit = role !== "group_leader";
 
   // --- 정렬 ---
   const handleSort = (key: string) => {

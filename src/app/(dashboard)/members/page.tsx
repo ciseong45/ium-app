@@ -36,7 +36,7 @@ export default async function MembersPage({
         <h2 className="text-2xl font-bold text-gray-900">멤버 관리</h2>
         <div className="flex items-center gap-2">
           <CSVControls role={role} />
-          {role !== "viewer" && (
+          {role !== "group_leader" && (
             <a
               href="/members/new"
               className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"

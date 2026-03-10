@@ -47,7 +47,7 @@ export default function GroupCard({
           )}
         </div>
         <div className="flex gap-2">
-          {role !== "viewer" && (
+          {role !== "group_leader" && (
             <button
               onClick={onStartAssign}
               className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
@@ -127,7 +127,7 @@ export default function GroupCard({
                 <span className="text-sm text-gray-700">
                   {entry.member.name}
                 </span>
-                {role !== "viewer" && (
+                {role !== "group_leader" && (
                   <button
                     onClick={() => onUnassign(entry.member.id)}
                     className="text-xs text-gray-400 hover:text-red-500"

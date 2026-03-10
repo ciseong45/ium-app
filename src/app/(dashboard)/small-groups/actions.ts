@@ -286,7 +286,7 @@ export async function getUnassignedMembers(seasonId: number) {
 
 export async function assignMember(groupId: number, memberId: number, seasonId: number): Promise<ActionResult> {
   const { supabase, role } = await requireAuth();
-  if (role === "viewer") return { success: false, error: "권한이 없습니다." };
+  if (role === "group_leader") return { success: false, error: "권한이 없습니다." };
   const { error } = await supabase
     .from("small_group_members")
     .insert({ group_id: groupId, member_id: memberId });
@@ -297,7 +297,7 @@ export async function assignMember(groupId: number, memberId: number, seasonId: 
 
 export async function unassignMember(groupId: number, memberId: number, seasonId: number): Promise<ActionResult> {
   const { supabase, role } = await requireAuth();
-  if (role === "viewer") return { success: false, error: "권한이 없습니다." };
+  if (role === "group_leader") return { success: false, error: "권한이 없습니다." };
   const { error } = await supabase
     .from("small_group_members")
     .delete()

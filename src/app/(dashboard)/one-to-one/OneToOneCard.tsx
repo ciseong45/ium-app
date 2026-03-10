@@ -101,7 +101,7 @@ export default function OneToOneCard({
           </p>
         </div>
 
-        {role !== "viewer" && (
+        {role !== "group_leader" && (
           <div className="flex gap-1">
             {entry.status === "active" && (
               <>
@@ -146,7 +146,7 @@ export default function OneToOneCard({
             <h4 className="text-sm font-semibold text-gray-700">
               세션 기록 ({sessions.length}회)
             </h4>
-            {role !== "viewer" && entry.status === "active" && (
+            {role !== "group_leader" && entry.status === "active" && (
               <button
                 onClick={() => setShowSessionForm(!showSessionForm)}
                 className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200"

@@ -81,7 +81,7 @@ export default function OneToOneView({
             진행 중 {activeCount}건
           </p>
         </div>
-        {role !== "viewer" && (
+        {role !== "group_leader" && (
           <button
             onClick={() => setShowForm(!showForm)}
             className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"

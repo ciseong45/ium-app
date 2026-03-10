@@ -4,7 +4,7 @@ import MemberForm from "../MemberForm";
 
 export default async function NewMemberPage() {
   const { role } = await requireAuth();
-  if (role === "viewer") redirect("/members");
+  if (role === "group_leader") redirect("/members");
 
   return (
     <div>

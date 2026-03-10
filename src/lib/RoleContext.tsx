@@ -3,7 +3,7 @@
 import { createContext, useContext } from "react";
 import type { UserRole } from "@/lib/auth";
 
-const RoleContext = createContext<UserRole>("viewer");
+const RoleContext = createContext<UserRole>("group_leader");
 
 export function RoleProvider({
   role,

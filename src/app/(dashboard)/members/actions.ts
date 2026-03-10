@@ -278,7 +278,7 @@ export async function getMember(id: number) {
 
 export async function createMember(formData: FormData): Promise<ActionResult> {
   const { supabase, role } = await requireAuth();
-  if (role === "viewer") return { success: false, error: "권한이 없습니다." };
+  if (role === "group_leader") return { success: false, error: "권한이 없습니다." };
 
   try {
     const member = memberSchema.parse({
@@ -310,7 +310,7 @@ export async function createMember(formData: FormData): Promise<ActionResult> {
 
 export async function updateMember(id: number, formData: FormData): Promise<ActionResult> {
   const { supabase, user, role } = await requireAuth();
-  if (role === "viewer") return { success: false, error: "권한이 없습니다." };
+  if (role === "group_leader") return { success: false, error: "권한이 없습니다." };
 
   try {
     const member = memberSchema.parse({
@@ -406,7 +406,7 @@ export async function moveMembersToGroup(
   targetGroupId: number | null
 ): Promise<ActionResult> {
   const { supabase, role } = await requireAuth();
-  if (role === "viewer") return { success: false, error: "권한이 없습니다." };
+  if (role === "group_leader") return { success: false, error: "권한이 없습니다." };
   if (memberIds.length === 0) return { success: false, error: "선택한 멤버가 없습니다." };
 
   // 활성 시즌의 그룹 ID 목록 조회
@@ -493,7 +493,7 @@ export async function startLeave(
   expectedReturn: string | null
 ): Promise<ActionResult> {
   const { supabase, user, role } = await requireAuth();
-  if (role === "viewer") return { success: false, error: "권한이 없습니다." };
+  if (role === "group_leader") return { success: false, error: "권한이 없습니다." };
 
   // 현재 멤버 상태 확인
   const { data: member } = await supabase
@@ -538,7 +538,7 @@ export async function quickUpdateField(
   value: string | null
 ): Promise<ActionResult> {
   const { supabase, user, role } = await requireAuth();
-  if (role === "viewer") return { success: false, error: "권한이 없습니다." };
+  if (role === "group_leader") return { success: false, error: "권한이 없습니다." };
 
   if (field === "gender" && value !== null && value !== "M" && value !== "F") {
     return { success: false, error: "잘못된 성별 값입니다." };
@@ -596,7 +596,7 @@ export async function updateMemberMinistryTeams(
   teamIds: number[]
 ): Promise<ActionResult> {
   const { supabase, role } = await requireAuth();
-  if (role === "viewer") return { success: false, error: "권한이 없습니다." };
+  if (role === "group_leader") return { success: false, error: "권한이 없습니다." };
 
   const { error: deleteError } = await supabase
     .from("member_ministry_teams")
@@ -715,7 +715,7 @@ export async function importMembersCSV(
   csvText: string
 ): Promise<{ success: true; imported: number; skipped: ImportRow[] } | { success: false; error: string }> {
   const { supabase, role } = await requireAuth();
-  if (role === "viewer") return { success: false, error: "권한이 없습니다." };
+  if (role === "group_leader") return { success: false, error: "권한이 없습니다." };
 
   const lines = csvText.split(/\r?\n/).filter((l) => l.trim() !== "");
   if (lines.length < 2) return { success: false, error: "CSV 파일에 데이터가 없습니다." };
@@ -840,7 +840,7 @@ export async function getNewFamilyEntry(memberId: number) {
 
 export async function returnFromLeave(memberId: number, leaveId: number): Promise<ActionResult> {
   const { supabase, user, role } = await requireAuth();
-  if (role === "viewer") return { success: false, error: "권한이 없습니다." };
+  if (role === "group_leader") return { success: false, error: "권한이 없습니다." };
 
   // 휴적 기록에 복귀일 기록
   const { error: leaveError } = await supabase

@@ -6,4 +6,5 @@ export type UserEntry = {
   name: string | null;
   role: UserRole;
   created_at: string;
+  linked_member_id: number | null;
 };

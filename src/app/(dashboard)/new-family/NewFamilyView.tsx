@@ -101,7 +101,7 @@ export default function NewFamilyView({
     <div>
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-900">새가족</h2>
-        {role !== "viewer" && (
+        {role !== "group_leader" && (
           <button
             onClick={() => setShowForm(!showForm)}
             className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
@@ -300,7 +300,7 @@ export default function NewFamilyView({
               </div>
 
               {/* 단계 버튼 */}
-              {role !== "viewer" && (
+              {role !== "group_leader" && (
                 <div className="mt-3 flex gap-1.5">
                   {STEPS.map((s) => (
                     <button

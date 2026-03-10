@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useRole } from "@/lib/RoleContext";
 
-const ROLE_LABELS = { admin: "관리자", leader: "리더", viewer: "뷰어" } as const;
+const ROLE_LABELS = { admin: "관리자", upper_room_leader: "다락방장", group_leader: "순장" } as const;
 
 export default function Header({ onMenuClick }: { onMenuClick: () => void }) {
   const [userEmail, setUserEmail] = useState<string | null>(null);

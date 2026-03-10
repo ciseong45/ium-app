@@ -90,7 +90,7 @@ export default function CSVControls({ role }: { role: UserRole }) {
         {exporting ? "내보내는 중..." : "CSV 내보내기"}
       </button>
 
-      {role !== "viewer" && (
+      {role !== "group_leader" && (
         <button
           onClick={() => {
             setShowImportModal(true);

@@ -26,7 +26,7 @@ export async function getOneToOnes(status?: string) {
 
 export async function createOneToOne(formData: FormData): Promise<ActionResult> {
   const { supabase, role } = await requireAuth();
-  if (role === "viewer") return { success: false, error: "권한이 없습니다." };
+  if (role === "group_leader") return { success: false, error: "권한이 없습니다." };
 
   const mentorId = Number(formData.get("mentor_id"));
   const menteeId = Number(formData.get("mentee_id"));
@@ -46,7 +46,7 @@ export async function createOneToOne(formData: FormData): Promise<ActionResult> 
 
 export async function updateOneToOneStatus(id: number, status: OneToOneStatus): Promise<ActionResult> {
   const { supabase, role } = await requireAuth();
-  if (role === "viewer") return { success: false, error: "권한이 없습니다." };
+  if (role === "group_leader") return { success: false, error: "권한이 없습니다." };
   const updates: Record<string, unknown> = { status };
   if (status === "completed") {
     updates.completed_at = new Date().toISOString().split("T")[0];
@@ -82,7 +82,7 @@ export async function getSessions(oneToOneId: number) {
 
 export async function addSession(oneToOneId: number, formData: FormData): Promise<ActionResult> {
   const { supabase, role } = await requireAuth();
-  if (role === "viewer") return { success: false, error: "권한이 없습니다." };
+  if (role === "group_leader") return { success: false, error: "권한이 없습니다." };
 
   // 다음 회차 번호 계산
   const { data: existing } = await supabase

@@ -153,7 +153,7 @@ export default function MemberDetail({
           목록으로
         </button>
         <div className="flex gap-2">
-          {role !== "viewer" && (
+          {role !== "group_leader" && (
             <button
               onClick={() => router.push(`/members/${member.id}/edit`)}
               className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
@@ -343,7 +343,7 @@ export default function MemberDetail({
                 {LEAVE_TYPE_LABELS[activeLeave.leave_type]}
               </span>
             </div>
-            {role !== "viewer" && (
+            {role !== "group_leader" && (
               <button
                 onClick={handleReturn}
                 className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 transition-colors"
@@ -390,7 +390,7 @@ export default function MemberDetail({
         {showLeaveHistory && (
           <div className="border-t px-5 pb-5">
             {/* 휴적 등록 버튼 */}
-            {role !== "viewer" &&
+            {role !== "group_leader" &&
               !activeLeave &&
               member.status !== "on_leave" &&
               member.status !== "removed" &&
