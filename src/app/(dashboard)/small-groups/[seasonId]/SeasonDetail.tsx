@@ -184,12 +184,12 @@ export default function SeasonDetail({
       <div className="flex items-center gap-3">
         <button
           onClick={() => router.push("/small-groups")}
-          className="text-gray-400 hover:text-gray-600"
+          className="rounded-lg p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
         >
           ←
         </button>
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">{season.name}</h2>
+          <h2 className="text-xl font-semibold text-gray-900">{season.name}</h2>
           {season.is_active && (
             <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
               활성 시즌

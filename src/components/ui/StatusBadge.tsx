@@ -10,7 +10,7 @@ export default function StatusBadge({ status }: { status: MemberStatus }) {
   return (
     <span className="flex items-center gap-1">
       <span
-        className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${main.color}`}
+        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${main.color}`}
       >
         {main.label}
       </span>

@@ -48,7 +48,7 @@ export default function AttendanceView({
 
   return (
     <div>
-      <h2 className="text-2xl font-bold text-gray-900">출석 관리</h2>
+      <h2 className="text-xl font-semibold text-gray-900">출석 관리</h2>
 
       {/* 순 선택 */}
       {groups.length > 1 && (
@@ -280,7 +280,7 @@ function AttendanceCheck({
       {/* 멤버별 출석 체크 */}
       <div className="mt-4 space-y-2">
         {members.map((member) => (
-          <div key={member.id} className="rounded-lg border bg-white">
+          <div key={member.id} className="rounded-xl border border-gray-200 bg-white shadow-sm">
             <div className="flex items-center justify-between px-4 py-3">
               <span className="text-sm font-medium text-gray-900">
                 {member.name}
@@ -453,7 +453,7 @@ function AttendanceHistory({
             {weeklyStats.map((week) => (
               <div
                 key={week.date}
-                className="flex min-w-[80px] flex-col items-center rounded-lg border bg-white p-3"
+                className="flex min-w-[80px] flex-col items-center rounded-xl border border-gray-200 bg-white p-3 shadow-sm"
               >
                 <span className="text-xs text-gray-400">
                   {new Date(week.date + "T00:00:00").toLocaleDateString("ko-KR", {

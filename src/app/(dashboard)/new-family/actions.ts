@@ -22,9 +22,7 @@ export async function getNewFamilies(seasonId?: number) {
     .from("new_family")
     .select(
       "*, member:members!member_id(id, name, phone), assignee:members!assigned_to(id, name)"
-    )
-    .order("step", { ascending: true })
-    .order("created_at", { ascending: false });
+    );
 
   if (seasonId) {
     query = query.eq("season_id", seasonId);
@@ -32,7 +30,11 @@ export async function getNewFamilies(seasonId?: number) {
 
   const { data, error } = await query;
   if (error) return [] as NewFamilyEntry[];
-  return data as NewFamilyEntry[];
+
+  // 이름순 정렬
+  return (data as NewFamilyEntry[]).sort((a, b) =>
+    a.member.name.localeCompare(b.member.name, "ko")
+  );
 }
 
 export async function createNewFamily(formData: FormData): Promise<ActionResult> {

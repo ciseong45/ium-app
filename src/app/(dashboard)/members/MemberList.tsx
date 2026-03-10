@@ -386,10 +386,11 @@ export default function MemberList({
           message={currentSearch || currentStatus ? "검색 결과가 없습니다." : "등록된 멤버가 없습니다."}
         />
       ) : (
-        <div className="mt-4 overflow-x-auto">
+        <div className="mt-4 rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b text-gray-500">
+              <tr className="border-b border-gray-200 bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wider">
                 {canEdit && (
                   <th className="pb-3 pr-2 font-medium w-8">
                     <input
@@ -418,7 +419,7 @@ export default function MemberList({
                 <tr
                   key={member.id}
                   onClick={() => router.push(`/members/${member.id}`)}
-                  className="cursor-pointer border-b transition-colors hover:bg-gray-50"
+                  className="cursor-pointer border-b border-gray-100 transition-colors hover:bg-gray-50"
                 >
                   {canEdit && (
                     <td className="py-3 pr-2" onClick={(e) => e.stopPropagation()}>
@@ -634,6 +635,7 @@ export default function MemberList({
               })}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

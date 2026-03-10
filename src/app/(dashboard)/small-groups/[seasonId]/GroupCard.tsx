@@ -37,7 +37,7 @@ export default function GroupCard({
   const role = useRole();
 
   return (
-    <div className="rounded-xl border bg-white p-4">
+    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
       {/* 그룹 헤더 */}
       <div className="flex items-center justify-between">
         <div>

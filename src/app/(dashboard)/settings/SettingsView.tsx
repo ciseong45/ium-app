@@ -61,7 +61,7 @@ export default function SettingsView({
       {users.map((user) => (
         <div
           key={user.id}
-          className="rounded-xl border bg-white p-4"
+          className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
         >
           <div className="flex items-center justify-between">
             <div>

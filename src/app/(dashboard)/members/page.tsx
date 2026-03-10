@@ -33,7 +33,7 @@ export default async function MembersPage({
   return (
     <div>
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">멤버 관리</h2>
+        <h2 className="text-xl font-semibold text-gray-900">멤버 관리</h2>
         <div className="flex items-center gap-2">
           <CSVControls role={role} />
           {role !== "group_leader" && (

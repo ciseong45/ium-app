@@ -78,7 +78,7 @@ export default function OneToOneCard({
   };
 
   return (
-    <div className="rounded-xl border bg-white p-4">
+    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
       {/* 헤더 */}
       <div className="flex items-start justify-between">
         <div

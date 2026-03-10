@@ -36,6 +36,7 @@ export default function NewFamilyView({
   const role = useRole();
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [stepFilter, setStepFilter] = useState<number | null>(null);
 
   const activeSeason = seasons.find((s) => s.is_active);
 
@@ -100,7 +101,7 @@ export default function NewFamilyView({
   return (
     <div>
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">새가족</h2>
+        <h2 className="text-xl font-semibold text-gray-900">새가족</h2>
         {role !== "group_leader" && (
           <button
             onClick={() => setShowForm(!showForm)}
@@ -130,18 +131,23 @@ export default function NewFamilyView({
         </div>
       )}
 
-      {/* 단계별 요약 */}
+      {/* 단계별 요약 (클릭 시 필터) */}
       <div className="mt-4 flex gap-3 overflow-x-auto pb-2">
         {stepCounts.map((s) => (
-          <div
+          <button
             key={s.step}
-            className="flex min-w-[100px] flex-col items-center rounded-xl border bg-white p-4"
+            onClick={() => setStepFilter(stepFilter === s.step ? null : s.step)}
+            className={`flex min-w-[100px] flex-col items-center rounded-xl border border-gray-200 p-5 shadow-sm transition-shadow hover:shadow-md ${
+              stepFilter === s.step
+                ? "border-blue-400 bg-blue-50 ring-1 ring-blue-400"
+                : "bg-white hover:border-gray-300"
+            }`}
           >
             <span className="text-xs text-gray-500">{s.label}</span>
             <span className="mt-1 text-2xl font-bold text-gray-900">
               {s.count}
             </span>
-          </div>
+          </button>
         ))}
       </div>
 
@@ -177,7 +183,7 @@ export default function NewFamilyView({
       {showForm && (
         <form
           onSubmit={handleCreate}
-          className="mt-4 rounded-xl border bg-white p-4 space-y-3"
+          className="mt-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm space-y-3"
         >
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
@@ -254,10 +260,12 @@ export default function NewFamilyView({
         <EmptyState message="등록된 새가족이 없습니다." />
       ) : (
         <div className="mt-6 space-y-3">
-          {families.map((family) => (
+          {families
+            .filter((f) => stepFilter === null || f.step === stepFilter)
+            .map((family) => (
             <div
               key={family.id}
-              className="rounded-xl border bg-white p-4"
+              className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
             >
               <div className="flex items-start justify-between">
                 <div>

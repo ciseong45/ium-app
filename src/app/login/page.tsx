@@ -34,10 +34,13 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-lg">
+      <div className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-8 shadow-lg">
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold text-gray-900">이음채플</h1>
-          <p className="mt-2 text-sm text-gray-500">관리자 로그인</p>
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600">
+            <span className="text-lg font-bold text-white">이</span>
+          </div>
+          <h1 className="text-xl font-semibold text-gray-900">이음채플</h1>
+          <p className="mt-1 text-sm text-gray-400">I:UM CHAPEL</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">

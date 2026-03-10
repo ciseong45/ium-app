@@ -15,9 +15,9 @@ export default function FilterPill({
   return (
     <button
       onClick={onClick}
-      className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+      className={`whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-medium transition-all ${
         active
-          ? "bg-blue-600 text-white"
+          ? "bg-gray-900 text-white shadow-sm"
           : "bg-gray-100 text-gray-600 hover:bg-gray-200"
       }`}
     >

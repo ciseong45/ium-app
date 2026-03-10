@@ -192,7 +192,7 @@ export default function UpperRoomSection({
             onCreateGroup(upperRoom.id, formData);
             e.currentTarget.reset();
           }}
-          className="mx-5 mb-3 rounded-xl border bg-white p-4 space-y-3"
+          className="mx-5 mb-3 rounded-xl border border-gray-200 bg-white p-5 shadow-sm space-y-3"
         >
           <div>
             <label className="block text-sm font-medium text-gray-700">
@@ -209,7 +209,7 @@ export default function UpperRoomSection({
             <button
               type="submit"
               disabled={loading}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors disabled:opacity-50"
             >
               {loading ? "생성 중..." : "생성"}
             </button>

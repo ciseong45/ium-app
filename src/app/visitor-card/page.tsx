@@ -28,9 +28,13 @@ export default function VisitorCardPage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
         <div className="w-full max-w-md text-center">
-          <div className="rounded-2xl bg-white p-8 shadow-lg">
-            <div className="text-5xl">🙏</div>
-            <h2 className="mt-4 text-xl font-bold text-gray-900">
+          <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-lg">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
+              <svg className="h-7 w-7 text-green-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h2 className="mt-4 text-xl font-semibold text-gray-900">
               환영합니다!
             </h2>
             <p className="mt-2 text-gray-600">
@@ -49,8 +53,11 @@ export default function VisitorCardPage() {
       <div className="mx-auto w-full max-w-md">
         {/* 헤더 */}
         <div className="mb-6 text-center">
-          <h1 className="text-2xl font-bold text-gray-900">이음채플</h1>
-          <p className="mt-1 text-lg text-gray-600">방문자 카드</p>
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600">
+            <span className="text-lg font-bold text-white">이</span>
+          </div>
+          <h1 className="text-xl font-semibold text-gray-900">이음채플</h1>
+          <p className="mt-0.5 text-sm text-gray-400">방문자 카드</p>
           <p className="mt-2 text-sm text-gray-400">
             이음채플에 오신 것을 환영합니다! 아래 정보를 작성해주세요.
           </p>
@@ -59,7 +66,7 @@ export default function VisitorCardPage() {
         {/* 폼 */}
         <form
           onSubmit={handleSubmit}
-          className="rounded-2xl bg-white p-6 shadow-lg space-y-4"
+          className="rounded-2xl border border-gray-200 bg-white p-6 shadow-lg space-y-4"
         >
           {/* 이름 */}
           <div>

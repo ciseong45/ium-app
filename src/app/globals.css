@@ -2,4 +2,11 @@
 
 @theme inline {
   --font-sans: var(--font-geist-sans);
+
+  /* Sidebar palette */
+  --color-sidebar: #0f172a;
+  --color-sidebar-hover: #1e293b;
+  --color-sidebar-active: #ffffff1a;
+  --color-sidebar-text: #94a3b8;
+  --color-sidebar-accent: #3b82f6;
 }

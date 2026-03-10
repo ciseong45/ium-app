@@ -76,7 +76,7 @@ export default function OneToOneView({
     <div>
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">1:1 양육</h2>
+          <h2 className="text-xl font-semibold text-gray-900">1:1 양육</h2>
           <p className="mt-1 text-sm text-gray-500">
             진행 중 {activeCount}건
           </p>
@@ -111,7 +111,7 @@ export default function OneToOneView({
       {showForm && (
         <form
           onSubmit={handleCreate}
-          className="mt-4 rounded-xl border bg-white p-4 space-y-3"
+          className="mt-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm space-y-3"
         >
           <div className="grid gap-3 sm:grid-cols-2">
             <div>

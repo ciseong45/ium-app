@@ -409,7 +409,7 @@ export default function MemberDetail({
             {showLeaveForm && (
               <form
                 onSubmit={handleStartLeave}
-                className="mt-3 rounded-xl border bg-gray-50 p-4 space-y-3"
+                className="mt-3 rounded-xl border bg-gray-50 p-5 space-y-3"
               >
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>

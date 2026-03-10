@@ -151,63 +151,65 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold text-gray-900">대시보드</h2>
-      <p className="mt-2 text-gray-600">
-        환영합니다{user?.email ? `, ${user.email}` : ""} 님
-      </p>
-
+    <div className="space-y-6">
       {/* 내 순 바로가기 (순장/다락방장) */}
       {myGroups.length > 0 && (
-        <div className="mt-6">
-          <h3 className="text-sm font-semibold text-gray-700">
+        <div>
+          <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">
             {role === "upper_room_leader" ? "내 다락방 순" : "내 순"}
           </h3>
-          <div className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {myGroups.map((g) => (
               <Link
                 key={g.id}
                 href={`/attendance?group=${g.id}`}
-                className="flex items-center justify-between rounded-xl border bg-white p-4 shadow-sm transition-colors hover:border-blue-300 hover:bg-blue-50"
+                className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
               >
                 <div>
                   <p className="font-medium text-gray-900">{g.name}</p>
-                  <p className="text-xs text-gray-400">
+                  <p className="mt-0.5 text-xs text-gray-400">
                     {g.upper_room_name} · {g.member_count}명
                   </p>
                 </div>
-                <span className="text-sm text-blue-600">출석 체크 →</span>
+                <span className="text-sm font-medium text-blue-600">출석 체크 →</span>
               </Link>
             ))}
           </div>
         </div>
       )}
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {/* 통계 카드 */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <DashboardCard
           title="멤버"
           value={`${memberCount}명`}
           description="재적 + 출석 + 적응중 멤버"
+          accent="border-l-blue-500"
         />
         <DashboardCard
           title="순"
           value={`${groupCount}개`}
           description={seasonName}
+          accent="border-l-indigo-500"
         />
         <DashboardCard
           title="출석률"
           value={totalChecked > 0 ? `${attendanceRate}%` : "—"}
           description={totalChecked > 0 ? `이번 주 ${presentCount}/${totalChecked}명` : "이번 주 기록 없음"}
+          accent="border-l-green-500"
+          progress={totalChecked > 0 ? attendanceRate : undefined}
         />
         <DashboardCard
           title="새가족"
           value={`${newFamilyCount}명`}
           description="진행 중"
+          accent="border-l-purple-500"
         />
         <DashboardCard
           title="1:1 양육"
           value={`${oneToOneCount}건`}
           description="진행 중"
+          accent="border-l-amber-500"
         />
       </div>
     </div>
@@ -218,16 +220,28 @@ function DashboardCard({
   title,
   value,
   description,
+  accent = "border-l-blue-500",
+  progress,
 }: {
   title: string;
   value: string;
   description: string;
+  accent?: string;
+  progress?: number;
 }) {
   return (
-    <div className="rounded-xl border bg-white p-6 shadow-sm">
+    <div className={`rounded-xl border border-gray-200 border-l-4 ${accent} bg-white p-5 shadow-sm`}>
       <p className="text-sm font-medium text-gray-500">{title}</p>
-      <p className="mt-2 text-3xl font-bold text-gray-900">{value}</p>
+      <p className="mt-2 text-2xl font-semibold text-gray-900">{value}</p>
       <p className="mt-1 text-xs text-gray-400">{description}</p>
+      {progress !== undefined && (
+        <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
+          <div
+            className="h-full rounded-full bg-green-500 transition-all"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      )}
     </div>
   );
 }
