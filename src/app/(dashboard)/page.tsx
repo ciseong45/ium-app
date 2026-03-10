@@ -151,11 +151,11 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* 내 순 바로가기 (순장/다락방장) */}
       {myGroups.length > 0 && (
         <div>
-          <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider">
+          <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400">
             {role === "upper_room_leader" ? "내 다락방 순" : "내 순"}
           </h3>
           <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -163,15 +163,17 @@ export default async function DashboardPage() {
               <Link
                 key={g.id}
                 href={`/attendance?group=${g.id}`}
-                className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+                className="group flex items-center justify-between rounded-2xl border border-gray-100 bg-white p-5 shadow-[var(--shadow-card)] transition-all duration-200 hover:shadow-[var(--shadow-card-hover)] hover:border-indigo-200"
               >
                 <div>
-                  <p className="font-medium text-gray-900">{g.name}</p>
+                  <p className="font-semibold text-gray-900">{g.name}</p>
                   <p className="mt-0.5 text-xs text-gray-400">
                     {g.upper_room_name} · {g.member_count}명
                   </p>
                 </div>
-                <span className="text-sm font-medium text-blue-600">출석 체크 →</span>
+                <span className="text-sm font-medium text-indigo-500 transition-transform duration-200 group-hover:translate-x-0.5">
+                  출석 체크 →
+                </span>
               </Link>
             ))}
           </div>
@@ -184,32 +186,42 @@ export default async function DashboardPage() {
           title="멤버"
           value={`${memberCount}명`}
           description="재적 + 출석 + 적응중 멤버"
-          accent="border-l-blue-500"
+          iconBg="bg-blue-50"
+          iconColor="text-blue-500"
+          icon={<svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg>}
         />
         <DashboardCard
           title="순"
           value={`${groupCount}개`}
           description={seasonName}
-          accent="border-l-indigo-500"
+          iconBg="bg-indigo-50"
+          iconColor="text-indigo-500"
+          icon={<svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15a2.25 2.25 0 012.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" /></svg>}
         />
         <DashboardCard
           title="출석률"
           value={totalChecked > 0 ? `${attendanceRate}%` : "—"}
           description={totalChecked > 0 ? `이번 주 ${presentCount}/${totalChecked}명` : "이번 주 기록 없음"}
-          accent="border-l-green-500"
+          iconBg="bg-emerald-50"
+          iconColor="text-emerald-500"
+          icon={<svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
           progress={totalChecked > 0 ? attendanceRate : undefined}
         />
         <DashboardCard
           title="새가족"
           value={`${newFamilyCount}명`}
           description="진행 중"
-          accent="border-l-purple-500"
+          iconBg="bg-violet-50"
+          iconColor="text-violet-500"
+          icon={<svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766z" /></svg>}
         />
         <DashboardCard
           title="1:1 양육"
           value={`${oneToOneCount}건`}
           description="진행 중"
-          accent="border-l-amber-500"
+          iconBg="bg-amber-50"
+          iconColor="text-amber-500"
+          icon={<svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>}
         />
       </div>
     </div>
@@ -220,24 +232,33 @@ function DashboardCard({
   title,
   value,
   description,
-  accent = "border-l-blue-500",
+  iconBg,
+  iconColor,
+  icon,
   progress,
 }: {
   title: string;
   value: string;
   description: string;
-  accent?: string;
+  iconBg: string;
+  iconColor: string;
+  icon: React.ReactNode;
   progress?: number;
 }) {
   return (
-    <div className={`rounded-xl border border-gray-200 border-l-4 ${accent} bg-white p-5 shadow-sm`}>
-      <p className="text-sm font-medium text-gray-500">{title}</p>
-      <p className="mt-2 text-2xl font-semibold text-gray-900">{value}</p>
-      <p className="mt-1 text-xs text-gray-400">{description}</p>
+    <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-[var(--shadow-card)] transition-all duration-200 hover:shadow-[var(--shadow-card-hover)]">
+      <div className="flex items-center justify-between">
+        <p className="text-[13px] font-medium text-gray-500">{title}</p>
+        <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${iconBg} ${iconColor}`}>
+          {icon}
+        </div>
+      </div>
+      <p className="mt-3 text-[28px] font-bold tracking-tight text-gray-900">{value}</p>
+      <p className="mt-0.5 text-xs text-gray-400">{description}</p>
       {progress !== undefined && (
         <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
           <div
-            className="h-full rounded-full bg-green-500 transition-all"
+            className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 transition-all duration-500"
             style={{ width: `${progress}%` }}
           />
         </div>

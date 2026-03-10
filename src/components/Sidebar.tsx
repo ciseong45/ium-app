@@ -100,26 +100,37 @@ export default function Sidebar({
       {/* 모바일 오버레이 */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden transition-opacity"
           onClick={onClose}
         />
       )}
 
       {/* 사이드바 */}
       <aside
-        className={`fixed left-0 top-0 z-50 flex h-full w-64 flex-col bg-sidebar shadow-lg transition-transform lg:static lg:translate-x-0 ${
+        className={`fixed left-0 top-0 z-50 flex h-full w-[260px] flex-col bg-gradient-to-b from-slate-900 to-slate-950 transition-transform duration-300 ease-out lg:static lg:translate-x-0 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         {/* 브랜드 */}
-        <div className="flex h-16 items-center border-b border-white/10 px-6">
-          <h1 className="text-lg font-bold tracking-tight text-white">
-            이음채플
-          </h1>
+        <div className="flex h-16 items-center gap-3 border-b border-white/[0.06] px-6">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/20">
+            <span className="text-sm font-bold text-indigo-400">i</span>
+          </div>
+          <div>
+            <h1 className="text-[15px] font-semibold tracking-tight text-white">
+              이음채플
+            </h1>
+            <p className="text-[10px] font-medium tracking-wider text-slate-500">
+              I:UM CHAPEL
+            </p>
+          </div>
         </div>
 
         {/* 메인 네비게이션 */}
-        <nav className="mt-4 flex-1 space-y-1 px-3">
+        <nav className="mt-6 flex-1 space-y-0.5 px-3">
+          <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-widest text-slate-600">
+            메뉴
+          </p>
           {menuItems.map((item) => {
             const active = isActive(item.href);
             return (
@@ -127,13 +138,16 @@ export default function Sidebar({
                 key={item.href}
                 href={item.href}
                 onClick={onClose}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-200 ${
                   active
-                    ? "border-l-[3px] border-sidebar-accent bg-sidebar-active pl-[9px] text-white"
-                    : "text-sidebar-text hover:bg-white/5 hover:text-white"
+                    ? "bg-white/[0.08] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
+                    : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200"
                 }`}
               >
-                <item.icon className="h-5 w-5 shrink-0" />
+                {active && (
+                  <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-indigo-400" />
+                )}
+                <item.icon className={`h-[18px] w-[18px] shrink-0 transition-colors ${active ? "text-indigo-400" : "text-slate-500 group-hover:text-slate-400"}`} />
                 {item.label}
               </Link>
             );
@@ -142,17 +156,20 @@ export default function Sidebar({
 
         {/* 설정 (하단 분리) */}
         {role === "admin" && (
-          <div className="border-t border-white/10 px-3 py-3">
+          <div className="border-t border-white/[0.06] px-3 py-3">
             <Link
               href="/settings"
               onClick={onClose}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+              className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-200 ${
                 pathname === "/settings"
-                  ? "border-l-[3px] border-sidebar-accent bg-sidebar-active pl-[9px] text-white"
-                  : "text-sidebar-text hover:bg-white/5 hover:text-white"
+                  ? "bg-white/[0.08] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
+                  : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200"
               }`}
             >
-              <CogIcon className="h-5 w-5 shrink-0" />
+              {pathname === "/settings" && (
+                <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-indigo-400" />
+              )}
+              <CogIcon className={`h-[18px] w-[18px] shrink-0 transition-colors ${pathname === "/settings" ? "text-indigo-400" : "text-slate-500 group-hover:text-slate-400"}`} />
               설정
             </Link>
           </div>

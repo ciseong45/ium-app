@@ -184,12 +184,12 @@ export default function SeasonDetail({
       <div className="flex items-center gap-3">
         <button
           onClick={() => router.push("/small-groups")}
-          className="rounded-lg p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+          className="rounded-xl p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-200"
         >
           ←
         </button>
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">{season.name}</h2>
+          <h2 className="text-xl font-semibold tracking-tight text-gray-900">{season.name}</h2>
           {season.is_active && (
             <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
               활성 시즌
@@ -199,7 +199,7 @@ export default function SeasonDetail({
       </div>
 
       {/* 요약 */}
-      <div className="mt-4 flex gap-4 text-sm text-gray-500">
+      <div className="mt-4 flex gap-4 text-sm text-gray-400">
         <span>다락방 {upperRooms.length}개</span>
         <span>순 {groups.length}개</span>
         <span>배정 {totalMembers}명</span>
@@ -236,14 +236,14 @@ export default function SeasonDetail({
       {/* 미배정 멤버 */}
       {localUnassigned.length > 0 && (
         <div className="mt-8">
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="text-base font-semibold text-gray-900">
             미배정 멤버 ({localUnassigned.length}명)
           </h3>
           <div className="mt-3 flex flex-wrap gap-2">
             {localUnassigned.map((member) => (
               <span
                 key={member.id}
-                className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-600"
+                className="rounded-full bg-white ring-1 ring-gray-200 px-3 py-1 text-sm text-gray-600"
               >
                 {member.name}
               </span>

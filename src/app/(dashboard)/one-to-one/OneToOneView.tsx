@@ -84,7 +84,7 @@ export default function OneToOneView({
         {role !== "group_leader" && (
           <button
             onClick={() => setShowForm(!showForm)}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition-colors duration-200"
           >
             + 양육 매칭
           </button>
@@ -111,7 +111,7 @@ export default function OneToOneView({
       {showForm && (
         <form
           onSubmit={handleCreate}
-          className="mt-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm space-y-3"
+          className="mt-4 rounded-2xl border border-gray-100 bg-white p-6 shadow-[var(--shadow-card)] space-y-3"
         >
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
@@ -164,14 +164,14 @@ export default function OneToOneView({
             <button
               type="submit"
               disabled={loading}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition-colors duration-200 disabled:opacity-50"
             >
               {loading ? "등록 중..." : "매칭 등록"}
             </button>
             <button
               type="button"
               onClick={() => setShowForm(false)}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              className="rounded-xl border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
             >
               취소
             </button>

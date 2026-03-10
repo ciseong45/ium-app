@@ -245,11 +245,11 @@ export default function MemberList({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="이름 또는 전화번호로 검색"
-            className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="flex-1 rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
           />
           <button
             type="submit"
-            className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200"
+            className="rounded-xl bg-white ring-1 ring-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:ring-gray-300 transition-colors duration-200"
           >
             검색
           </button>
@@ -279,7 +279,7 @@ export default function MemberList({
         <select
           value={currentGroup || "all"}
           onChange={(e) => handleGroupFilter(e.target.value)}
-          className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-700 focus:border-blue-500 focus:outline-none"
+          className="rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-1.5 text-xs text-gray-700 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
         >
           <option value="all">순 전체</option>
           {filterOptions.groups.map((g) => (
@@ -292,7 +292,7 @@ export default function MemberList({
         <select
           value={currentSchool || "all"}
           onChange={(e) => handleSchoolFilter(e.target.value)}
-          className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-700 focus:border-blue-500 focus:outline-none"
+          className="rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-1.5 text-xs text-gray-700 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
         >
           <option value="all">학교/직장 전체</option>
           {COMMON_SCHOOLS.map((s) => (
@@ -303,7 +303,7 @@ export default function MemberList({
         <select
           value={currentBirthYear || "all"}
           onChange={(e) => handleBirthYearFilter(e.target.value)}
-          className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-700 focus:border-blue-500 focus:outline-none"
+          className="rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-1.5 text-xs text-gray-700 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
         >
           <option value="all">생년 전체</option>
           {filterOptions.birthYears.map((y) => (
@@ -317,7 +317,7 @@ export default function MemberList({
           <select
             value={currentMinistryTeam || "all"}
             onChange={(e) => handleMinistryTeamFilter(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-700 focus:border-blue-500 focus:outline-none"
+            className="rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-1.5 text-xs text-gray-700 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
           >
             <option value="all">사역팀 전체</option>
             <optgroup label="예배사역">
@@ -343,7 +343,7 @@ export default function MemberList({
         <p className="text-sm text-gray-500">
           총 {members.length}명
           {canEdit && selected.size > 0 && (
-            <span className="ml-2 text-blue-600">({selected.size}명 선택)</span>
+            <span className="ml-2 text-indigo-600">({selected.size}명 선택)</span>
           )}
         </p>
         {canEdit && selected.size > 0 && (
@@ -356,7 +356,7 @@ export default function MemberList({
                   e.target.value = "";
                 }}
                 disabled={isPending}
-                className="rounded-lg border border-gray-300 px-2 py-1.5 text-xs text-gray-700 focus:border-blue-500 focus:outline-none disabled:opacity-50"
+                className="rounded-xl border border-gray-200 bg-gray-50/50 px-2 py-1.5 text-xs text-gray-700 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 disabled:opacity-50"
               >
                 <option value="" disabled>순 이동</option>
                 <option value="none">배정 해제</option>
@@ -371,7 +371,7 @@ export default function MemberList({
               <button
                 onClick={handleDeleteSelected}
                 disabled={isPending}
-                className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                className="rounded-xl bg-rose-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-rose-700 disabled:opacity-50 transition-colors duration-200"
               >
                 {isPending ? "처리 중..." : `선택 삭제 (${selected.size})`}
               </button>
@@ -386,18 +386,18 @@ export default function MemberList({
           message={currentSearch || currentStatus ? "검색 결과가 없습니다." : "등록된 멤버가 없습니다."}
         />
       ) : (
-        <div className="mt-4 rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div className="mt-4 rounded-2xl border border-gray-100 bg-white shadow-[var(--shadow-card)] overflow-hidden">
           <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-gray-200 bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <tr className="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-400 uppercase tracking-widest">
                 {canEdit && (
                   <th className="pb-3 pr-2 font-medium w-8">
                     <input
                       type="checkbox"
                       checked={members.length > 0 && selected.size === members.length}
                       onChange={toggleAll}
-                      className="h-4 w-4 rounded border-gray-300 text-blue-600"
+                      className="h-4 w-4 rounded border-gray-300 text-indigo-600"
                     />
                   </th>
                 )}
@@ -419,7 +419,7 @@ export default function MemberList({
                 <tr
                   key={member.id}
                   onClick={() => router.push(`/members/${member.id}`)}
-                  className="cursor-pointer border-b border-gray-100 transition-colors hover:bg-gray-50"
+                  className="cursor-pointer border-b border-gray-50 transition-colors duration-200 hover:bg-indigo-50/30"
                 >
                   {canEdit && (
                     <td className="py-3 pr-2" onClick={(e) => e.stopPropagation()}>
@@ -427,7 +427,7 @@ export default function MemberList({
                         type="checkbox"
                         checked={selected.has(member.id)}
                         onChange={() => toggleSelect(member.id)}
-                        className="h-4 w-4 rounded border-gray-300 text-blue-600"
+                        className="h-4 w-4 rounded border-gray-300 text-indigo-600"
                       />
                     </td>
                   )}
@@ -459,14 +459,14 @@ export default function MemberList({
                         defaultValue={member.gender || ""}
                         onChange={(e) => handleFieldSave(member.id, "gender", e.target.value || null)}
                         onBlur={() => setEditingCell(null)}
-                        className="rounded border border-blue-300 px-1 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="rounded border border-indigo-300 px-1 py-0.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-100"
                       >
                         <option value="">-</option>
                         <option value="M">남</option>
                         <option value="F">여</option>
                       </select>
                     ) : (
-                      <span className={canEdit ? "cursor-pointer hover:text-blue-600" : ""}>
+                      <span className={canEdit ? "cursor-pointer hover:text-indigo-500" : ""}>
                         {member.gender === "M" ? "남" : member.gender === "F" ? "여" : "—"}
                       </span>
                     )}
@@ -483,7 +483,7 @@ export default function MemberList({
                         defaultValue={member.group_info ? String(member.group_info.group_id) : "none"}
                         onChange={(e) => handleGroupSave(member.id, e.target.value)}
                         onBlur={() => setEditingCell(null)}
-                        className="rounded border border-blue-300 px-1 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="rounded border border-indigo-300 px-1 py-0.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-100"
                       >
                         <option value="none">배정 해제</option>
                         {filterOptions.groups.map((g) => (
@@ -493,7 +493,7 @@ export default function MemberList({
                         ))}
                       </select>
                     ) : (
-                      <span className={canEdit ? "cursor-pointer hover:text-blue-600" : ""}>
+                      <span className={canEdit ? "cursor-pointer hover:text-indigo-500" : ""}>
                         {member.group_info
                           ? `${member.group_info.upper_room_name} > ${member.group_info.group_name}`
                           : "—"}
@@ -518,7 +518,7 @@ export default function MemberList({
                             if (e.key === "Enter") handleFieldSave(member.id, "school_or_work", schoolCustomValue || null);
                             if (e.key === "Escape") setEditingCell(null);
                           }}
-                          className="w-full min-w-[100px] rounded border border-blue-300 px-1 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          className="w-full min-w-[100px] rounded border border-indigo-300 px-1 py-0.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-100"
                           placeholder="직접 입력"
                         />
                       ) : (
@@ -534,7 +534,7 @@ export default function MemberList({
                             }
                           }}
                           onBlur={() => setEditingCell(null)}
-                          className="rounded border border-blue-300 px-1 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          className="rounded border border-indigo-300 px-1 py-0.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-100"
                         >
                           <option value="">-</option>
                           {COMMON_SCHOOLS.map((s) => (
@@ -544,7 +544,7 @@ export default function MemberList({
                         </select>
                       )
                     ) : (
-                      <span className={canEdit ? "cursor-pointer hover:text-blue-600" : ""}>
+                      <span className={canEdit ? "cursor-pointer hover:text-indigo-500" : ""}>
                         {member.school_or_work || "—"}
                       </span>
                     )}
@@ -570,7 +570,7 @@ export default function MemberList({
                           </span>
                         ))
                       ) : (
-                        <span className={`text-gray-400 ${canEdit ? "cursor-pointer hover:text-blue-600" : ""}`}>
+                        <span className={`text-gray-400 ${canEdit ? "cursor-pointer hover:text-indigo-500" : ""}`}>
                           —
                         </span>
                       )}
@@ -607,7 +607,7 @@ export default function MemberList({
                         }
                         onChange={(e) => handleFieldSave(member.id, "status", e.target.value)}
                         onBlur={() => setEditingCell(null)}
-                        className="rounded border border-blue-300 px-1 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="rounded border border-indigo-300 px-1 py-0.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-100"
                       >
                         {MAIN_STATUS_OPTIONS.map((opt) => (
                           <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -684,7 +684,7 @@ function MinistryTeamEditor({
   return (
     <div
       ref={ref}
-      className="absolute left-0 top-full z-20 mt-1 w-48 rounded-lg border bg-white p-2 shadow-lg"
+      className="absolute left-0 top-full z-20 mt-1 w-48 rounded-xl border border-gray-100 bg-white p-2 shadow-[var(--shadow-elevated)]"
       onClick={(e) => e.stopPropagation()}
     >
       <div className="mb-1 text-xs font-semibold text-indigo-600">예배사역</div>
@@ -713,7 +713,7 @@ function MinistryTeamEditor({
       ))}
       <button
         onClick={() => onSave(memberId, Array.from(selected))}
-        className="mt-2 w-full rounded bg-blue-600 py-1 text-xs font-medium text-white hover:bg-blue-700"
+        className="mt-2 w-full rounded-xl bg-indigo-600 py-1 text-xs font-medium text-white hover:bg-indigo-700 transition-colors duration-200"
       >
         저장
       </button>
@@ -740,13 +740,13 @@ function SortableHeader({
   const isActive = currentKey === sortKey;
   return (
     <th
-      className={`pb-3 pr-4 font-medium select-none cursor-pointer hover:text-blue-600 transition-colors ${className}`}
+      className={`pb-3 pr-4 font-medium select-none cursor-pointer hover:text-indigo-500 transition-colors duration-200 ${className}`}
       onClick={() => onSort(sortKey)}
     >
       <span className="inline-flex items-center gap-1">
         {label}
         {isActive ? (
-          <svg className="h-3.5 w-3.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <svg className="h-3.5 w-3.5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             {dir === "asc" ? (
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
             ) : (

@@ -12,9 +12,9 @@ const ROLE_LABELS = {
 } as const;
 
 const ROLE_COLORS: Record<string, string> = {
-  admin: "bg-red-50 text-red-600",
-  upper_room_leader: "bg-purple-50 text-purple-600",
-  group_leader: "bg-blue-50 text-blue-600",
+  admin: "bg-rose-50 text-rose-600 ring-1 ring-rose-100",
+  upper_room_leader: "bg-violet-50 text-violet-600 ring-1 ring-violet-100",
+  group_leader: "bg-indigo-50 text-indigo-600 ring-1 ring-indigo-100",
 };
 
 const PAGE_TITLES: Record<string, string> = {
@@ -64,12 +64,12 @@ export default function Header({ onMenuClick }: { onMenuClick: () => void }) {
   const initial = userEmail ? userEmail.charAt(0).toUpperCase() : "?";
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-4 lg:px-6">
+    <header className="flex h-16 items-center justify-between bg-white/80 px-4 backdrop-blur-md shadow-[var(--shadow-header)] lg:px-6">
       {/* 왼쪽: 모바일 메뉴 + 페이지 제목 */}
       <div className="flex items-center gap-3">
         <button
           onClick={onMenuClick}
-          className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 lg:hidden"
+          className="rounded-xl p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 lg:hidden"
         >
           <svg
             className="h-5 w-5"
@@ -80,38 +80,39 @@ export default function Header({ onMenuClick }: { onMenuClick: () => void }) {
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 6h16M4 12h16M4 18h16"
+              strokeWidth={1.5}
+              d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5"
             />
           </svg>
         </button>
-        <h1 className="hidden text-lg font-semibold text-gray-900 lg:block">
+        <h1 className="hidden text-[17px] font-semibold tracking-tight text-gray-900 lg:block">
           {pageTitle}
         </h1>
       </div>
 
       {/* 오른쪽: 유저 정보 + 로그아웃 */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         {userEmail && (
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-xs font-semibold text-white shadow-sm">
               {initial}
             </div>
             <div className="hidden sm:block">
-              <p className="text-sm font-medium text-gray-700">
+              <p className="text-sm font-medium text-gray-800">
                 {userEmail.split("@")[0]}
               </p>
               <span
-                className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${ROLE_COLORS[role] ?? "bg-gray-100 text-gray-500"}`}
+                className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${ROLE_COLORS[role] ?? "bg-gray-100 text-gray-500"}`}
               >
                 {ROLE_LABELS[role]}
               </span>
             </div>
           </div>
         )}
+        <div className="ml-1 h-5 w-px bg-gray-200 hidden sm:block" />
         <button
           onClick={handleSignOut}
-          className="rounded-lg px-3 py-1.5 text-sm text-gray-500 hover:bg-gray-100 transition-colors"
+          className="rounded-xl px-3 py-1.5 text-[13px] text-gray-400 transition-all duration-200 hover:bg-gray-100 hover:text-gray-600"
         >
           로그아웃
         </button>

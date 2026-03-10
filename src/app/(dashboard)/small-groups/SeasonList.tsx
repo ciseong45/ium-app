@@ -52,7 +52,7 @@ export default function SeasonList({ seasons }: { seasons: Season[] }) {
       {role === "admin" && (
         <button
           onClick={() => setShowForm(!showForm)}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+          className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition-colors duration-200"
         >
           + 새 시즌
         </button>
@@ -62,7 +62,7 @@ export default function SeasonList({ seasons }: { seasons: Season[] }) {
       {showForm && (
         <form
           onSubmit={handleCreate}
-          className="mt-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm space-y-3"
+          className="mt-4 rounded-2xl border border-gray-100 bg-white p-6 shadow-[var(--shadow-card)] space-y-3"
         >
           <div>
             <label className="block text-sm font-medium text-gray-700">
@@ -105,14 +105,14 @@ export default function SeasonList({ seasons }: { seasons: Season[] }) {
             <button
               type="submit"
               disabled={loading}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors disabled:opacity-50"
+              className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition-colors duration-200 disabled:opacity-50"
             >
               {loading ? "생성 중..." : "생성"}
             </button>
             <button
               type="button"
               onClick={() => setShowForm(false)}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              className="rounded-xl border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
             >
               취소
             </button>
@@ -128,7 +128,7 @@ export default function SeasonList({ seasons }: { seasons: Season[] }) {
           {seasons.map((season) => (
             <div
               key={season.id}
-              className="flex items-center justify-between rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-colors hover:border-blue-200"
+              className="flex items-center justify-between rounded-2xl border border-gray-100 bg-white p-5 shadow-[var(--shadow-card)] transition-all duration-200 hover:border-indigo-200 hover:shadow-[var(--shadow-card-hover)]"
             >
               <div
                 className="flex-1 cursor-pointer"
@@ -151,7 +151,7 @@ export default function SeasonList({ seasons }: { seasons: Season[] }) {
               {role === "admin" && (
                 <button
                   onClick={() => handleDelete(season.id, season.name)}
-                  className="ml-4 text-sm text-red-400 hover:text-red-600"
+                  className="ml-4 text-sm text-gray-400 hover:text-rose-600 transition-colors duration-200"
                 >
                   삭제
                 </button>

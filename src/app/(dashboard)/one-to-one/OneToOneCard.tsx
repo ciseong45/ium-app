@@ -78,7 +78,7 @@ export default function OneToOneCard({
   };
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+    <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-[var(--shadow-card)] transition-shadow duration-200 hover:shadow-[var(--shadow-card-hover)]">
       {/* 헤더 */}
       <div className="flex items-start justify-between">
         <div
@@ -149,7 +149,7 @@ export default function OneToOneCard({
             {role !== "group_leader" && entry.status === "active" && (
               <button
                 onClick={() => setShowSessionForm(!showSessionForm)}
-                className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200"
+                className="rounded-xl bg-white ring-1 ring-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-200"
               >
                 + 세션 추가
               </button>
@@ -159,7 +159,7 @@ export default function OneToOneCard({
           {showSessionForm && (
             <form
               onSubmit={handleAddSession}
-              className="mt-3 rounded-lg border bg-gray-50 p-3 space-y-2"
+              className="mt-3 rounded-xl border bg-gray-50 p-3 space-y-2"
             >
               <div className="flex gap-2">
                 <input
@@ -179,14 +179,14 @@ export default function OneToOneCard({
                 <button
                   type="submit"
                   disabled={saving}
-                  className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  className="rounded-xl bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 transition-colors duration-200 disabled:opacity-50"
                 >
                   {saving ? "저장 중..." : "추가"}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowSessionForm(false)}
-                  className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-700"
+                  className="rounded-xl border border-gray-300 px-3 py-1.5 text-xs text-gray-700 transition-colors duration-200"
                 >
                   취소
                 </button>
@@ -205,7 +205,7 @@ export default function OneToOneCard({
               {sessions.map((session) => (
                 <div
                   key={session.id}
-                  className="flex items-start justify-between rounded-lg bg-gray-50 px-3 py-2"
+                  className="flex items-start justify-between rounded-xl bg-gray-50 px-3 py-2"
                 >
                   <div>
                     <div className="flex items-center gap-2">

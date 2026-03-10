@@ -156,7 +156,7 @@ export default function MemberDetail({
           {role !== "group_leader" && (
             <button
               onClick={() => router.push(`/members/${member.id}/edit`)}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+              className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition-colors"
             >
               수정
             </button>
@@ -165,7 +165,7 @@ export default function MemberDetail({
             <button
               onClick={handleDelete}
               disabled={deleting}
-              className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors"
+              className="rounded-xl border border-rose-200 px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50 disabled:opacity-50 transition-colors"
             >
               삭제
             </button>
@@ -174,7 +174,7 @@ export default function MemberDetail({
       </div>
 
       {/* ========== 프로필 카드 ========== */}
-      <div className="overflow-hidden rounded-2xl border bg-white shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-[var(--shadow-card)]">
         {/* 성별 악센트 바 */}
         <div className={`h-2 ${genderAccent}`} />
 
@@ -212,8 +212,8 @@ export default function MemberDetail({
         </div>
 
         {/* 기본 정보 그리드 */}
-        <div className="border-t px-6 py-5">
-          <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+        <div className="border-t border-gray-100 px-6 py-5">
+          <h4 className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-400">
             기본 정보
           </h4>
           <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
@@ -229,7 +229,7 @@ export default function MemberDetail({
             />
           </dl>
           {member.notes && (
-            <div className="mt-4 rounded-lg bg-gray-50 p-3">
+            <div className="mt-4 rounded-xl bg-gray-50/80 p-3">
               <dt className="text-xs font-medium text-gray-400">메모</dt>
               <dd className="mt-1 whitespace-pre-wrap text-sm text-gray-700">
                 {member.notes}
@@ -241,8 +241,8 @@ export default function MemberDetail({
 
       {/* ========== 순 & 사역팀 카드 ========== */}
       {(groupInfo || (ministryTeams && ministryTeams.length > 0)) && (
-        <div className="rounded-2xl border bg-white p-5 shadow-sm">
-          <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-[var(--shadow-card)]">
+          <h4 className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-400">
             소속
           </h4>
 
@@ -346,7 +346,7 @@ export default function MemberDetail({
             {role !== "group_leader" && (
               <button
                 onClick={handleReturn}
-                className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 transition-colors"
+                className="rounded-xl bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 transition-colors"
               >
                 복귀 처리
               </button>
@@ -363,7 +363,7 @@ export default function MemberDetail({
       )}
 
       {/* ========== 휴적 관리 (접이식) ========== */}
-      <div className="rounded-2xl border bg-white shadow-sm">
+      <div className="rounded-2xl border border-gray-100 bg-white shadow-[var(--shadow-card)]">
         <button
           onClick={() => setShowLeaveHistory(!showLeaveHistory)}
           className="flex w-full items-center justify-between p-5 text-left transition-colors hover:bg-gray-50"
@@ -388,7 +388,7 @@ export default function MemberDetail({
         </button>
 
         {showLeaveHistory && (
-          <div className="border-t px-5 pb-5">
+          <div className="border-t border-gray-100 px-5 pb-5">
             {/* 휴적 등록 버튼 */}
             {role !== "group_leader" &&
               !activeLeave &&
@@ -398,7 +398,7 @@ export default function MemberDetail({
                 <div className="pt-3">
                   <button
                     onClick={() => setShowLeaveForm(!showLeaveForm)}
-                    className="rounded-lg border border-orange-300 px-3 py-1.5 text-xs font-medium text-orange-600 hover:bg-orange-50 transition-colors"
+                    className="rounded-xl border border-orange-200 px-3 py-1.5 text-xs font-medium text-orange-600 hover:bg-orange-50 transition-colors"
                   >
                     + 휴적 등록
                   </button>
@@ -409,7 +409,7 @@ export default function MemberDetail({
             {showLeaveForm && (
               <form
                 onSubmit={handleStartLeave}
-                className="mt-3 rounded-xl border bg-gray-50 p-5 space-y-3"
+                className="mt-3 rounded-2xl border border-gray-100 bg-gray-50/80 p-5 space-y-3"
               >
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
@@ -419,7 +419,7 @@ export default function MemberDetail({
                     <select
                       name="leave_type"
                       required
-                      className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100"
                     >
                       <option value="military">군대</option>
                       <option value="academic_leave">휴학</option>
@@ -436,7 +436,7 @@ export default function MemberDetail({
                       type="date"
                       required
                       defaultValue={new Date().toISOString().split("T")[0]}
-                      className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100"
                     />
                   </div>
                   <div>
@@ -446,7 +446,7 @@ export default function MemberDetail({
                     <input
                       name="expected_return"
                       type="date"
-                      className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100"
                     />
                   </div>
                   <div>
@@ -457,7 +457,7 @@ export default function MemberDetail({
                       name="reason"
                       type="text"
                       placeholder="예: 육군 입대"
-                      className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100"
                     />
                   </div>
                 </div>
@@ -465,14 +465,14 @@ export default function MemberDetail({
                   <button
                     type="submit"
                     disabled={leaveLoading}
-                    className="rounded-lg bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700 disabled:opacity-50 transition-colors"
+                    className="rounded-xl bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700 disabled:opacity-50 transition-colors"
                   >
                     {leaveLoading ? "등록 중..." : "휴적 등록"}
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowLeaveForm(false)}
-                    className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                   >
                     취소
                   </button>
@@ -486,7 +486,7 @@ export default function MemberDetail({
                 {pastLeaves.map((leave) => (
                   <div
                     key={leave.id}
-                    className="flex items-center gap-3 rounded-lg bg-gray-50 px-4 py-3 text-sm"
+                    className="flex items-center gap-3 rounded-xl bg-gray-50/80 px-4 py-3 text-sm"
                   >
                     <span className="rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-600">
                       {LEAVE_TYPE_LABELS[leave.leave_type]}
@@ -509,7 +509,7 @@ export default function MemberDetail({
 
       {/* ========== 상태 변경 이력 (접이식) ========== */}
       {statusLog.length > 0 && (
-        <div className="rounded-2xl border bg-white shadow-sm">
+        <div className="rounded-2xl border border-gray-100 bg-white shadow-[var(--shadow-card)]">
           <button
             onClick={() => setShowStatusLog(!showStatusLog)}
             className="flex w-full items-center justify-between p-5 text-left transition-colors hover:bg-gray-50"
@@ -532,12 +532,12 @@ export default function MemberDetail({
           </button>
 
           {showStatusLog && (
-            <div className="border-t px-5 pb-5">
+            <div className="border-t border-gray-100 px-5 pb-5">
               <div className="mt-3 space-y-2">
                 {statusLog.map((log) => (
                   <div
                     key={log.id}
-                    className="flex items-center gap-3 rounded-lg bg-gray-50 px-4 py-3 text-sm"
+                    className="flex items-center gap-3 rounded-xl bg-gray-50/80 px-4 py-3 text-sm"
                   >
                     <span className="min-w-[70px] text-xs text-gray-400">
                       {new Date(log.changed_at).toLocaleDateString("ko-KR")}

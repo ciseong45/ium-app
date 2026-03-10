@@ -145,7 +145,7 @@ export default function MemberForm({ member }: { member?: Member }) {
               name="is_baptized"
               value="true"
               defaultChecked={member?.is_baptized === true}
-              className="text-blue-600"
+              className="text-indigo-600"
             />
             <span className="text-sm text-gray-700">예</span>
           </label>
@@ -155,7 +155,7 @@ export default function MemberForm({ member }: { member?: Member }) {
               name="is_baptized"
               value="false"
               defaultChecked={!member?.is_baptized}
-              className="text-blue-600"
+              className="text-indigo-600"
             />
             <span className="text-sm text-gray-700">아니오</span>
           </label>
@@ -209,14 +209,14 @@ export default function MemberForm({ member }: { member?: Member }) {
         <button
           type="submit"
           disabled={loading}
-          className="rounded-lg bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          className="rounded-xl bg-indigo-600 px-6 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
         >
           {loading ? "저장 중..." : isEdit ? "수정" : "등록"}
         </button>
         <button
           type="button"
           onClick={() => router.back()}
-          className="rounded-lg border border-gray-300 px-6 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className="rounded-xl border border-gray-200 px-6 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
         >
           취소
         </button>

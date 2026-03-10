@@ -37,7 +37,7 @@ export default function GroupCard({
   const role = useRole();
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-[var(--shadow-card)]">
       {/* 그룹 헤더 */}
       <div className="flex items-center justify-between">
         <div>
@@ -50,9 +50,9 @@ export default function GroupCard({
           {role !== "group_leader" && (
             <button
               onClick={onStartAssign}
-              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+              className={`rounded-xl px-3 py-1.5 text-xs font-medium transition-colors ${
                 isAssigning
-                  ? "bg-blue-600 text-white"
+                  ? "bg-indigo-600 text-white"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
             >
@@ -67,7 +67,7 @@ export default function GroupCard({
                   const targetId = Number(e.target.value);
                   if (targetId) onMoveToUpperRoom(targetId);
                 }}
-                className="rounded-lg border border-gray-200 px-2 py-1 text-xs text-gray-500 focus:border-blue-500 focus:outline-none"
+                className="rounded-xl border border-gray-200 px-2 py-1 text-xs text-gray-500 focus:border-indigo-400 focus:outline-none"
               >
                 <option value="" disabled>이동</option>
                 {upperRooms
@@ -80,7 +80,7 @@ export default function GroupCard({
               </select>
               <button
                 onClick={onDelete}
-                className="rounded-lg px-3 py-1.5 text-xs text-red-400 hover:text-red-600"
+                className="rounded-xl px-3 py-1.5 text-xs text-rose-400 hover:text-rose-600"
               >
                 삭제
               </button>
@@ -91,8 +91,8 @@ export default function GroupCard({
 
       {/* 배정 패널 */}
       {isAssigning && (
-        <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 p-3">
-          <p className="mb-2 text-xs font-medium text-blue-700">
+        <div className="mt-3 rounded-xl border border-indigo-200 bg-indigo-50 p-3">
+          <p className="mb-2 text-xs font-medium text-indigo-700">
             멤버를 클릭하면 이 그룹에 배정됩니다
           </p>
           {unassignedMembers.length === 0 ? (
@@ -103,7 +103,7 @@ export default function GroupCard({
                 <button
                   key={member.id}
                   onClick={() => onAssign(member.id)}
-                  className="rounded-full bg-white px-2.5 py-1 text-xs text-gray-700 shadow-sm hover:bg-blue-100"
+                  className="rounded-full bg-white px-2.5 py-1 text-xs text-gray-700 shadow-sm hover:bg-indigo-100"
                 >
                   {member.name}
                 </button>
@@ -122,7 +122,7 @@ export default function GroupCard({
             {members.map((entry) => (
               <div
                 key={entry.id}
-                className="flex items-center justify-between rounded-lg px-2 py-1.5 hover:bg-gray-50"
+                className="flex items-center justify-between rounded-xl px-2 py-1.5 hover:bg-gray-50/80"
               >
                 <span className="text-sm text-gray-700">
                   {entry.member.name}

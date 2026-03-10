@@ -88,7 +88,7 @@ export default function UpperRoomSection({
   };
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-gray-50/50">
+    <div className="rounded-2xl border border-gray-100 bg-gray-50/50 shadow-[var(--shadow-card)]">
       {/* 다락방 헤더 */}
       <div
         className="flex items-center justify-between px-5 py-4 cursor-pointer"
@@ -110,11 +110,11 @@ export default function UpperRoomSection({
                   if (e.key === "Escape") { setNameValue(upperRoom.name); setEditingName(false); }
                 }}
                 onClick={(e) => e.stopPropagation()}
-                className="text-lg font-bold text-gray-900 border-b-2 border-blue-500 bg-transparent outline-none"
+                className="text-lg font-bold text-gray-900 border-b-2 border-indigo-500 bg-transparent outline-none"
               />
             ) : (
               <h3
-                className={`text-lg font-bold text-gray-900 ${role === "admin" ? "cursor-pointer hover:text-blue-600" : ""}`}
+                className={`text-lg font-bold text-gray-900 ${role === "admin" ? "cursor-pointer hover:text-indigo-600" : ""}`}
                 onClick={(e) => {
                   if (role === "admin") {
                     e.stopPropagation();
@@ -143,7 +143,7 @@ export default function UpperRoomSection({
             <>
               <button
                 onClick={() => setEditingLeader(!editingLeader)}
-                className="rounded-lg px-3 py-1.5 text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                className="rounded-xl px-3 py-1.5 text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
               >
                 {editingLeader ? "닫기" : "다락방장 변경"}
               </button>
@@ -153,7 +153,7 @@ export default function UpperRoomSection({
                     showGroupForm === upperRoom.id ? null : upperRoom.id
                   )
                 }
-                className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 transition-colors"
+                className="rounded-xl bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 transition-colors"
               >
                 + 순 추가
               </button>
@@ -164,8 +164,8 @@ export default function UpperRoomSection({
 
       {/* 다락방장 변경 패널 */}
       {editingLeader && (
-        <div className="mx-5 mb-3 rounded-lg border border-blue-200 bg-blue-50 p-3">
-          <p className="mb-2 text-xs font-medium text-blue-700">
+        <div className="mx-5 mb-3 rounded-xl border border-indigo-200 bg-indigo-50 p-3">
+          <p className="mb-2 text-xs font-medium text-indigo-700">
             다락방장을 선택하세요
           </p>
           <select
@@ -192,7 +192,7 @@ export default function UpperRoomSection({
             onCreateGroup(upperRoom.id, formData);
             e.currentTarget.reset();
           }}
-          className="mx-5 mb-3 rounded-xl border border-gray-200 bg-white p-5 shadow-sm space-y-3"
+          className="mx-5 mb-3 rounded-2xl border border-gray-100 bg-white p-5 shadow-[var(--shadow-card)] space-y-3"
         >
           <div>
             <label className="block text-sm font-medium text-gray-700">
@@ -209,14 +209,14 @@ export default function UpperRoomSection({
             <button
               type="submit"
               disabled={loading}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors disabled:opacity-50"
+              className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition-colors disabled:opacity-50"
             >
               {loading ? "생성 중..." : "생성"}
             </button>
             <button
               type="button"
               onClick={() => onToggleGroupForm(null)}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
             >
               취소
             </button>

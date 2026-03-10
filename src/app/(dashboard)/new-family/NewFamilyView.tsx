@@ -105,7 +105,7 @@ export default function NewFamilyView({
         {role !== "group_leader" && (
           <button
             onClick={() => setShowForm(!showForm)}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition-colors duration-200"
           >
             + 새가족 등록
           </button>
@@ -137,9 +137,9 @@ export default function NewFamilyView({
           <button
             key={s.step}
             onClick={() => setStepFilter(stepFilter === s.step ? null : s.step)}
-            className={`flex min-w-[100px] flex-col items-center rounded-xl border border-gray-200 p-5 shadow-sm transition-shadow hover:shadow-md ${
+            className={`flex min-w-[100px] flex-col items-center rounded-2xl border border-gray-100 p-5 shadow-[var(--shadow-card)] transition-shadow duration-200 hover:shadow-[var(--shadow-card-hover)] ${
               stepFilter === s.step
-                ? "border-blue-400 bg-blue-50 ring-1 ring-blue-400"
+                ? "border-indigo-300 bg-indigo-50 ring-1 ring-indigo-300"
                 : "bg-white hover:border-gray-300"
             }`}
           >
@@ -153,7 +153,7 @@ export default function NewFamilyView({
 
       {/* 장기 미진행 경고 */}
       {stalled.length > 0 && (
-        <div className="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+        <div className="mt-4 rounded-2xl border border-yellow-200 bg-yellow-50 p-4">
           <h3 className="text-sm font-semibold text-yellow-700">
             2주 이상 단계 변화 없음
           </h3>
@@ -172,7 +172,7 @@ export default function NewFamilyView({
 
       {/* 활성 시즌 없음 경고 */}
       {!activeSeason && (
-        <div className="mt-4 rounded-lg border border-orange-200 bg-orange-50 p-4">
+        <div className="mt-4 rounded-2xl border border-orange-200 bg-orange-50 p-4">
           <p className="text-sm text-orange-700">
             활성 시즌이 없습니다. 순관리에서 시즌을 생성하고 활성화해주세요.
           </p>
@@ -183,7 +183,7 @@ export default function NewFamilyView({
       {showForm && (
         <form
           onSubmit={handleCreate}
-          className="mt-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm space-y-3"
+          className="mt-4 rounded-2xl border border-gray-100 bg-white p-6 shadow-[var(--shadow-card)] space-y-3"
         >
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
@@ -240,14 +240,14 @@ export default function NewFamilyView({
             <button
               type="submit"
               disabled={loading}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+              className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition-colors duration-200 disabled:opacity-50"
             >
               {loading ? "등록 중..." : "등록"}
             </button>
             <button
               type="button"
               onClick={() => setShowForm(false)}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              className="rounded-xl border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
             >
               취소
             </button>
@@ -265,7 +265,7 @@ export default function NewFamilyView({
             .map((family) => (
             <div
               key={family.id}
-              className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+              className="rounded-2xl border border-gray-100 bg-white p-5 shadow-[var(--shadow-card)] transition-shadow duration-200 hover:shadow-[var(--shadow-card-hover)]"
             >
               <div className="flex items-start justify-between">
                 <div>
