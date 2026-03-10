@@ -31,9 +31,12 @@ export default async function MembersPage({
   ]);
 
   return (
-    <div>
+    <div className="animate-fade-in">
       <div className="flex items-center justify-between">
-        <h2 className="font-serif text-2xl font-light tracking-tight text-[var(--color-warm-text)]">멤버 관리</h2>
+        <div>
+          <h2 className="font-serif text-2xl font-light tracking-tight text-[var(--color-warm-text)]">멤버 관리</h2>
+          <p className="mt-1 text-[12px] text-[var(--color-warm-muted)]">교회 멤버 정보를 관리하고 검색합니다</p>
+        </div>
         <div className="flex items-center gap-2">
           <CSVControls role={role} />
           {role !== "group_leader" && (

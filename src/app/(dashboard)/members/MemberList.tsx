@@ -29,6 +29,12 @@ type EditingCellValue = {
 
 type EditingCell = EditingCellValue | null;
 
+const INLINE_SELECT =
+  "rounded-lg border border-[var(--color-warm-border)] bg-white px-2 py-1 text-sm text-[var(--color-warm-text)] transition-all duration-200 focus:border-[var(--color-warm-text)] focus:outline-none focus:ring-1 focus:ring-[var(--color-warm-text)]/10";
+
+const FILTER_SELECT =
+  "rounded-lg border border-[var(--color-warm-border)] bg-[var(--color-warm-bg)] px-3 py-1.5 text-xs text-[var(--color-warm-text)] transition-all duration-300 focus:border-[var(--color-warm-text)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-warm-text)]/10";
+
 export default function MemberList({
   members,
   currentSearch,
@@ -94,7 +100,7 @@ export default function MemberList({
     const aVal = getValue(a);
     const bVal = getValue(b);
     if (aVal === bVal) return 0;
-    if (aVal === "") return 1; // 빈 값은 뒤로
+    if (aVal === "") return 1;
     if (bVal === "") return -1;
     return aVal.localeCompare(bVal, "ko") * dir;
   });
@@ -235,26 +241,27 @@ export default function MemberList({
     router.push(`/members?${buildParams({ ministry_team: teamId }).toString()}`);
   };
 
-  return (
-    <div className="mt-6">
-      {/* 검색 + 상태 필터 */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <form onSubmit={handleSearch} className="flex flex-1 gap-2">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="이름 또는 전화번호로 검색"
-            className="flex-1 rounded-lg border border-[var(--color-warm-border)] bg-[var(--color-warm-bg)] px-3.5 py-2.5 text-sm text-[var(--color-warm-text)] placeholder:text-[var(--color-warm-muted)] transition-all duration-300 focus:border-[var(--color-warm-text)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-warm-text)]/10"
-          />
-          <button
-            type="submit"
-            className="rounded-lg border border-[var(--color-warm-border)] bg-white px-5 py-2.5 text-sm font-medium text-[var(--color-warm-text)] transition-all duration-300 hover:border-[var(--color-warm-text)]"
-          >
-            검색
-          </button>
-        </form>
+  const activeFilterCount = [currentGroup, currentSchool, currentBirthYear, currentMinistryTeam]
+    .filter((v) => v && v !== "all").length;
 
+  return (
+    <div className="mt-8 space-y-5">
+      {/* ━━━ 검색 바 ━━━ */}
+      <form onSubmit={handleSearch} className="relative">
+        <svg className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-warm-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+        </svg>
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="이름 또는 전화번호로 검색..."
+          className="w-full rounded-xl border border-[var(--color-warm-border)] bg-white py-2.5 pl-10 pr-4 text-sm text-[var(--color-warm-text)] placeholder:text-[var(--color-warm-subtle)] transition-all duration-300 focus:border-[var(--color-warm-text)] focus:outline-none focus:ring-1 focus:ring-[var(--color-warm-text)]/10"
+        />
+      </form>
+
+      {/* ━━━ 상태 필터 + 추가 필터 ━━━ */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap gap-1">
           {[
             { value: "all", label: "전체" },
@@ -272,78 +279,55 @@ export default function MemberList({
             />
           ))}
         </div>
-      </div>
 
-      {/* 추가 필터 */}
-      <div className="mt-3 flex flex-wrap gap-2">
-        <select
-          value={currentGroup || "all"}
-          onChange={(e) => handleGroupFilter(e.target.value)}
-          className="rounded-lg border border-[var(--color-warm-border)] bg-[var(--color-warm-bg)] px-3 py-1.5 text-xs text-[var(--color-warm-text)] transition-all duration-300 focus:border-[var(--color-warm-text)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-warm-text)]/10"
-        >
-          <option value="all">순 전체</option>
-          {filterOptions.groups.map((g) => (
-            <option key={g.id} value={String(g.id)}>
-              {g.upper_room_name ? `${g.upper_room_name} > ${g.name}` : g.name}
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={currentSchool || "all"}
-          onChange={(e) => handleSchoolFilter(e.target.value)}
-          className="rounded-lg border border-[var(--color-warm-border)] bg-[var(--color-warm-bg)] px-3 py-1.5 text-xs text-[var(--color-warm-text)] transition-all duration-300 focus:border-[var(--color-warm-text)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-warm-text)]/10"
-        >
-          <option value="all">학교/직장 전체</option>
-          {COMMON_SCHOOLS.map((s) => (
-            <option key={s} value={s}>{s}</option>
-          ))}
-        </select>
-
-        <select
-          value={currentBirthYear || "all"}
-          onChange={(e) => handleBirthYearFilter(e.target.value)}
-          className="rounded-lg border border-[var(--color-warm-border)] bg-[var(--color-warm-bg)] px-3 py-1.5 text-xs text-[var(--color-warm-text)] transition-all duration-300 focus:border-[var(--color-warm-text)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-warm-text)]/10"
-        >
-          <option value="all">생년 전체</option>
-          {filterOptions.birthYears.map((y) => (
-            <option key={y} value={y}>
-              {y}년
-            </option>
-          ))}
-        </select>
-
-        {filterOptions.ministryTeams.length > 0 && (
-          <select
-            value={currentMinistryTeam || "all"}
-            onChange={(e) => handleMinistryTeamFilter(e.target.value)}
-            className="rounded-lg border border-[var(--color-warm-border)] bg-[var(--color-warm-bg)] px-3 py-1.5 text-xs text-[var(--color-warm-text)] transition-all duration-300 focus:border-[var(--color-warm-text)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-warm-text)]/10"
-          >
-            <option value="all">사역팀 전체</option>
-            <optgroup label="예배사역">
-              {filterOptions.ministryTeams
-                .filter((t) => t.category === "worship")
-                .map((t) => (
-                  <option key={t.id} value={String(t.id)}>{t.name}</option>
-                ))}
-            </optgroup>
-            <optgroup label="순사역">
-              {filterOptions.ministryTeams
-                .filter((t) => t.category === "discipleship")
-                .map((t) => (
-                  <option key={t.id} value={String(t.id)}>{t.name}</option>
-                ))}
-            </optgroup>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <select value={currentGroup || "all"} onChange={(e) => handleGroupFilter(e.target.value)} className={FILTER_SELECT}>
+            <option value="all">순 전체</option>
+            {filterOptions.groups.map((g) => (
+              <option key={g.id} value={String(g.id)}>
+                {g.upper_room_name ? `${g.upper_room_name} > ${g.name}` : g.name}
+              </option>
+            ))}
           </select>
-        )}
+          <select value={currentSchool || "all"} onChange={(e) => handleSchoolFilter(e.target.value)} className={FILTER_SELECT}>
+            <option value="all">학교 전체</option>
+            {COMMON_SCHOOLS.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+          <select value={currentBirthYear || "all"} onChange={(e) => handleBirthYearFilter(e.target.value)} className={FILTER_SELECT}>
+            <option value="all">생년 전체</option>
+            {filterOptions.birthYears.map((y) => (
+              <option key={y} value={y}>{y}년</option>
+            ))}
+          </select>
+          {filterOptions.ministryTeams.length > 0 && (
+            <select value={currentMinistryTeam || "all"} onChange={(e) => handleMinistryTeamFilter(e.target.value)} className={FILTER_SELECT}>
+              <option value="all">사역팀 전체</option>
+              <optgroup label="예배사역">
+                {filterOptions.ministryTeams.filter((t) => t.category === "worship").map((t) => (
+                  <option key={t.id} value={String(t.id)}>{t.name}</option>
+                ))}
+              </optgroup>
+              <optgroup label="순사역">
+                {filterOptions.ministryTeams.filter((t) => t.category === "discipleship").map((t) => (
+                  <option key={t.id} value={String(t.id)}>{t.name}</option>
+                ))}
+              </optgroup>
+            </select>
+          )}
+        </div>
       </div>
 
-      {/* 결과 수 + 선택 액션 */}
-      <div className="mt-4 flex items-center justify-between">
-        <p className="text-sm text-[var(--color-warm-muted)]">
-          총 {members.length}명
+      {/* ━━━ 결과 바 + 선택 액션 ━━━ */}
+      <div className="flex items-center justify-between">
+        <p className="text-[12px] text-[var(--color-warm-muted)]">
+          {members.length}명
+          {activeFilterCount > 0 && (
+            <span className="ml-1 text-[var(--color-warm-subtle)]">· 필터 {activeFilterCount}개 적용</span>
+          )}
           {canEdit && selected.size > 0 && (
-            <span className="ml-2 text-[var(--color-warm-text)] font-medium">({selected.size}명 선택)</span>
+            <span className="ml-1.5 font-medium text-[var(--color-warm-text)]">· {selected.size}명 선택</span>
           )}
         </p>
         {canEdit && selected.size > 0 && (
@@ -351,12 +335,9 @@ export default function MemberList({
             {filterOptions.groups.length > 0 && (
               <select
                 defaultValue=""
-                onChange={(e) => {
-                  handleMoveToGroup(e.target.value);
-                  e.target.value = "";
-                }}
+                onChange={(e) => { handleMoveToGroup(e.target.value); e.target.value = ""; }}
                 disabled={isPending}
-                className="rounded-lg border border-[var(--color-warm-border)] bg-[var(--color-warm-bg)] px-2 py-1.5 text-xs text-[var(--color-warm-text)] transition-all duration-300 focus:border-[var(--color-warm-text)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-warm-text)]/10 disabled:opacity-50"
+                className={`${FILTER_SELECT} disabled:opacity-50`}
               >
                 <option value="" disabled>순 이동</option>
                 <option value="none">배정 해제</option>
@@ -371,270 +352,249 @@ export default function MemberList({
               <button
                 onClick={handleDeleteSelected}
                 disabled={isPending}
-                className="rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-50/50 disabled:opacity-50 transition-all duration-300"
+                className="rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-medium text-rose-500 hover:bg-rose-50/50 disabled:opacity-50 transition-all duration-300"
               >
-                {isPending ? "처리 중..." : `선택 삭제 (${selected.size})`}
+                {isPending ? "처리 중..." : `삭제 (${selected.size})`}
               </button>
             )}
           </div>
         )}
       </div>
 
-      {/* 멤버 테이블 */}
+      {/* ━━━ 테이블 ━━━ */}
       {members.length === 0 ? (
         <EmptyState
           message={currentSearch || currentStatus ? "검색 결과가 없습니다." : "등록된 멤버가 없습니다."}
         />
       ) : (
-        <div className="mt-4 rounded-xl border border-[var(--color-warm-border)] bg-white shadow-[var(--shadow-card)] overflow-hidden">
+        <div className="rounded-xl border border-[var(--color-warm-border)] bg-white shadow-[var(--shadow-card)] overflow-hidden">
           <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-[var(--color-warm-border)] bg-[var(--color-warm-bg)] text-[10px] font-medium text-[var(--color-warm-muted)] uppercase tracking-[0.2em]">
-                {canEdit && (
-                  <th className="pb-3 pr-2 font-medium w-8">
-                    <input
-                      type="checkbox"
-                      checked={members.length > 0 && selected.size === members.length}
-                      onChange={toggleAll}
-                      className="h-4 w-4 rounded border-[var(--color-warm-border)] text-[#1a1a1a] accent-[#1a1a1a]"
-                    />
-                  </th>
-                )}
-                <SortableHeader label="이름" sortKey="name" currentKey={sortKey} dir={sortDir} onSort={handleSort} />
-                <SortableHeader label="전화번호" sortKey="phone" currentKey={sortKey} dir={sortDir} onSort={handleSort} />
-                <SortableHeader label="성별" sortKey="gender" currentKey={sortKey} dir={sortDir} onSort={handleSort} className="hidden sm:table-cell" />
-                <SortableHeader label="순" sortKey="group" currentKey={sortKey} dir={sortDir} onSort={handleSort} className="hidden md:table-cell" />
-                <SortableHeader label="학교" sortKey="school" currentKey={sortKey} dir={sortDir} onSort={handleSort} className="hidden md:table-cell" />
-                <SortableHeader label="사역팀" sortKey="ministry" currentKey={sortKey} dir={sortDir} onSort={handleSort} className="hidden lg:table-cell" />
-                <SortableHeader label="생년" sortKey="birth_year" currentKey={sortKey} dir={sortDir} onSort={handleSort} className="hidden lg:table-cell" />
-                <SortableHeader label="상태" sortKey="status" currentKey={sortKey} dir={sortDir} onSort={handleSort} />
-              </tr>
-            </thead>
-            <tbody>
-              {sortedMembers.map((member) => {
-                const main = getMainStatus(member.status);
-                const sub = getSubStatus(member.status);
-                return (
-                <tr
-                  key={member.id}
-                  onClick={() => router.push(`/members/${member.id}`)}
-                  className="cursor-pointer border-b border-[var(--color-warm-border-light)] transition-colors duration-300 hover:bg-[var(--color-warm-bg)]"
-                >
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-[var(--color-warm-border)] bg-[var(--color-warm-bg)] text-[10px] font-medium text-[var(--color-warm-muted)] uppercase tracking-[0.15em]">
                   {canEdit && (
-                    <td className="py-3 pr-2" onClick={(e) => e.stopPropagation()}>
+                    <th className="w-10 py-3 pl-5 pr-0 font-medium">
                       <input
                         type="checkbox"
-                        checked={selected.has(member.id)}
-                        onChange={() => toggleSelect(member.id)}
-                        className="h-4 w-4 rounded border-[var(--color-warm-border)] text-[#1a1a1a] accent-[#1a1a1a]"
+                        checked={members.length > 0 && selected.size === members.length}
+                        onChange={toggleAll}
+                        className="h-3.5 w-3.5 rounded border-[var(--color-warm-border)] accent-[#1a1a1a]"
                       />
-                    </td>
+                    </th>
                   )}
-                  <td className="py-3 pr-4">
-                    <span
-                      className={`font-medium ${
-                        member.gender === "M"
-                          ? "text-[#4a6fa5]"
-                          : member.gender === "F"
-                            ? "text-[#b56576]"
-                            : "text-[var(--color-warm-text)]"
-                      }`}
+                  <SortableHeader label="이름" sortKey="name" currentKey={sortKey} dir={sortDir} onSort={handleSort} isFirst={!canEdit} />
+                  <SortableHeader label="연락처" sortKey="phone" currentKey={sortKey} dir={sortDir} onSort={handleSort} className="hidden sm:table-cell" />
+                  <SortableHeader label="순" sortKey="group" currentKey={sortKey} dir={sortDir} onSort={handleSort} className="hidden md:table-cell" />
+                  <SortableHeader label="학교" sortKey="school" currentKey={sortKey} dir={sortDir} onSort={handleSort} className="hidden lg:table-cell" />
+                  <SortableHeader label="사역팀" sortKey="ministry" currentKey={sortKey} dir={sortDir} onSort={handleSort} className="hidden xl:table-cell" />
+                  <SortableHeader label="상태" sortKey="status" currentKey={sortKey} dir={sortDir} onSort={handleSort} isLast />
+                </tr>
+              </thead>
+              <tbody>
+                {sortedMembers.map((member, idx) => {
+                  const main = getMainStatus(member.status);
+                  const sub = getSubStatus(member.status);
+                  const isLast = idx === sortedMembers.length - 1;
+                  return (
+                    <tr
+                      key={member.id}
+                      onClick={() => router.push(`/members/${member.id}`)}
+                      className={`cursor-pointer transition-colors duration-200 hover:bg-[var(--color-warm-bg)]/60 ${isLast ? "" : "border-b border-[var(--color-warm-border-light)]"}`}
                     >
-                      {member.name}
-                    </span>
-                  </td>
-                  <td className="py-3 pr-4 text-[var(--color-warm-text)]/70">
-                    {member.phone || "—"}
-                  </td>
-
-                  {/* 성별 (인라인 편집) */}
-                  <td
-                    className="hidden py-3 pr-4 text-[var(--color-warm-text)]/70 sm:table-cell"
-                    onClick={(e) => handleCellClick(e, member.id, "gender", member.gender)}
-                  >
-                    {editingCell?.memberId === member.id && editingCell.field === "gender" ? (
-                      <select
-                        autoFocus
-                        defaultValue={member.gender || ""}
-                        onChange={(e) => handleFieldSave(member.id, "gender", e.target.value || null)}
-                        onBlur={() => setEditingCell(null)}
-                        className="rounded-lg border border-[var(--color-warm-border)] bg-[var(--color-warm-bg)] px-1.5 py-0.5 text-sm transition-all duration-300 focus:border-[var(--color-warm-text)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-warm-text)]/10"
-                      >
-                        <option value="">-</option>
-                        <option value="M">남</option>
-                        <option value="F">여</option>
-                      </select>
-                    ) : (
-                      <span className={canEdit ? "cursor-pointer hover:text-[var(--color-warm-text)]" : ""}>
-                        {member.gender === "M" ? "남" : member.gender === "F" ? "여" : "—"}
-                      </span>
-                    )}
-                  </td>
-
-                  {/* 순 (인라인 편집) */}
-                  <td
-                    className="hidden py-3 pr-4 text-[var(--color-warm-text)]/70 md:table-cell"
-                    onClick={(e) => handleCellClick(e, member.id, "group", member.group_info?.group_name || null)}
-                  >
-                    {editingCell?.memberId === member.id && editingCell.field === "group" ? (
-                      <select
-                        autoFocus
-                        defaultValue={member.group_info ? String(member.group_info.group_id) : "none"}
-                        onChange={(e) => handleGroupSave(member.id, e.target.value)}
-                        onBlur={() => setEditingCell(null)}
-                        className="rounded-lg border border-[var(--color-warm-border)] bg-[var(--color-warm-bg)] px-1.5 py-0.5 text-sm transition-all duration-300 focus:border-[var(--color-warm-text)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-warm-text)]/10"
-                      >
-                        <option value="none">배정 해제</option>
-                        {filterOptions.groups.map((g) => (
-                          <option key={g.id} value={String(g.id)}>
-                            {g.upper_room_name ? `${g.upper_room_name} > ${g.name}` : g.name}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <span className={canEdit ? "cursor-pointer hover:text-[var(--color-warm-text)]" : ""}>
-                        {member.group_info
-                          ? `${member.group_info.upper_room_name} > ${member.group_info.group_name}`
-                          : "—"}
-                      </span>
-                    )}
-                  </td>
-
-                  {/* 학교/직장 (인라인 편집) */}
-                  <td
-                    className="hidden py-3 pr-4 text-[var(--color-warm-text)]/70 md:table-cell"
-                    onClick={(e) => handleCellClick(e, member.id, "school_or_work", member.school_or_work)}
-                  >
-                    {editingCell?.memberId === member.id && editingCell.field === "school_or_work" ? (
-                      schoolCustomMode ? (
-                        <input
-                          autoFocus
-                          type="text"
-                          value={schoolCustomValue}
-                          onChange={(e) => setSchoolCustomValue(e.target.value)}
-                          onBlur={() => handleFieldSave(member.id, "school_or_work", schoolCustomValue || null)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") handleFieldSave(member.id, "school_or_work", schoolCustomValue || null);
-                            if (e.key === "Escape") setEditingCell(null);
-                          }}
-                          className="w-full min-w-[100px] rounded-lg border border-[var(--color-warm-border)] bg-[var(--color-warm-bg)] px-1.5 py-0.5 text-sm transition-all duration-300 focus:border-[var(--color-warm-text)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-warm-text)]/10"
-                          placeholder="직접 입력"
-                        />
-                      ) : (
-                        <select
-                          autoFocus
-                          defaultValue={member.school_or_work || ""}
-                          onChange={(e) => {
-                            if (e.target.value === "__custom__") {
-                              setSchoolCustomMode(true);
-                              setSchoolCustomValue(member.school_or_work || "");
-                            } else {
-                              handleFieldSave(member.id, "school_or_work", e.target.value || null);
-                            }
-                          }}
-                          onBlur={() => setEditingCell(null)}
-                          className="rounded-lg border border-[var(--color-warm-border)] bg-[var(--color-warm-bg)] px-1.5 py-0.5 text-sm transition-all duration-300 focus:border-[var(--color-warm-text)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-warm-text)]/10"
-                        >
-                          <option value="">-</option>
-                          {COMMON_SCHOOLS.map((s) => (
-                            <option key={s} value={s}>{s}</option>
-                          ))}
-                          <option value="__custom__">직접 입력...</option>
-                        </select>
-                      )
-                    ) : (
-                      <span className={canEdit ? "cursor-pointer hover:text-[var(--color-warm-text)]" : ""}>
-                        {member.school_or_work || "—"}
-                      </span>
-                    )}
-                  </td>
-
-                  {/* 사역팀 */}
-                  <td
-                    className="hidden py-3 pr-4 lg:table-cell relative"
-                    onClick={(e) => {
-                      if (!canEdit) return;
-                      e.stopPropagation();
-                      setEditingMinistryTeam(editingMinistryTeam === member.id ? null : member.id);
-                    }}
-                  >
-                    <div className="flex flex-wrap gap-1">
-                      {(member.ministry_teams ?? []).length > 0 ? (
-                        (member.ministry_teams ?? []).map((t) => (
-                          <span
-                            key={t.id}
-                            className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${MINISTRY_TEAM_COLORS[t.category]}`}
-                          >
-                            {t.name}
-                          </span>
-                        ))
-                      ) : (
-                        <span className={`text-[var(--color-warm-muted)] ${canEdit ? "cursor-pointer hover:text-[var(--color-warm-text)]" : ""}`}>
-                          —
-                        </span>
+                      {/* 체크박스 */}
+                      {canEdit && (
+                        <td className="w-10 py-3.5 pl-5 pr-0" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={selected.has(member.id)}
+                            onChange={() => toggleSelect(member.id)}
+                            className="h-3.5 w-3.5 rounded border-[var(--color-warm-border)] accent-[#1a1a1a]"
+                          />
+                        </td>
                       )}
-                    </div>
-                    {editingMinistryTeam === member.id && (
-                      <MinistryTeamEditor
-                        memberId={member.id}
-                        currentTeamIds={(member.ministry_teams ?? []).map((t) => t.id)}
-                        allTeams={filterOptions.ministryTeams}
-                        onSave={handleMinistryTeamSave}
-                        onCancel={() => setEditingMinistryTeam(null)}
-                      />
-                    )}
-                  </td>
 
-                  {/* 생년 */}
-                  <td className="hidden py-3 pr-4 text-[var(--color-warm-text)]/70 lg:table-cell">
-                    {member.birth_date ? member.birth_date.substring(0, 4) : "—"}
-                  </td>
+                      {/* 이름 (+ 성별 색상 + 생년) */}
+                      <td className={`py-3.5 pr-4 ${canEdit ? "" : "pl-5"}`}>
+                        <div className="flex items-center gap-2.5">
+                          {/* 성별 인디케이터 도트 */}
+                          <span className={`inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full ${
+                            member.gender === "M" ? "bg-[#4a6fa5]"
+                            : member.gender === "F" ? "bg-[#b56576]"
+                            : "bg-[var(--color-warm-border)]"
+                          }`} />
+                          <div className="min-w-0">
+                            <p className="font-medium text-[var(--color-warm-text)] truncate">
+                              {member.name}
+                            </p>
+                            {member.birth_date && (
+                              <p className="mt-0.5 text-[11px] text-[var(--color-warm-subtle)]">
+                                {member.birth_date.substring(0, 4)}년생
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </td>
 
-                  {/* 상태 (메인 + 보조) 인라인 편집 */}
-                  <td
-                    className="py-3 pr-4"
-                    onClick={(e) => handleCellClick(e, member.id, "status", member.status)}
-                  >
-                    {editingCell?.memberId === member.id && editingCell.field === "status" ? (
-                      <select
-                        autoFocus
-                        defaultValue={
-                          // adjusting → "active" 기본 선택 (재적)
-                          member.status === "adjusting" || member.status === "attending" || member.status === "inactive"
-                            ? "active"
-                            : member.status
-                        }
-                        onChange={(e) => handleFieldSave(member.id, "status", e.target.value)}
-                        onBlur={() => setEditingCell(null)}
-                        className="rounded-lg border border-[var(--color-warm-border)] bg-[var(--color-warm-bg)] px-1.5 py-0.5 text-sm transition-all duration-300 focus:border-[var(--color-warm-text)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-warm-text)]/10"
-                      >
-                        {MAIN_STATUS_OPTIONS.map((opt) => (
-                          <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                      </select>
-                    ) : (
-                      <div className={`flex flex-wrap gap-1 ${canEdit ? "cursor-pointer" : ""}`}>
-                        <span
-                          className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${main.color}`}
-                        >
-                          {main.label}
+                      {/* 연락처 */}
+                      <td className="hidden py-3.5 pr-4 sm:table-cell">
+                        <span className="text-[var(--color-warm-text)]/60 tabular-nums">
+                          {member.phone || "—"}
                         </span>
-                        {sub && (
-                          <span
-                            className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${sub.color}`}
+                      </td>
+
+                      {/* 순 (인라인 편집) */}
+                      <td
+                        className="hidden py-3.5 pr-4 md:table-cell"
+                        onClick={(e) => handleCellClick(e, member.id, "group", member.group_info?.group_name || null)}
+                      >
+                        {editingCell?.memberId === member.id && editingCell.field === "group" ? (
+                          <select
+                            autoFocus
+                            defaultValue={member.group_info ? String(member.group_info.group_id) : "none"}
+                            onChange={(e) => handleGroupSave(member.id, e.target.value)}
+                            onBlur={() => setEditingCell(null)}
+                            className={INLINE_SELECT}
                           >
-                            {sub.label}
+                            <option value="none">배정 해제</option>
+                            {filterOptions.groups.map((g) => (
+                              <option key={g.id} value={String(g.id)}>
+                                {g.upper_room_name ? `${g.upper_room_name} > ${g.name}` : g.name}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span className={`text-[var(--color-warm-text)]/60 ${canEdit ? "cursor-pointer hover:text-[var(--color-warm-text)]" : ""}`}>
+                            {member.group_info
+                              ? member.group_info.group_name
+                              : "—"}
                           </span>
                         )}
-                      </div>
-                    )}
-                  </td>
-                </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      </td>
+
+                      {/* 학교/직장 (인라인 편집) */}
+                      <td
+                        className="hidden py-3.5 pr-4 lg:table-cell"
+                        onClick={(e) => handleCellClick(e, member.id, "school_or_work", member.school_or_work)}
+                      >
+                        {editingCell?.memberId === member.id && editingCell.field === "school_or_work" ? (
+                          schoolCustomMode ? (
+                            <input
+                              autoFocus
+                              type="text"
+                              value={schoolCustomValue}
+                              onChange={(e) => setSchoolCustomValue(e.target.value)}
+                              onBlur={() => handleFieldSave(member.id, "school_or_work", schoolCustomValue || null)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") handleFieldSave(member.id, "school_or_work", schoolCustomValue || null);
+                                if (e.key === "Escape") setEditingCell(null);
+                              }}
+                              className={`${INLINE_SELECT} w-full min-w-[100px]`}
+                              placeholder="직접 입력"
+                            />
+                          ) : (
+                            <select
+                              autoFocus
+                              defaultValue={member.school_or_work || ""}
+                              onChange={(e) => {
+                                if (e.target.value === "__custom__") {
+                                  setSchoolCustomMode(true);
+                                  setSchoolCustomValue(member.school_or_work || "");
+                                } else {
+                                  handleFieldSave(member.id, "school_or_work", e.target.value || null);
+                                }
+                              }}
+                              onBlur={() => setEditingCell(null)}
+                              className={INLINE_SELECT}
+                            >
+                              <option value="">-</option>
+                              {COMMON_SCHOOLS.map((s) => (
+                                <option key={s} value={s}>{s}</option>
+                              ))}
+                              <option value="__custom__">직접 입력...</option>
+                            </select>
+                          )
+                        ) : (
+                          <span className={`text-[var(--color-warm-text)]/60 ${canEdit ? "cursor-pointer hover:text-[var(--color-warm-text)]" : ""}`}>
+                            {member.school_or_work || "—"}
+                          </span>
+                        )}
+                      </td>
+
+                      {/* 사역팀 */}
+                      <td
+                        className="hidden py-3.5 pr-4 xl:table-cell relative"
+                        onClick={(e) => {
+                          if (!canEdit) return;
+                          e.stopPropagation();
+                          setEditingMinistryTeam(editingMinistryTeam === member.id ? null : member.id);
+                        }}
+                      >
+                        <div className="flex flex-wrap gap-1">
+                          {(member.ministry_teams ?? []).length > 0 ? (
+                            (member.ministry_teams ?? []).map((t) => (
+                              <span
+                                key={t.id}
+                                className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${MINISTRY_TEAM_COLORS[t.category]}`}
+                              >
+                                {t.name}
+                              </span>
+                            ))
+                          ) : (
+                            <span className={`text-[var(--color-warm-muted)] ${canEdit ? "cursor-pointer hover:text-[var(--color-warm-text)]" : ""}`}>
+                              —
+                            </span>
+                          )}
+                        </div>
+                        {editingMinistryTeam === member.id && (
+                          <MinistryTeamEditor
+                            memberId={member.id}
+                            currentTeamIds={(member.ministry_teams ?? []).map((t) => t.id)}
+                            allTeams={filterOptions.ministryTeams}
+                            onSave={handleMinistryTeamSave}
+                            onCancel={() => setEditingMinistryTeam(null)}
+                          />
+                        )}
+                      </td>
+
+                      {/* 상태 (인라인 편집) */}
+                      <td
+                        className="py-3.5 pr-5"
+                        onClick={(e) => handleCellClick(e, member.id, "status", member.status)}
+                      >
+                        {editingCell?.memberId === member.id && editingCell.field === "status" ? (
+                          <select
+                            autoFocus
+                            defaultValue={
+                              member.status === "adjusting" || member.status === "attending" || member.status === "inactive"
+                                ? "active"
+                                : member.status
+                            }
+                            onChange={(e) => handleFieldSave(member.id, "status", e.target.value)}
+                            onBlur={() => setEditingCell(null)}
+                            className={INLINE_SELECT}
+                          >
+                            {MAIN_STATUS_OPTIONS.map((opt) => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <div className={`flex flex-wrap items-center gap-1 ${canEdit ? "cursor-pointer" : ""}`}>
+                            <span className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${main.color}`}>
+                              {main.label}
+                            </span>
+                            {sub && (
+                              <span className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${sub.color}`}>
+                                {sub.label}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
@@ -684,36 +644,36 @@ function MinistryTeamEditor({
   return (
     <div
       ref={ref}
-      className="absolute left-0 top-full z-20 mt-1 w-48 rounded-xl border border-[var(--color-warm-border)] bg-white p-2 shadow-[var(--shadow-elevated)]"
+      className="absolute left-0 top-full z-20 mt-1 w-48 rounded-xl border border-[var(--color-warm-border)] bg-white p-3 shadow-[var(--shadow-elevated)]"
       onClick={(e) => e.stopPropagation()}
     >
-      <div className="mb-1 text-[9px] font-medium text-[var(--color-warm-muted)] uppercase tracking-[0.25em]">예배사역</div>
+      <div className="mb-1.5 text-[9px] font-medium text-[var(--color-warm-muted)] uppercase tracking-[0.25em]">예배사역</div>
       {worshipTeams.map((team) => (
-        <label key={team.id} className="flex items-center gap-2 rounded px-2 py-1 text-sm text-[var(--color-warm-text)] hover:bg-[var(--color-warm-bg)] cursor-pointer transition-colors duration-300">
+        <label key={team.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-[var(--color-warm-text)] hover:bg-[var(--color-warm-bg)] cursor-pointer transition-colors duration-200">
           <input
             type="checkbox"
             checked={selected.has(team.id)}
             onChange={() => toggle(team.id)}
-            className="rounded border-[var(--color-warm-border)] accent-[#1a1a1a]"
+            className="h-3.5 w-3.5 rounded border-[var(--color-warm-border)] accent-[#1a1a1a]"
           />
           {team.name}
         </label>
       ))}
-      <div className="mb-1 mt-2 text-[9px] font-medium text-[var(--color-warm-muted)] uppercase tracking-[0.25em]">순사역</div>
+      <div className="mb-1.5 mt-3 text-[9px] font-medium text-[var(--color-warm-muted)] uppercase tracking-[0.25em]">순사역</div>
       {discipleshipTeams.map((team) => (
-        <label key={team.id} className="flex items-center gap-2 rounded px-2 py-1 text-sm text-[var(--color-warm-text)] hover:bg-[var(--color-warm-bg)] cursor-pointer transition-colors duration-300">
+        <label key={team.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-[var(--color-warm-text)] hover:bg-[var(--color-warm-bg)] cursor-pointer transition-colors duration-200">
           <input
             type="checkbox"
             checked={selected.has(team.id)}
             onChange={() => toggle(team.id)}
-            className="rounded border-[var(--color-warm-border)] accent-[#1a1a1a]"
+            className="h-3.5 w-3.5 rounded border-[var(--color-warm-border)] accent-[#1a1a1a]"
           />
           {team.name}
         </label>
       ))}
       <button
         onClick={() => onSave(memberId, Array.from(selected))}
-        className="mt-2 w-full rounded-lg bg-[#1a1a1a] py-1.5 text-xs font-medium text-white hover:bg-[#333] transition-all duration-300"
+        className="mt-3 w-full rounded-lg bg-[#1a1a1a] py-1.5 text-xs font-medium text-white hover:bg-[#333] transition-all duration-300"
       >
         저장
       </button>
@@ -729,6 +689,8 @@ function SortableHeader({
   dir,
   onSort,
   className = "",
+  isFirst = false,
+  isLast = false,
 }: {
   label: string;
   sortKey: string;
@@ -736,17 +698,19 @@ function SortableHeader({
   dir: "asc" | "desc";
   onSort: (key: string) => void;
   className?: string;
+  isFirst?: boolean;
+  isLast?: boolean;
 }) {
   const isActive = currentKey === sortKey;
   return (
     <th
-      className={`pb-3 pr-4 font-medium select-none cursor-pointer hover:text-[var(--color-warm-text)] transition-colors duration-300 ${className}`}
+      className={`py-3 pr-4 font-medium select-none cursor-pointer hover:text-[var(--color-warm-text)] transition-colors duration-200 ${isFirst ? "pl-5" : ""} ${isLast ? "pr-5" : ""} ${className}`}
       onClick={() => onSort(sortKey)}
     >
       <span className="inline-flex items-center gap-1">
         {label}
         {isActive ? (
-          <svg className="h-3.5 w-3.5 text-[var(--color-warm-text)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.2}>
+          <svg className="h-3 w-3 text-[var(--color-warm-text)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             {dir === "asc" ? (
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
             ) : (
@@ -754,8 +718,8 @@ function SortableHeader({
             )}
           </svg>
         ) : (
-          <svg className="h-3.5 w-3.5 text-[var(--color-warm-subtle)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+          <svg className="h-3 w-3 text-[var(--color-warm-subtle)]/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8 9l4-4 4 4M16 15l-4 4-4-4" />
           </svg>
         )}
       </span>
