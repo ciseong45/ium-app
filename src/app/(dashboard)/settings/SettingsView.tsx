@@ -61,27 +61,27 @@ export default function SettingsView({
       {users.map((user) => (
         <div
           key={user.id}
-          className="rounded-2xl border border-gray-100 bg-white p-6 shadow-[var(--shadow-card)]"
+          className="rounded-xl border border-[var(--color-warm-border)] bg-white p-6 shadow-[var(--shadow-card)]"
         >
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-medium text-gray-900">
+                <span className="font-medium text-[var(--color-warm-text)]">
                   {user.name || "이름 없음"}
                 </span>
                 {user.id === currentUserId && (
-                  <span className="rounded-full bg-indigo-100 px-1.5 py-0.5 text-xs text-indigo-600">
+                  <span className="rounded-full bg-[var(--color-warm-bg)] border border-[var(--color-warm-border)] px-1.5 py-0.5 text-xs text-[var(--color-warm-text)]">
                     나
                   </span>
                 )}
               </div>
-              <p className="mt-0.5 text-sm text-gray-500">{user.email}</p>
+              <p className="mt-0.5 text-sm text-[var(--color-warm-muted)]">{user.email}</p>
             </div>
             <select
               value={user.role}
               onChange={(e) => handleRoleChange(user.id, e.target.value as UserRole)}
               disabled={user.id === currentUserId || saving === user.id}
-              className="rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-1.5 text-sm focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 disabled:opacity-50"
+              className="rounded-lg border border-[var(--color-warm-border)] bg-[var(--color-warm-bg)] px-3 py-1.5 text-sm text-[var(--color-warm-text)] transition-all duration-300 focus:border-[var(--color-warm-text)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-warm-text)]/10 disabled:opacity-50"
             >
               {ROLE_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -92,13 +92,13 @@ export default function SettingsView({
           </div>
 
           {/* 멤버 연결 */}
-          <div className="mt-2 flex items-center gap-2 border-t border-gray-100 pt-2">
-            <span className="text-xs text-gray-500 whitespace-nowrap">연결 멤버:</span>
+          <div className="mt-2 flex items-center gap-2 border-t border-[var(--color-warm-border-light)] pt-2">
+            <span className="text-xs text-[var(--color-warm-muted)] whitespace-nowrap">연결 멤버:</span>
             <select
               value={user.linked_member_id ? String(user.linked_member_id) : ""}
               onChange={(e) => handleMemberLink(user.id, e.target.value)}
               disabled={saving === user.id}
-              className="flex-1 rounded-xl border border-gray-200 bg-gray-50/50 px-2 py-1 text-sm text-gray-700 focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 disabled:opacity-50"
+              className="flex-1 rounded-lg border border-[var(--color-warm-border)] bg-[var(--color-warm-bg)] px-2 py-1 text-sm text-[var(--color-warm-text)] transition-all duration-300 focus:border-[var(--color-warm-text)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-warm-text)]/10 disabled:opacity-50"
             >
               <option value="">미연결</option>
               {members.map((m) => (
@@ -108,7 +108,7 @@ export default function SettingsView({
               ))}
             </select>
             {user.linked_member_id && (
-              <span className="rounded bg-green-100 px-1.5 py-0.5 text-xs text-green-700">
+              <span className="rounded bg-[#edf5ed] px-1.5 py-0.5 text-xs text-[#3d6b3d]">
                 {getMemberName(user.linked_member_id)}
               </span>
             )}

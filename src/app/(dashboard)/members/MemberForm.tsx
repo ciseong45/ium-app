@@ -41,7 +41,7 @@ export default function MemberForm({ member }: { member?: Member }) {
     <form onSubmit={handleSubmit} className="max-w-lg space-y-4">
       {/* 이름 (필수) */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-[var(--color-warm-text)]">
           이름 <span className="text-red-500">*</span>
         </label>
         <input
@@ -55,7 +55,7 @@ export default function MemberForm({ member }: { member?: Member }) {
 
       {/* 전화번호 */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-[var(--color-warm-text)]">
           전화번호
         </label>
         <input
@@ -69,7 +69,7 @@ export default function MemberForm({ member }: { member?: Member }) {
 
       {/* 이메일 */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-[var(--color-warm-text)]">
           이메일
         </label>
         <input
@@ -82,7 +82,7 @@ export default function MemberForm({ member }: { member?: Member }) {
 
       {/* 카카오톡 ID */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-[var(--color-warm-text)]">
           카카오톡 ID
         </label>
         <input
@@ -95,7 +95,7 @@ export default function MemberForm({ member }: { member?: Member }) {
 
       {/* 성별 */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">성별</label>
+        <label className="block text-sm font-medium text-[var(--color-warm-text)]">성별</label>
         <select
           name="gender"
           defaultValue={member?.gender || ""}
@@ -109,7 +109,7 @@ export default function MemberForm({ member }: { member?: Member }) {
 
       {/* 생년월일 */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-[var(--color-warm-text)]">
           생년월일
         </label>
         <input
@@ -122,7 +122,7 @@ export default function MemberForm({ member }: { member?: Member }) {
 
       {/* 학교/직장 */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-[var(--color-warm-text)]">
           학교/직장
         </label>
         <input
@@ -135,7 +135,7 @@ export default function MemberForm({ member }: { member?: Member }) {
 
       {/* 세례입교 여부 */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-[var(--color-warm-text)]">
           세례입교 여부
         </label>
         <div className="mt-2 flex gap-4">
@@ -145,9 +145,9 @@ export default function MemberForm({ member }: { member?: Member }) {
               name="is_baptized"
               value="true"
               defaultChecked={member?.is_baptized === true}
-              className="text-indigo-600"
+              className="text-[#1a1a1a] accent-[#1a1a1a]"
             />
-            <span className="text-sm text-gray-700">예</span>
+            <span className="text-sm text-[var(--color-warm-text)]">예</span>
           </label>
           <label className="flex items-center gap-1.5">
             <input
@@ -155,16 +155,16 @@ export default function MemberForm({ member }: { member?: Member }) {
               name="is_baptized"
               value="false"
               defaultChecked={!member?.is_baptized}
-              className="text-indigo-600"
+              className="text-[#1a1a1a] accent-[#1a1a1a]"
             />
-            <span className="text-sm text-gray-700">아니오</span>
+            <span className="text-sm text-[var(--color-warm-text)]">아니오</span>
           </label>
         </div>
       </div>
 
       {/* 주소 */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">주소</label>
+        <label className="block text-sm font-medium text-[var(--color-warm-text)]">주소</label>
         <input
           name="address"
           type="text"
@@ -175,7 +175,7 @@ export default function MemberForm({ member }: { member?: Member }) {
 
       {/* 상태 */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">상태</label>
+        <label className="block text-sm font-medium text-[var(--color-warm-text)]">상태</label>
         <select
           name="status"
           defaultValue={member?.status || "active"}
@@ -193,7 +193,7 @@ export default function MemberForm({ member }: { member?: Member }) {
 
       {/* 메모 */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">메모</label>
+        <label className="block text-sm font-medium text-[var(--color-warm-text)]">메모</label>
         <textarea
           name="notes"
           rows={3}
@@ -209,14 +209,14 @@ export default function MemberForm({ member }: { member?: Member }) {
         <button
           type="submit"
           disabled={loading}
-          className="rounded-xl bg-indigo-600 px-6 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+          className="rounded-lg bg-[#1a1a1a] px-5 py-2.5 text-sm font-medium text-white transition-all duration-300 hover:bg-[#333] disabled:opacity-40 disabled:pointer-events-none"
         >
           {loading ? "저장 중..." : isEdit ? "수정" : "등록"}
         </button>
         <button
           type="button"
           onClick={() => router.back()}
-          className="rounded-xl border border-gray-200 px-6 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className="rounded-lg border border-[var(--color-warm-border)] bg-white px-5 py-2.5 text-sm font-medium text-[var(--color-warm-text)] transition-all duration-300 hover:border-[var(--color-warm-text)] hover:bg-[var(--color-warm-bg)]"
         >
           취소
         </button>

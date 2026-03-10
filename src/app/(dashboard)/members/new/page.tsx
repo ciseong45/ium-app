@@ -8,8 +8,8 @@ export default async function NewMemberPage() {
 
   return (
     <div>
-      <h2 className="text-xl font-semibold tracking-tight text-gray-900">멤버 등록</h2>
-      <p className="mt-2 text-sm text-gray-500">새 멤버 정보를 입력하세요.</p>
+      <h2 className="font-serif text-2xl font-light tracking-tight text-[var(--color-warm-text)]">멤버 등록</h2>
+      <p className="mt-2 text-sm text-[var(--color-warm-muted)]">새 멤버 정보를 입력하세요.</p>
       <div className="mt-6">
         <MemberForm />
       </div>

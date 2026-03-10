@@ -48,7 +48,7 @@ export default function AttendanceView({
 
   return (
     <div>
-      <h2 className="text-xl font-semibold text-gray-900 tracking-tight">출석 관리</h2>
+      <h2 className="font-serif text-2xl font-light tracking-tight text-[var(--color-warm-text)]">출석 관리</h2>
 
       {/* 순 선택 */}
       {groups.length > 1 && (
@@ -63,7 +63,7 @@ export default function AttendanceView({
                 router.push(`/attendance?date=${selectedDate}&tab=${tab}`);
               }
             }}
-            className="w-full rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+            className="w-full rounded-lg border border-[var(--color-warm-border)] bg-[var(--color-warm-bg)] px-3.5 py-2.5 text-sm text-[var(--color-warm-text)] transition-all duration-300 focus:border-[var(--color-warm-text)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-warm-text)]/10"
           >
             <option value="">순을 선택하세요</option>
             {groups.map((g) => (
@@ -77,14 +77,14 @@ export default function AttendanceView({
 
       {/* 순 하나만 있으면 순 이름 표시 */}
       {groups.length === 1 && (
-        <p className="mt-2 text-sm text-gray-500">
+        <p className="mt-2 text-sm text-[var(--color-warm-muted)]">
           {groups[0].name} ({groups[0].upper_room_name})
         </p>
       )}
 
       {/* 순 미선택 시 안내 */}
       {!selectedGroupId && groups.length > 1 && (
-        <div className="mt-12 text-center text-gray-400">
+        <div className="mt-12 text-center text-[var(--color-warm-muted)]">
           <p className="text-4xl">👆</p>
           <p className="mt-2">순을 선택하면 출석을 관리할 수 있습니다.</p>
         </div>
@@ -92,7 +92,7 @@ export default function AttendanceView({
 
       {/* 순 없음 */}
       {groups.length === 0 && (
-        <div className="mt-12 text-center text-gray-400">
+        <div className="mt-12 text-center text-[var(--color-warm-muted)]">
           <p className="text-4xl">🚫</p>
           <p className="mt-2">접근 가능한 순이 없습니다.</p>
           <p className="text-xs mt-1">관리자에게 문의하세요.</p>
@@ -244,9 +244,9 @@ function AttendanceCheck({
               `/attendance?group=${groupId}&tab=check&date=${e.target.value}`
             )
           }
-          className="rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+          className="rounded-lg border border-[var(--color-warm-border)] bg-[var(--color-warm-bg)] px-3.5 py-2.5 text-sm text-[var(--color-warm-text)] transition-all duration-300 focus:border-[var(--color-warm-text)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-warm-text)]/10"
         />
-        <span className="text-sm text-gray-500">
+        <span className="text-sm text-[var(--color-warm-muted)]">
           {new Date(selectedDate + "T00:00:00").toLocaleDateString("ko-KR", {
             weekday: "long",
             year: "numeric",
@@ -258,19 +258,19 @@ function AttendanceCheck({
 
       {/* 요약 + 전체 선택 */}
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        <span className="text-sm text-gray-500">
+        <span className="text-sm text-[var(--color-warm-muted)]">
           {checkedCount}/{members.length}명 체크 (출석 {presentCount}, 결석 {absentCount})
         </span>
         <div className="flex gap-1">
           <button
             onClick={() => handleSelectAll("present")}
-            className="rounded-lg px-2 py-1 text-xs text-gray-500 hover:bg-green-50 transition-colors duration-200"
+            className="rounded-lg px-2 py-1 text-xs text-[var(--color-warm-muted)] hover:bg-[var(--color-warm-bg)] hover:text-[var(--color-warm-text)] transition-all duration-300"
           >
             전체 출석
           </button>
           <button
             onClick={() => handleSelectAll("absent")}
-            className="rounded-lg px-2 py-1 text-xs text-gray-500 hover:bg-red-50 transition-colors duration-200"
+            className="rounded-lg px-2 py-1 text-xs text-[var(--color-warm-muted)] hover:bg-[var(--color-warm-bg)] hover:text-[var(--color-warm-text)] transition-all duration-300"
           >
             전체 결석
           </button>
@@ -280,9 +280,9 @@ function AttendanceCheck({
       {/* 멤버별 출석 체크 */}
       <div className="mt-4 space-y-2">
         {members.map((member) => (
-          <div key={member.id} className="rounded-2xl border border-gray-100 bg-white shadow-[var(--shadow-card)]">
+          <div key={member.id} className="rounded-xl border border-[var(--color-warm-border)] bg-white shadow-[var(--shadow-card)]">
             <div className="flex items-center justify-between px-4 py-3">
-              <span className="text-sm font-medium text-gray-900">
+              <span className="text-sm font-medium text-[var(--color-warm-text)]">
                 {member.name}
               </span>
               <div className="flex items-center gap-2">
@@ -295,7 +295,7 @@ function AttendanceCheck({
                       className={`rounded-full px-3 py-1 text-xs font-medium transition-colors duration-200 ${
                         statuses[member.id] === option.value
                           ? option.color
-                          : "bg-gray-50 text-gray-400 hover:bg-gray-100"
+                          : "bg-[var(--color-warm-bg)] text-[var(--color-warm-muted)] hover:bg-[var(--color-warm-border-light)]"
                       }`}
                     >
                       {option.label}
@@ -307,8 +307,8 @@ function AttendanceCheck({
                   onClick={() => handlePrayerToggle(member.id)}
                   className={`rounded-full px-2 py-1 text-xs transition-colors duration-200 ${
                     prayerFlags[member.id]
-                      ? "bg-amber-100 text-amber-700"
-                      : "bg-gray-50 text-gray-400 hover:bg-amber-50"
+                      ? "bg-amber-50 text-amber-700 border border-amber-200/60"
+                      : "bg-[var(--color-warm-bg)] text-[var(--color-warm-muted)] hover:bg-amber-50/50"
                   }`}
                   title="기도필요"
                 >
@@ -329,7 +329,7 @@ function AttendanceCheck({
                     }))
                   }
                   placeholder="기도 사유를 간단히 입력하세요"
-                  className="w-full rounded border border-gray-200 px-3 py-1.5 text-sm text-gray-700 placeholder-gray-400 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100"
+                  className="w-full rounded-lg border border-[var(--color-warm-border)] bg-[var(--color-warm-bg)] px-3 py-1.5 text-sm text-[var(--color-warm-text)] placeholder:text-[var(--color-warm-muted)] transition-all duration-300 focus:border-[var(--color-warm-text)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-warm-text)]/10"
                 />
               </div>
             )}
@@ -342,7 +342,7 @@ function AttendanceCheck({
         <button
           onClick={handleSave}
           disabled={saving}
-          className="w-full rounded-xl bg-indigo-600 py-3 text-sm font-medium text-white shadow-[var(--shadow-elevated)] hover:bg-indigo-700 disabled:opacity-50 transition-colors duration-200"
+          className="w-full rounded-lg bg-[#1a1a1a] py-3 text-sm font-medium text-white shadow-[var(--shadow-elevated)] hover:bg-[#333] disabled:opacity-40 disabled:pointer-events-none transition-all duration-300"
         >
           {saving ? "저장 중..." : "출석 저장"}
         </button>
@@ -432,14 +432,14 @@ function AttendanceHistory({
   };
 
   const statusColor = (record: AttendanceRecord | null) => {
-    if (!record) return "text-gray-300";
+    if (!record) return "text-[var(--color-warm-subtle)]";
     switch (record.status) {
       case "present":
         return "text-green-500";
       case "absent":
         return "text-red-400";
       default:
-        return "text-gray-300";
+        return "text-[var(--color-warm-subtle)]";
     }
   };
 
@@ -448,23 +448,23 @@ function AttendanceHistory({
       {/* 주간 출석률 */}
       {weeklyStats.length > 0 && (
         <div className="mb-6">
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest">주간 출석률</h3>
+          <h3 className="text-[9px] font-medium text-[var(--color-warm-muted)] uppercase tracking-[0.25em]">주간 출석률</h3>
           <div className="mt-2 flex gap-2 overflow-x-auto pb-2">
             {weeklyStats.map((week) => (
               <div
                 key={week.date}
-                className="flex min-w-[80px] flex-col items-center rounded-2xl border border-gray-100 bg-white p-3 shadow-[var(--shadow-card)]"
+                className="flex min-w-[80px] flex-col items-center rounded-xl border border-[var(--color-warm-border)] bg-white p-3 shadow-[var(--shadow-card)]"
               >
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-[var(--color-warm-muted)]">
                   {new Date(week.date + "T00:00:00").toLocaleDateString("ko-KR", {
                     month: "short",
                     day: "numeric",
                   })}
                 </span>
-                <span className="mt-1 text-lg font-bold text-gray-900">
+                <span className="mt-1 text-lg font-bold text-[var(--color-warm-text)]">
                   {week.rate}%
                 </span>
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-[var(--color-warm-muted)]">
                   {week.present}/{week.total}
                 </span>
               </div>
@@ -475,7 +475,7 @@ function AttendanceHistory({
 
       {/* 기도필요 목록 */}
       {prayerMembers.length > 0 && (
-        <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+        <div className="mb-6 rounded-xl border border-amber-200/60 bg-amber-50/50 p-4">
           <h3 className="text-sm font-semibold text-amber-700">
             🙏 기도필요 ({prayerMembers.length}명)
           </h3>
@@ -494,7 +494,7 @@ function AttendanceHistory({
 
       {/* 연속 결석 경고 */}
       {memberAttendance.filter((m) => m.consecutiveAbsent >= 3).length > 0 && (
-        <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4">
+        <div className="mb-6 rounded-xl border border-red-200/60 bg-red-50/50 p-4">
           <h3 className="text-sm font-semibold text-red-700">
             3주 이상 연속 결석
           </h3>
@@ -515,13 +515,13 @@ function AttendanceHistory({
 
       {/* 출석 현황 테이블 */}
       {dates.length === 0 ? (
-        <p className="text-center text-gray-400">출석 기록이 없습니다.</p>
+        <p className="text-center text-[var(--color-warm-muted)]">출석 기록이 없습니다.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 text-gray-400">
-                <th className="sticky left-0 bg-gray-50/80 pb-3 pr-4 text-left font-medium">
+              <tr className="border-b border-[var(--color-warm-border)] text-[var(--color-warm-muted)]">
+                <th className="sticky left-0 bg-[var(--color-warm-bg)] pb-3 pr-4 text-left text-[10px] font-medium uppercase tracking-[0.2em]">
                   이름
                 </th>
                 {dates.map((date) => (
@@ -541,9 +541,9 @@ function AttendanceHistory({
               {memberAttendance.map(({ member, weekData, consecutiveAbsent }) => (
                 <tr
                   key={member.id}
-                  className={`border-b border-gray-50 transition-colors duration-200 ${consecutiveAbsent >= 3 ? "bg-red-50" : "hover:bg-indigo-50/30"}`}
+                  className={`border-b border-[var(--color-warm-border-light)] transition-colors duration-300 ${consecutiveAbsent >= 3 ? "bg-red-50/50" : "hover:bg-[var(--color-warm-bg)]"}`}
                 >
-                  <td className="sticky left-0 bg-inherit py-2.5 pr-4 font-medium text-gray-900">
+                  <td className="sticky left-0 bg-inherit py-2.5 pr-4 font-medium text-[var(--color-warm-text)]">
                     {member.name}
                   </td>
                   {weekData.map((record, i) => (
@@ -562,7 +562,7 @@ function AttendanceHistory({
       )}
 
       {/* 범례 */}
-      <div className="mt-4 flex gap-4 text-xs text-gray-500">
+      <div className="mt-4 flex gap-4 text-xs text-[var(--color-warm-muted)]">
         <span>
           <span className="text-green-500">●</span> 출석
         </span>
@@ -570,7 +570,7 @@ function AttendanceHistory({
           <span className="text-red-400">○</span> 결석
         </span>
         <span>
-          <span className="text-gray-300">—</span> 미체크
+          <span className="text-[var(--color-warm-subtle)]">—</span> 미체크
         </span>
         <span>🙏 기도필요</span>
       </div>

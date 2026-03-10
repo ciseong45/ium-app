@@ -88,7 +88,7 @@ export default function UpperRoomSection({
   };
 
   return (
-    <div className="rounded-2xl border border-gray-100 bg-gray-50/50 shadow-[var(--shadow-card)]">
+    <div className="rounded-xl border border-[var(--color-warm-border)] bg-[var(--color-warm-bg)]/50 shadow-[var(--shadow-card)]">
       {/* 다락방 헤더 */}
       <div
         className="flex items-center justify-between px-5 py-4 cursor-pointer"
@@ -110,11 +110,11 @@ export default function UpperRoomSection({
                   if (e.key === "Escape") { setNameValue(upperRoom.name); setEditingName(false); }
                 }}
                 onClick={(e) => e.stopPropagation()}
-                className="text-lg font-bold text-gray-900 border-b-2 border-indigo-500 bg-transparent outline-none"
+                className="text-lg font-bold text-[var(--color-warm-text)] border-b-2 border-[var(--color-warm-text)] bg-transparent outline-none"
               />
             ) : (
               <h3
-                className={`text-lg font-bold text-gray-900 ${role === "admin" ? "cursor-pointer hover:text-indigo-600" : ""}`}
+                className={`text-lg font-bold text-[var(--color-warm-text)] ${role === "admin" ? "cursor-pointer hover:text-[#333]" : ""}`}
                 onClick={(e) => {
                   if (role === "admin") {
                     e.stopPropagation();
@@ -125,11 +125,11 @@ export default function UpperRoomSection({
                 {upperRoom.name}
               </h3>
             )}
-            <div className="flex items-center gap-2 text-sm text-gray-500">
+            <div className="flex items-center gap-2 text-sm text-[var(--color-warm-muted)]">
               {upperRoom.leader ? (
                 <span>다락방장: {upperRoom.leader.name}</span>
               ) : (
-                <span className="text-gray-400">다락방장 미지정</span>
+                <span className="text-[var(--color-warm-subtle)]">다락방장 미지정</span>
               )}
               <span>·</span>
               <span>{groups.length}순</span>
@@ -143,7 +143,7 @@ export default function UpperRoomSection({
             <>
               <button
                 onClick={() => setEditingLeader(!editingLeader)}
-                className="rounded-xl px-3 py-1.5 text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                className="rounded-lg border border-[var(--color-warm-border)] bg-white px-3 py-1.5 text-xs font-medium text-[var(--color-warm-text)] hover:border-[var(--color-warm-text)] transition-all duration-300"
               >
                 {editingLeader ? "닫기" : "다락방장 변경"}
               </button>
@@ -153,7 +153,7 @@ export default function UpperRoomSection({
                     showGroupForm === upperRoom.id ? null : upperRoom.id
                   )
                 }
-                className="rounded-xl bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 transition-colors"
+                className="rounded-lg bg-[#1a1a1a] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#333] transition-all duration-300"
               >
                 + 순 추가
               </button>
@@ -164,8 +164,8 @@ export default function UpperRoomSection({
 
       {/* 다락방장 변경 패널 */}
       {editingLeader && (
-        <div className="mx-5 mb-3 rounded-xl border border-indigo-200 bg-indigo-50 p-3">
-          <p className="mb-2 text-xs font-medium text-indigo-700">
+        <div className="mx-5 mb-3 rounded-xl border border-[var(--color-warm-border)] bg-[var(--color-warm-bg)] p-3">
+          <p className="mb-2 text-xs font-medium text-[var(--color-warm-text)]">
             다락방장을 선택하세요
           </p>
           <select
@@ -192,10 +192,10 @@ export default function UpperRoomSection({
             onCreateGroup(upperRoom.id, formData);
             e.currentTarget.reset();
           }}
-          className="mx-5 mb-3 rounded-2xl border border-gray-100 bg-white p-5 shadow-[var(--shadow-card)] space-y-3"
+          className="mx-5 mb-3 rounded-xl border border-[var(--color-warm-border)] bg-white p-5 shadow-[var(--shadow-card)] space-y-3"
         >
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-[var(--color-warm-text)]">
               순 이름 <span className="text-red-500">*</span>
             </label>
             <input
@@ -209,14 +209,14 @@ export default function UpperRoomSection({
             <button
               type="submit"
               disabled={loading}
-              className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition-colors disabled:opacity-50"
+              className="rounded-lg bg-[#1a1a1a] px-5 py-2.5 text-sm font-medium text-white transition-all duration-300 hover:bg-[#333] disabled:opacity-50"
             >
               {loading ? "생성 중..." : "생성"}
             </button>
             <button
               type="button"
               onClick={() => onToggleGroupForm(null)}
-              className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              className="rounded-lg border border-[var(--color-warm-border)] bg-white px-5 py-2.5 text-sm font-medium text-[var(--color-warm-text)] transition-all duration-300 hover:border-[var(--color-warm-text)]"
             >
               취소
             </button>
@@ -228,7 +228,7 @@ export default function UpperRoomSection({
       {!collapsed && (
         <div className="px-5 pb-4">
           {groups.length === 0 ? (
-            <p className="text-sm text-gray-400 py-2">소속 순이 없습니다.</p>
+            <p className="text-sm text-[var(--color-warm-muted)] py-2">소속 순이 없습니다.</p>
           ) : (
             <div className="grid gap-3 lg:grid-cols-2">
               {groups.map((group) => (

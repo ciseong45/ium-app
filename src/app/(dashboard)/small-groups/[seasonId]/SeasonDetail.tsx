@@ -184,14 +184,14 @@ export default function SeasonDetail({
       <div className="flex items-center gap-3">
         <button
           onClick={() => router.push("/small-groups")}
-          className="rounded-xl p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-200"
+          className="rounded-xl p-1 text-[var(--color-warm-muted)] hover:text-[var(--color-warm-text)] hover:bg-[var(--color-warm-bg)] transition-all duration-300"
         >
           ←
         </button>
         <div>
-          <h2 className="text-xl font-semibold tracking-tight text-gray-900">{season.name}</h2>
+          <h2 className="font-serif text-2xl font-light tracking-tight text-[var(--color-warm-text)]">{season.name}</h2>
           {season.is_active && (
-            <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+            <span className="rounded-full bg-[#edf5ed] px-2 py-0.5 text-xs font-medium text-[#3d6b3d]">
               활성 시즌
             </span>
           )}
@@ -199,7 +199,7 @@ export default function SeasonDetail({
       </div>
 
       {/* 요약 */}
-      <div className="mt-4 flex gap-4 text-sm text-gray-400">
+      <div className="mt-4 flex gap-4 text-sm text-[var(--color-warm-muted)]">
         <span>다락방 {upperRooms.length}개</span>
         <span>순 {groups.length}개</span>
         <span>배정 {totalMembers}명</span>
@@ -236,14 +236,14 @@ export default function SeasonDetail({
       {/* 미배정 멤버 */}
       {localUnassigned.length > 0 && (
         <div className="mt-8">
-          <h3 className="text-base font-semibold text-gray-900">
+          <h3 className="text-[9px] font-medium uppercase tracking-[0.25em] text-[var(--color-warm-muted)]">
             미배정 멤버 ({localUnassigned.length}명)
           </h3>
           <div className="mt-3 flex flex-wrap gap-2">
             {localUnassigned.map((member) => (
               <span
                 key={member.id}
-                className="rounded-full bg-white ring-1 ring-gray-200 px-3 py-1 text-sm text-gray-600"
+                className="rounded-full bg-white ring-1 ring-[var(--color-warm-border)] px-3 py-1 text-sm text-[var(--color-warm-text)]"
               >
                 {member.name}
               </span>

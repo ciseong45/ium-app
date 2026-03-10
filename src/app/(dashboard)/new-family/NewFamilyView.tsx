@@ -14,9 +14,9 @@ import EmptyState from "@/components/ui/EmptyState";
 import { INPUT_CLASS } from "@/components/ui/constants";
 
 const STEPS = [
-  { step: 1, label: "1주차 방문", color: "bg-gray-100 text-gray-700" },
-  { step: 2, label: "2주차 교육", color: "bg-blue-100 text-blue-700" },
-  { step: 3, label: "3주차 교육", color: "bg-green-100 text-green-700" },
+  { step: 1, label: "1주차 방문", color: "bg-[var(--color-warm-bg)] text-[var(--color-warm-text)]" },
+  { step: 2, label: "2주차 교육", color: "bg-[#f0f4ed] text-[#4a6741]" },
+  { step: 3, label: "3주차 교육", color: "bg-[#edf5ed] text-[#3d6b3d]" },
 ];
 
 type SimpleMember = { id: number; name: string };
@@ -101,11 +101,11 @@ export default function NewFamilyView({
   return (
     <div>
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-900">새가족</h2>
+        <h2 className="font-serif text-2xl font-light tracking-tight text-[var(--color-warm-text)]">새가족</h2>
         {role !== "group_leader" && (
           <button
             onClick={() => setShowForm(!showForm)}
-            className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition-colors duration-200"
+            className="rounded-lg bg-[#1a1a1a] px-5 py-2.5 text-sm font-medium text-white transition-all duration-300 hover:bg-[#333]"
           >
             + 새가족 등록
           </button>
@@ -137,14 +137,14 @@ export default function NewFamilyView({
           <button
             key={s.step}
             onClick={() => setStepFilter(stepFilter === s.step ? null : s.step)}
-            className={`flex min-w-[100px] flex-col items-center rounded-2xl border border-gray-100 p-5 shadow-[var(--shadow-card)] transition-shadow duration-200 hover:shadow-[var(--shadow-card-hover)] ${
+            className={`flex min-w-[100px] flex-col items-center rounded-xl border p-5 shadow-[var(--shadow-card)] transition-all duration-300 hover:shadow-[var(--shadow-card-hover)] ${
               stepFilter === s.step
-                ? "border-indigo-300 bg-indigo-50 ring-1 ring-indigo-300"
-                : "bg-white hover:border-gray-300"
+                ? "border-[var(--color-warm-text)] bg-white ring-1 ring-[var(--color-warm-text)]/10"
+                : "border-[var(--color-warm-border)] bg-white hover:border-[var(--color-warm-text)]"
             }`}
           >
-            <span className="text-xs text-gray-500">{s.label}</span>
-            <span className="mt-1 text-2xl font-bold text-gray-900">
+            <span className="text-xs text-[var(--color-warm-muted)]">{s.label}</span>
+            <span className="mt-1 text-2xl font-bold text-[var(--color-warm-text)]">
               {s.count}
             </span>
           </button>
@@ -153,15 +153,15 @@ export default function NewFamilyView({
 
       {/* 장기 미진행 경고 */}
       {stalled.length > 0 && (
-        <div className="mt-4 rounded-2xl border border-yellow-200 bg-yellow-50 p-4">
-          <h3 className="text-sm font-semibold text-yellow-700">
+        <div className="mt-4 rounded-xl border border-[#e5dfd3] bg-[#fdfbf5] p-4">
+          <h3 className="text-sm font-semibold text-[#8a7a56]">
             2주 이상 단계 변화 없음
           </h3>
           <div className="mt-2 flex flex-wrap gap-2">
             {stalled.map((f) => (
               <span
                 key={f.id}
-                className="rounded-full bg-yellow-100 px-3 py-1 text-sm text-yellow-700"
+                className="rounded-full bg-[#f5f0e0] px-3 py-1 text-sm text-[#8a7a56]"
               >
                 {f.member.name}
               </span>
@@ -172,8 +172,8 @@ export default function NewFamilyView({
 
       {/* 활성 시즌 없음 경고 */}
       {!activeSeason && (
-        <div className="mt-4 rounded-2xl border border-orange-200 bg-orange-50 p-4">
-          <p className="text-sm text-orange-700">
+        <div className="mt-4 rounded-xl border border-[var(--color-warm-border)] bg-[var(--color-warm-bg)] p-4">
+          <p className="text-sm text-[var(--color-warm-muted)]">
             활성 시즌이 없습니다. 순관리에서 시즌을 생성하고 활성화해주세요.
           </p>
         </div>
@@ -183,11 +183,11 @@ export default function NewFamilyView({
       {showForm && (
         <form
           onSubmit={handleCreate}
-          className="mt-4 rounded-2xl border border-gray-100 bg-white p-6 shadow-[var(--shadow-card)] space-y-3"
+          className="mt-4 rounded-xl border border-[var(--color-warm-border)] bg-white p-6 shadow-[var(--shadow-card)] space-y-3"
         >
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-[var(--color-warm-text)]">
                 이름 <span className="text-red-500">*</span>
               </label>
               <input
@@ -197,7 +197,7 @@ export default function NewFamilyView({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-[var(--color-warm-text)]">
                 전화번호
               </label>
               <input
@@ -208,7 +208,7 @@ export default function NewFamilyView({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-[var(--color-warm-text)]">
                 첫 방문일 <span className="text-red-500">*</span>
               </label>
               <input
@@ -220,7 +220,7 @@ export default function NewFamilyView({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-[var(--color-warm-text)]">
                 담당자
               </label>
               <select
@@ -240,14 +240,14 @@ export default function NewFamilyView({
             <button
               type="submit"
               disabled={loading}
-              className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition-colors duration-200 disabled:opacity-50"
+              className="rounded-lg bg-[#1a1a1a] px-5 py-2.5 text-sm font-medium text-white transition-all duration-300 hover:bg-[#333] disabled:opacity-50"
             >
               {loading ? "등록 중..." : "등록"}
             </button>
             <button
               type="button"
               onClick={() => setShowForm(false)}
-              className="rounded-xl border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
+              className="rounded-lg border border-[var(--color-warm-border)] bg-white px-5 py-2.5 text-sm font-medium text-[var(--color-warm-text)] transition-all duration-300 hover:border-[var(--color-warm-text)]"
             >
               취소
             </button>
@@ -265,18 +265,18 @@ export default function NewFamilyView({
             .map((family) => (
             <div
               key={family.id}
-              className="rounded-2xl border border-gray-100 bg-white p-5 shadow-[var(--shadow-card)] transition-shadow duration-200 hover:shadow-[var(--shadow-card-hover)]"
+              className="hover-lift rounded-xl border border-[var(--color-warm-border)] bg-white p-5 shadow-[var(--shadow-card)] transition-all duration-300 hover:shadow-[var(--shadow-card-hover)]"
             >
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-gray-900">
+                    <h3 className="font-semibold text-[var(--color-warm-text)]">
                       {family.member.name}
                     </h3>
                     <span
                       className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                         family.step === 3
-                          ? "bg-green-100 text-green-700"
+                          ? "bg-[#edf5ed] text-[#3d6b3d]"
                           : STEPS[family.step - 1].color
                       }`}
                     >
@@ -285,7 +285,7 @@ export default function NewFamilyView({
                         : STEPS[family.step - 1].label}
                     </span>
                   </div>
-                  <div className="mt-1 flex gap-3 text-sm text-gray-500">
+                  <div className="mt-1 flex gap-3 text-sm text-[var(--color-warm-muted)]">
                     <span>첫 방문: {family.first_visit}</span>
                     {family.member.phone && (
                       <span>{family.member.phone}</span>
@@ -317,7 +317,7 @@ export default function NewFamilyView({
                       className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                         family.step >= s.step
                           ? s.color
-                          : "bg-gray-50 text-gray-400 hover:bg-gray-100"
+                          : "bg-[var(--color-warm-bg)] text-[var(--color-warm-subtle)] hover:bg-[var(--color-warm-border-light)]"
                       }`}
                     >
                       {s.step}. {s.label}

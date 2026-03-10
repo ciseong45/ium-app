@@ -1,38 +1,38 @@
-/** 공통 폼 입력 스타일 — 프리미엄 느낌의 subtle bg + refined focus */
+/** 공통 폼 입력 스타일 — 에디토리얼 미니멀 */
 export const INPUT_CLASS =
-  "mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50/50 px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100";
+  "mt-1.5 block w-full rounded-lg border border-[var(--color-warm-border)] bg-[var(--color-warm-bg)] px-3.5 py-2.5 text-sm text-[var(--color-warm-text)] placeholder:text-[var(--color-warm-muted)] transition-all duration-300 focus:border-[var(--color-warm-text)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-warm-text)]/10";
 
 /** 공통 select 스타일 */
 export const SELECT_CLASS =
-  "mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50/50 px-3.5 py-2.5 text-sm text-gray-900 transition-colors focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100";
+  "mt-1.5 block w-full rounded-lg border border-[var(--color-warm-border)] bg-[var(--color-warm-bg)] px-3.5 py-2.5 text-sm text-[var(--color-warm-text)] transition-all duration-300 focus:border-[var(--color-warm-text)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-warm-text)]/10";
 
-/** 기본 카드 — 섬세한 다중 쉐도우 */
+/** 기본 카드 — 에디토리얼 */
 export const CARD_CLASS =
-  "rounded-2xl bg-white border border-gray-100 shadow-[var(--shadow-card)]";
+  "rounded-xl bg-white border border-[var(--color-warm-border)] shadow-[var(--shadow-card)]";
 
-/** 인터랙티브 카드 (호버 효과) */
+/** 인터랙티브 카드 (호버) */
 export const CARD_HOVER_CLASS =
-  "rounded-2xl bg-white border border-gray-100 shadow-[var(--shadow-card)] transition-all duration-200 hover:shadow-[var(--shadow-card-hover)] hover:border-gray-200";
+  "rounded-xl bg-white border border-[var(--color-warm-border)] shadow-[var(--shadow-card)] hover-lift";
 
-/** 페이지 제목 */
-export const PAGE_TITLE_CLASS = "text-xl font-semibold tracking-tight text-gray-900";
+/** 페이지 제목 — 세리프 에디토리얼 */
+export const PAGE_TITLE_CLASS = "font-serif text-2xl font-light tracking-tight text-[var(--color-warm-text)]";
 
-/** 섹션 라벨 (소문자 + tracking) */
+/** 섹션 라벨 — 에디토리얼 소문자 */
 export const SECTION_LABEL_CLASS =
-  "text-xs font-semibold text-gray-400 uppercase tracking-widest";
+  "text-[9px] font-medium text-[var(--color-warm-muted)] uppercase tracking-[0.25em]";
 
-/** 기본 버튼 — 인디고 기반 프리미엄 */
+/** 기본 버튼 — 다크 미니멀 */
 export const BTN_PRIMARY_CLASS =
-  "rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:bg-indigo-700 hover:shadow-md active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none";
+  "rounded-lg bg-[#1a1a1a] px-5 py-2.5 text-sm font-medium text-white transition-all duration-300 hover:bg-[#333] disabled:opacity-40 disabled:pointer-events-none";
 
-/** 보조 버튼 */
+/** 보조 버튼 — 아웃라인 미니멀 */
 export const BTN_SECONDARY_CLASS =
-  "rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-all duration-200 hover:bg-gray-50 hover:border-gray-300 active:scale-[0.98]";
+  "rounded-lg border border-[var(--color-warm-border)] bg-white px-5 py-2.5 text-sm font-medium text-[var(--color-warm-text)] transition-all duration-300 hover:border-[var(--color-warm-text)] hover:bg-[var(--color-warm-bg)]";
 
-/** 테이블 헤더 행 */
+/** 테이블 헤더 행 — 에디토리얼 */
 export const TABLE_HEADER_CLASS =
-  "border-b border-gray-100 bg-gray-50/80 text-[11px] font-semibold text-gray-400 uppercase tracking-widest";
+  "border-b border-[var(--color-warm-border)] bg-[var(--color-warm-bg)] text-[10px] font-medium text-[var(--color-warm-muted)] uppercase tracking-[0.2em]";
 
 /** 테이블 바디 행 */
 export const TABLE_ROW_CLASS =
-  "border-b border-gray-50 transition-colors duration-150 hover:bg-indigo-50/30";
+  "border-b border-[var(--color-warm-border-light)] transition-colors duration-300 hover:bg-[var(--color-warm-bg)]";

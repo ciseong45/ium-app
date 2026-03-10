@@ -13,9 +13,9 @@ const STATUS_LABELS: Record<OneToOneStatus, string> = {
 };
 
 const STATUS_COLORS: Record<OneToOneStatus, string> = {
-  active: "bg-green-100 text-green-700",
-  paused: "bg-yellow-100 text-yellow-700",
-  completed: "bg-gray-100 text-gray-500",
+  active: "bg-[#edf5ed] text-[#3d6b3d]",
+  paused: "bg-[#f5f0e0] text-[#8a7a56]",
+  completed: "bg-[var(--color-warm-bg)] text-[var(--color-warm-muted)]",
 };
 
 export default function OneToOneCard({
@@ -78,7 +78,7 @@ export default function OneToOneCard({
   };
 
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-[var(--shadow-card)] transition-shadow duration-200 hover:shadow-[var(--shadow-card-hover)]">
+    <div className="hover-lift rounded-xl border border-[var(--color-warm-border)] bg-white p-5 shadow-[var(--shadow-card)] transition-all duration-300 hover:shadow-[var(--shadow-card-hover)]">
       {/* 헤더 */}
       <div className="flex items-start justify-between">
         <div
@@ -86,7 +86,7 @@ export default function OneToOneCard({
           onClick={() => setExpanded(!expanded)}
         >
           <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-gray-900">
+            <h3 className="font-semibold text-[var(--color-warm-text)]">
               {entry.mentor.name} → {entry.mentee.name}
             </h3>
             <span
@@ -95,7 +95,7 @@ export default function OneToOneCard({
               {STATUS_LABELS[entry.status]}
             </span>
           </div>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-[var(--color-warm-muted)]">
             시작: {entry.started_at}
             {entry.completed_at && ` · 완료: ${entry.completed_at}`}
           </p>
@@ -107,13 +107,13 @@ export default function OneToOneCard({
               <>
                 <button
                   onClick={() => onStatusChange(entry.id, "paused")}
-                  className="rounded px-2 py-1 text-xs text-yellow-600 hover:bg-yellow-50"
+                  className="rounded-lg px-2 py-1 text-xs text-[#8a7a56] hover:bg-[#fdfbf5] transition-all duration-300"
                 >
                   일시정지
                 </button>
                 <button
                   onClick={() => onStatusChange(entry.id, "completed")}
-                  className="rounded px-2 py-1 text-xs text-green-600 hover:bg-green-50"
+                  className="rounded-lg px-2 py-1 text-xs text-[#3d6b3d] hover:bg-[#edf5ed] transition-all duration-300"
                 >
                   완료
                 </button>
@@ -122,7 +122,7 @@ export default function OneToOneCard({
             {entry.status === "paused" && (
               <button
                 onClick={() => onStatusChange(entry.id, "active")}
-                className="rounded px-2 py-1 text-xs text-blue-600 hover:bg-blue-50"
+                className="rounded-lg px-2 py-1 text-xs text-[var(--color-warm-text)] hover:bg-[var(--color-warm-bg)] transition-all duration-300"
               >
                 재개
               </button>
@@ -141,15 +141,15 @@ export default function OneToOneCard({
 
       {/* 세션 목록 (펼침) */}
       {expanded && (
-        <div className="mt-4 border-t pt-4">
+        <div className="mt-4 border-t border-[var(--color-warm-border-light)] pt-4">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-gray-700">
+            <h4 className="text-[9px] font-medium uppercase tracking-[0.25em] text-[var(--color-warm-muted)]">
               세션 기록 ({sessions.length}회)
             </h4>
             {role !== "group_leader" && entry.status === "active" && (
               <button
                 onClick={() => setShowSessionForm(!showSessionForm)}
-                className="rounded-xl bg-white ring-1 ring-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-200"
+                className="rounded-lg border border-[var(--color-warm-border)] bg-white px-3 py-1.5 text-xs font-medium text-[var(--color-warm-text)] hover:border-[var(--color-warm-text)] transition-all duration-300"
               >
                 + 세션 추가
               </button>
@@ -159,34 +159,34 @@ export default function OneToOneCard({
           {showSessionForm && (
             <form
               onSubmit={handleAddSession}
-              className="mt-3 rounded-xl border bg-gray-50 p-3 space-y-2"
+              className="mt-3 rounded-xl border border-[var(--color-warm-border)] bg-[var(--color-warm-bg)] p-3 space-y-2"
             >
               <div className="flex gap-2">
                 <input
                   name="session_date"
                   type="date"
                   defaultValue={new Date().toISOString().split("T")[0]}
-                  className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm"
+                  className="rounded-lg border border-[var(--color-warm-border)] bg-[var(--color-warm-bg)] px-3 py-1.5 text-sm text-[var(--color-warm-text)] transition-all duration-300 focus:border-[var(--color-warm-text)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-warm-text)]/10"
                 />
               </div>
               <textarea
                 name="notes"
                 rows={2}
                 placeholder="메모 (선택)"
-                className="block w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm"
+                className="block w-full rounded-lg border border-[var(--color-warm-border)] bg-[var(--color-warm-bg)] px-3 py-1.5 text-sm text-[var(--color-warm-text)] transition-all duration-300 focus:border-[var(--color-warm-text)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-warm-text)]/10"
               />
               <div className="flex gap-2">
                 <button
                   type="submit"
                   disabled={saving}
-                  className="rounded-xl bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 transition-colors duration-200 disabled:opacity-50"
+                  className="rounded-lg bg-[#1a1a1a] px-3 py-1.5 text-xs font-medium text-white transition-all duration-300 hover:bg-[#333] disabled:opacity-50"
                 >
                   {saving ? "저장 중..." : "추가"}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowSessionForm(false)}
-                  className="rounded-xl border border-gray-300 px-3 py-1.5 text-xs text-gray-700 transition-colors duration-200"
+                  className="rounded-lg border border-[var(--color-warm-border)] px-3 py-1.5 text-xs text-[var(--color-warm-text)] transition-all duration-300 hover:border-[var(--color-warm-text)]"
                 >
                   취소
                 </button>
@@ -195,9 +195,9 @@ export default function OneToOneCard({
           )}
 
           {loadingSessions ? (
-            <p className="mt-3 text-xs text-gray-400">불러오는 중...</p>
+            <p className="mt-3 text-xs text-[var(--color-warm-muted)]">불러오는 중...</p>
           ) : sessions.length === 0 ? (
-            <p className="mt-3 text-xs text-gray-400">
+            <p className="mt-3 text-xs text-[var(--color-warm-muted)]">
               기록된 세션이 없습니다.
             </p>
           ) : (
@@ -205,19 +205,19 @@ export default function OneToOneCard({
               {sessions.map((session) => (
                 <div
                   key={session.id}
-                  className="flex items-start justify-between rounded-xl bg-gray-50 px-3 py-2"
+                  className="flex items-start justify-between rounded-xl bg-[var(--color-warm-bg)] px-3 py-2"
                 >
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-gray-900">
+                      <span className="text-xs font-medium text-[var(--color-warm-text)]">
                         {session.session_number}회차
                       </span>
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-[var(--color-warm-muted)]">
                         {session.session_date}
                       </span>
                     </div>
                     {session.notes && (
-                      <p className="mt-1 whitespace-pre-wrap text-xs text-gray-600">
+                      <p className="mt-1 whitespace-pre-wrap text-xs text-[var(--color-warm-text)]/70">
                         {session.notes}
                       </p>
                     )}
@@ -225,7 +225,7 @@ export default function OneToOneCard({
                   {role === "admin" && (
                     <button
                       onClick={() => handleDeleteSession(session.id)}
-                      className="text-xs text-gray-400 hover:text-red-500"
+                      className="text-xs text-[var(--color-warm-muted)] hover:text-red-500"
                     >
                       삭제
                     </button>
@@ -241,7 +241,7 @@ export default function OneToOneCard({
       {!expanded && (
         <button
           onClick={() => setExpanded(true)}
-          className="mt-2 text-xs text-gray-400 hover:text-gray-600"
+          className="mt-2 text-xs text-[var(--color-warm-muted)] hover:text-[var(--color-warm-text)] transition-all duration-300"
         >
           세션 기록 보기 ▼
         </button>

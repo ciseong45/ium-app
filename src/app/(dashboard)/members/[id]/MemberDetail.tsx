@@ -59,17 +59,17 @@ export default function MemberDetail({
   // 성별 악센트 색상
   const genderAccent =
     member.gender === "M"
-      ? "bg-blue-500"
+      ? "bg-[#4a6fa5]"
       : member.gender === "F"
-        ? "bg-rose-400"
-        : "bg-gray-300";
+        ? "bg-[#b56576]"
+        : "bg-[var(--color-warm-border)]";
 
   const genderBgTint =
     member.gender === "M"
-      ? "bg-blue-50/40"
+      ? "bg-[#4a6fa5]/5"
       : member.gender === "F"
-        ? "bg-rose-50/40"
-        : "bg-gray-50";
+        ? "bg-[#b56576]/5"
+        : "bg-[var(--color-warm-bg)]";
 
   const handleDelete = async () => {
     if (!confirm(`정말 ${member.name}님을 삭제하시겠습니까?`)) return;
@@ -145,9 +145,9 @@ export default function MemberDetail({
       <div className="flex items-center justify-between">
         <button
           onClick={() => router.push("/members")}
-          className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+          className="flex items-center gap-1 text-sm text-[var(--color-warm-muted)] hover:text-[var(--color-warm-text)] transition-all duration-300"
         >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
           목록으로
@@ -156,7 +156,7 @@ export default function MemberDetail({
           {role !== "group_leader" && (
             <button
               onClick={() => router.push(`/members/${member.id}/edit`)}
-              className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition-colors"
+              className="rounded-lg bg-[#1a1a1a] px-5 py-2.5 text-sm font-medium text-white transition-all duration-300 hover:bg-[#333]"
             >
               수정
             </button>
@@ -165,7 +165,7 @@ export default function MemberDetail({
             <button
               onClick={handleDelete}
               disabled={deleting}
-              className="rounded-xl border border-rose-200 px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50 disabled:opacity-50 transition-colors"
+              className="rounded-lg border border-[var(--color-warm-border)] px-5 py-2.5 text-sm font-medium text-rose-600 hover:border-rose-300 hover:bg-rose-50/50 disabled:opacity-40 transition-all duration-300"
             >
               삭제
             </button>
@@ -174,7 +174,7 @@ export default function MemberDetail({
       </div>
 
       {/* ========== 프로필 카드 ========== */}
-      <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-[var(--shadow-card)]">
+      <div className="overflow-hidden rounded-xl border border-[var(--color-warm-border)] bg-white shadow-[var(--shadow-card)]">
         {/* 성별 악센트 바 */}
         <div className={`h-2 ${genderAccent}`} />
 
@@ -182,7 +182,7 @@ export default function MemberDetail({
           {/* 이름 + 상태 배지 */}
           <div className="flex items-start justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">{member.name}</h2>
+              <h2 className="font-serif text-2xl font-light tracking-tight text-[var(--color-warm-text)]">{member.name}</h2>
               <div className="mt-2 flex items-center gap-2">
                 <span
                   className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${mainStatus.color}`}
@@ -199,11 +199,11 @@ export default function MemberDetail({
               </div>
             </div>
             <div className="flex flex-col items-end gap-1">
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-[var(--color-warm-muted)]">
                 {member.gender === "M" ? "남" : member.gender === "F" ? "여" : "—"}
               </span>
               {member.is_baptized && (
-                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+                <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 border border-amber-200/60">
                   세례입교
                 </span>
               )}
@@ -212,8 +212,8 @@ export default function MemberDetail({
         </div>
 
         {/* 기본 정보 그리드 */}
-        <div className="border-t border-gray-100 px-6 py-5">
-          <h4 className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-400">
+        <div className="border-t border-[var(--color-warm-border-light)] px-6 py-5">
+          <h4 className="mb-3 text-[9px] font-medium uppercase tracking-[0.25em] text-[var(--color-warm-muted)]">
             기본 정보
           </h4>
           <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
@@ -229,9 +229,9 @@ export default function MemberDetail({
             />
           </dl>
           {member.notes && (
-            <div className="mt-4 rounded-xl bg-gray-50/80 p-3">
-              <dt className="text-xs font-medium text-gray-400">메모</dt>
-              <dd className="mt-1 whitespace-pre-wrap text-sm text-gray-700">
+            <div className="mt-4 rounded-xl bg-[var(--color-warm-bg)] p-3 border border-[var(--color-warm-border-light)]">
+              <dt className="text-xs font-medium text-[var(--color-warm-muted)]">메모</dt>
+              <dd className="mt-1 whitespace-pre-wrap text-sm text-[var(--color-warm-text)]">
                 {member.notes}
               </dd>
             </div>
@@ -241,8 +241,8 @@ export default function MemberDetail({
 
       {/* ========== 순 & 사역팀 카드 ========== */}
       {(groupInfo || (ministryTeams && ministryTeams.length > 0)) && (
-        <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-[var(--shadow-card)]">
-          <h4 className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-400">
+        <div className="rounded-xl border border-[var(--color-warm-border)] bg-white p-5 shadow-[var(--shadow-card)]">
+          <h4 className="mb-3 text-[9px] font-medium uppercase tracking-[0.25em] text-[var(--color-warm-muted)]">
             소속
           </h4>
 
@@ -250,17 +250,17 @@ export default function MemberDetail({
             {/* 순 */}
             {groupInfo && (
               <div className="flex items-center gap-3">
-                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 text-sm font-bold text-blue-600">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-warm-bg)] border border-[var(--color-warm-border)] text-sm font-medium text-[var(--color-warm-text)]">
                   순
                 </span>
                 <div>
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-[var(--color-warm-text)]">
                     {groupInfo.upper_room_name
                       ? `${groupInfo.upper_room_name} > ${groupInfo.group_name}`
                       : groupInfo.group_name}
                   </p>
                   {groupInfo.leader_name && (
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-[var(--color-warm-muted)]">
                       리더: {groupInfo.leader_name}
                     </p>
                   )}
@@ -271,7 +271,7 @@ export default function MemberDetail({
             {/* 사역팀 */}
             {worshipTeams.length > 0 && (
               <div className="flex items-center gap-3">
-                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-sm font-bold text-indigo-600">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-warm-bg)] border border-[var(--color-warm-border)] text-sm font-medium text-[var(--color-warm-text)]">
                   예
                 </span>
                 <div className="flex flex-wrap gap-1.5">
@@ -288,7 +288,7 @@ export default function MemberDetail({
             )}
             {discipleshipTeams.length > 0 && (
               <div className="flex items-center gap-3">
-                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-sm font-bold text-emerald-600">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-warm-bg)] border border-[var(--color-warm-border)] text-sm font-medium text-[var(--color-warm-text)]">
                   순
                 </span>
                 <div className="flex flex-wrap gap-1.5">
@@ -309,7 +309,7 @@ export default function MemberDetail({
 
       {/* ========== 적응중 배너 ========== */}
       {adjustingInfo && (
-        <div className="rounded-2xl border border-teal-200 bg-teal-50 p-5 shadow-sm">
+        <div className="rounded-xl border border-teal-200/60 bg-teal-50/50 p-5 shadow-[var(--shadow-card)]">
           <div className="flex items-center justify-between">
             <h4 className="text-sm font-semibold text-teal-700">적응 기간</h4>
             <span className="text-xs font-medium text-teal-600">
@@ -335,7 +335,7 @@ export default function MemberDetail({
 
       {/* ========== 현재 휴적 중 알림 ========== */}
       {activeLeave && (
-        <div className="rounded-2xl border border-orange-200 bg-orange-50 p-5 shadow-sm">
+        <div className="rounded-xl border border-orange-200/60 bg-orange-50/50 p-5 shadow-[var(--shadow-card)]">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold text-orange-700">현재 휴적 중</span>
@@ -346,7 +346,7 @@ export default function MemberDetail({
             {role !== "group_leader" && (
               <button
                 onClick={handleReturn}
-                className="rounded-xl bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 transition-colors"
+                className="rounded-lg bg-[#1a1a1a] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#333] transition-all duration-300"
               >
                 복귀 처리
               </button>
@@ -363,32 +363,32 @@ export default function MemberDetail({
       )}
 
       {/* ========== 휴적 관리 (접이식) ========== */}
-      <div className="rounded-2xl border border-gray-100 bg-white shadow-[var(--shadow-card)]">
+      <div className="rounded-xl border border-[var(--color-warm-border)] bg-white shadow-[var(--shadow-card)]">
         <button
           onClick={() => setShowLeaveHistory(!showLeaveHistory)}
-          className="flex w-full items-center justify-between p-5 text-left transition-colors hover:bg-gray-50"
+          className="flex w-full items-center justify-between p-5 text-left transition-colors duration-300 hover:bg-[var(--color-warm-bg)]"
         >
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold text-gray-900">휴적 관리</h3>
+            <h3 className="text-sm font-medium text-[var(--color-warm-text)]">휴적 관리</h3>
             {pastLeaves.length > 0 && (
-              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+              <span className="rounded-full bg-[var(--color-warm-bg)] border border-[var(--color-warm-border-light)] px-2 py-0.5 text-xs text-[var(--color-warm-muted)]">
                 {pastLeaves.length}
               </span>
             )}
           </div>
           <svg
-            className={`h-4 w-4 text-gray-400 transition-transform ${showLeaveHistory ? "rotate-180" : ""}`}
+            className={`h-4 w-4 text-[var(--color-warm-muted)] transition-transform ${showLeaveHistory ? "rotate-180" : ""}`}
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
-            strokeWidth={2}
+            strokeWidth={1.2}
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
           </svg>
         </button>
 
         {showLeaveHistory && (
-          <div className="border-t border-gray-100 px-5 pb-5">
+          <div className="border-t border-[var(--color-warm-border-light)] px-5 pb-5">
             {/* 휴적 등록 버튼 */}
             {role !== "group_leader" &&
               !activeLeave &&
@@ -398,7 +398,7 @@ export default function MemberDetail({
                 <div className="pt-3">
                   <button
                     onClick={() => setShowLeaveForm(!showLeaveForm)}
-                    className="rounded-xl border border-orange-200 px-3 py-1.5 text-xs font-medium text-orange-600 hover:bg-orange-50 transition-colors"
+                    className="rounded-lg border border-[var(--color-warm-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-warm-text)] hover:border-[var(--color-warm-text)] transition-all duration-300"
                   >
                     + 휴적 등록
                   </button>
@@ -409,17 +409,17 @@ export default function MemberDetail({
             {showLeaveForm && (
               <form
                 onSubmit={handleStartLeave}
-                className="mt-3 rounded-2xl border border-gray-100 bg-gray-50/80 p-5 space-y-3"
+                className="mt-3 rounded-xl border border-[var(--color-warm-border)] bg-[var(--color-warm-bg)] p-5 space-y-3"
               >
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div>
-                    <label className="block text-xs font-medium text-gray-600">
+                    <label className="block text-xs font-medium text-[var(--color-warm-text)]">
                       사유 유형 <span className="text-red-500">*</span>
                     </label>
                     <select
                       name="leave_type"
                       required
-                      className="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                      className="mt-1.5 block w-full rounded-lg border border-[var(--color-warm-border)] bg-[var(--color-warm-bg)] px-3.5 py-2.5 text-sm text-[var(--color-warm-text)] transition-all duration-300 focus:border-[var(--color-warm-text)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-warm-text)]/10"
                     >
                       <option value="military">군대</option>
                       <option value="academic_leave">휴학</option>
@@ -428,7 +428,7 @@ export default function MemberDetail({
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600">
+                    <label className="block text-xs font-medium text-[var(--color-warm-text)]">
                       시작일 <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -436,28 +436,28 @@ export default function MemberDetail({
                       type="date"
                       required
                       defaultValue={new Date().toISOString().split("T")[0]}
-                      className="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                      className="mt-1.5 block w-full rounded-lg border border-[var(--color-warm-border)] bg-[var(--color-warm-bg)] px-3.5 py-2.5 text-sm text-[var(--color-warm-text)] transition-all duration-300 focus:border-[var(--color-warm-text)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-warm-text)]/10"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600">
+                    <label className="block text-xs font-medium text-[var(--color-warm-text)]">
                       예상 복귀일
                     </label>
                     <input
                       name="expected_return"
                       type="date"
-                      className="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                      className="mt-1.5 block w-full rounded-lg border border-[var(--color-warm-border)] bg-[var(--color-warm-bg)] px-3.5 py-2.5 text-sm text-[var(--color-warm-text)] transition-all duration-300 focus:border-[var(--color-warm-text)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-warm-text)]/10"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600">
+                    <label className="block text-xs font-medium text-[var(--color-warm-text)]">
                       상세 사유
                     </label>
                     <input
                       name="reason"
                       type="text"
                       placeholder="예: 육군 입대"
-                      className="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100"
+                      className="mt-1.5 block w-full rounded-lg border border-[var(--color-warm-border)] bg-[var(--color-warm-bg)] px-3.5 py-2.5 text-sm text-[var(--color-warm-text)] transition-all duration-300 focus:border-[var(--color-warm-text)] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[var(--color-warm-text)]/10"
                     />
                   </div>
                 </div>
@@ -465,14 +465,14 @@ export default function MemberDetail({
                   <button
                     type="submit"
                     disabled={leaveLoading}
-                    className="rounded-xl bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700 disabled:opacity-50 transition-colors"
+                    className="rounded-lg bg-[#1a1a1a] px-5 py-2.5 text-sm font-medium text-white transition-all duration-300 hover:bg-[#333] disabled:opacity-40"
                   >
                     {leaveLoading ? "등록 중..." : "휴적 등록"}
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowLeaveForm(false)}
-                    className="rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    className="rounded-lg border border-[var(--color-warm-border)] bg-white px-5 py-2.5 text-sm font-medium text-[var(--color-warm-text)] transition-all duration-300 hover:border-[var(--color-warm-text)] hover:bg-[var(--color-warm-bg)]"
                   >
                     취소
                   </button>
@@ -486,22 +486,22 @@ export default function MemberDetail({
                 {pastLeaves.map((leave) => (
                   <div
                     key={leave.id}
-                    className="flex items-center gap-3 rounded-xl bg-gray-50/80 px-4 py-3 text-sm"
+                    className="flex items-center gap-3 rounded-xl bg-[var(--color-warm-bg)] border border-[var(--color-warm-border-light)] px-4 py-3 text-sm"
                   >
-                    <span className="rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-600">
+                    <span className="rounded-full bg-[var(--color-warm-bg)] border border-[var(--color-warm-border)] px-2 py-0.5 text-xs font-medium text-[var(--color-warm-text)]">
                       {LEAVE_TYPE_LABELS[leave.leave_type]}
                     </span>
-                    <span className="text-gray-500">
+                    <span className="text-[var(--color-warm-muted)]">
                       {leave.start_date} ~ {leave.actual_return}
                     </span>
                     {leave.reason && (
-                      <span className="text-gray-400">{leave.reason}</span>
+                      <span className="text-[var(--color-warm-muted)]">{leave.reason}</span>
                     )}
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="mt-3 text-xs text-gray-400">휴적 이력이 없습니다.</p>
+              <p className="mt-3 text-xs text-[var(--color-warm-muted)]">휴적 이력이 없습니다.</p>
             )}
           </div>
         )}
@@ -509,52 +509,52 @@ export default function MemberDetail({
 
       {/* ========== 상태 변경 이력 (접이식) ========== */}
       {statusLog.length > 0 && (
-        <div className="rounded-2xl border border-gray-100 bg-white shadow-[var(--shadow-card)]">
+        <div className="rounded-xl border border-[var(--color-warm-border)] bg-white shadow-[var(--shadow-card)]">
           <button
             onClick={() => setShowStatusLog(!showStatusLog)}
-            className="flex w-full items-center justify-between p-5 text-left transition-colors hover:bg-gray-50"
+            className="flex w-full items-center justify-between p-5 text-left transition-colors duration-300 hover:bg-[var(--color-warm-bg)]"
           >
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold text-gray-900">상태 변경 이력</h3>
-              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+              <h3 className="text-sm font-medium text-[var(--color-warm-text)]">상태 변경 이력</h3>
+              <span className="rounded-full bg-[var(--color-warm-bg)] border border-[var(--color-warm-border-light)] px-2 py-0.5 text-xs text-[var(--color-warm-muted)]">
                 {statusLog.length}
               </span>
             </div>
             <svg
-              className={`h-4 w-4 text-gray-400 transition-transform ${showStatusLog ? "rotate-180" : ""}`}
+              className={`h-4 w-4 text-[var(--color-warm-muted)] transition-transform ${showStatusLog ? "rotate-180" : ""}`}
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
-              strokeWidth={2}
+              strokeWidth={1.2}
             >
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
             </svg>
           </button>
 
           {showStatusLog && (
-            <div className="border-t border-gray-100 px-5 pb-5">
+            <div className="border-t border-[var(--color-warm-border-light)] px-5 pb-5">
               <div className="mt-3 space-y-2">
                 {statusLog.map((log) => (
                   <div
                     key={log.id}
-                    className="flex items-center gap-3 rounded-xl bg-gray-50/80 px-4 py-3 text-sm"
+                    className="flex items-center gap-3 rounded-xl bg-[var(--color-warm-bg)] border border-[var(--color-warm-border-light)] px-4 py-3 text-sm"
                   >
-                    <span className="min-w-[70px] text-xs text-gray-400">
+                    <span className="min-w-[70px] text-xs text-[var(--color-warm-muted)]">
                       {new Date(log.changed_at).toLocaleDateString("ko-KR")}
                     </span>
-                    <span className="text-gray-500">
+                    <span className="text-[var(--color-warm-muted)]">
                       {log.old_status
                         ? STATUS_LABELS[log.old_status as keyof typeof STATUS_LABELS]
                         : "—"}
                     </span>
-                    <svg className="h-3 w-3 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <svg className="h-3 w-3 text-[var(--color-warm-subtle)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                     </svg>
-                    <span className="font-medium text-gray-900">
+                    <span className="font-medium text-[var(--color-warm-text)]">
                       {STATUS_LABELS[log.new_status as keyof typeof STATUS_LABELS]}
                     </span>
                     {log.profiles?.name && (
-                      <span className="ml-auto text-xs text-gray-400">
+                      <span className="ml-auto text-xs text-[var(--color-warm-muted)]">
                         {log.profiles.name}
                       </span>
                     )}
@@ -578,8 +578,8 @@ function InfoItem({
 }) {
   return (
     <div className="flex flex-col">
-      <dt className="text-xs text-gray-400">{label}</dt>
-      <dd className="mt-0.5 text-sm text-gray-900">{value || "—"}</dd>
+      <dt className="text-[10px] font-medium uppercase tracking-[0.15em] text-[var(--color-warm-muted)]">{label}</dt>
+      <dd className="mt-0.5 text-sm text-[var(--color-warm-text)]">{value || "—"}</dd>
     </div>
   );
 }

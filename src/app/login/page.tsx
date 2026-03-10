@@ -33,65 +33,75 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#f8f9fb]">
-      <div className="w-full max-w-sm rounded-2xl border border-gray-100 bg-white p-8 shadow-[var(--shadow-elevated)]">
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-md">
-            <span className="text-lg font-bold text-white">i</span>
-          </div>
-          <h1 className="text-xl font-semibold tracking-tight text-gray-900">이음채플</h1>
-          <p className="mt-1 text-[13px] font-medium tracking-wider text-gray-400">I:UM CHAPEL</p>
+    <div className="grain-overlay flex min-h-screen items-center justify-center bg-[var(--color-warm-bg)]">
+      <div className="w-full max-w-sm animate-fade-in px-4">
+        {/* 브랜드 */}
+        <div className="mb-10 text-center">
+          <h1 className="font-serif text-3xl font-light tracking-tight text-[var(--color-warm-text)]">
+            I:UM Chapel
+          </h1>
+          <div className="editorial-divider mx-auto mt-4" />
+          <p className="mt-4 text-[10px] font-medium uppercase tracking-[0.25em] text-[var(--color-warm-muted)]">
+            관리 시스템
+          </p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-[13px] font-medium text-gray-600"
+        {/* 폼 */}
+        <div className="rounded-xl border border-[var(--color-warm-border)] bg-white p-8 shadow-[var(--shadow-elevated)]">
+          <form onSubmit={handleLogin} className="space-y-5">
+            <div>
+              <label
+                htmlFor="email"
+                className="block text-[11px] font-medium uppercase tracking-[0.15em] text-[var(--color-warm-muted)]"
+              >
+                이메일
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="mt-2 block w-full border-b border-[var(--color-warm-border)] bg-transparent px-0 py-2.5 text-sm text-[var(--color-warm-text)] placeholder:text-[var(--color-warm-subtle)] transition-all duration-300 focus:border-[var(--color-warm-text)] focus:outline-none"
+                placeholder="email@example.com"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="password"
+                className="block text-[11px] font-medium uppercase tracking-[0.15em] text-[var(--color-warm-muted)]"
+              >
+                비밀번호
+              </label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="mt-2 block w-full border-b border-[var(--color-warm-border)] bg-transparent px-0 py-2.5 text-sm text-[var(--color-warm-text)] placeholder:text-[var(--color-warm-subtle)] transition-all duration-300 focus:border-[var(--color-warm-text)] focus:outline-none"
+                placeholder="비밀번호 입력"
+              />
+            </div>
+
+            {error && (
+              <p className="text-[13px] text-rose-500">{error}</p>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-lg bg-[#1a1a1a] py-3 text-sm font-medium text-white transition-all duration-300 hover:bg-[#333] disabled:opacity-40 disabled:pointer-events-none"
             >
-              이메일
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="mt-1.5 block w-full rounded-xl border border-gray-200 bg-gray-50/50 px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100"
-              placeholder="email@example.com"
-            />
-          </div>
+              {loading ? "로그인 중..." : "로그인"}
+            </button>
+          </form>
+        </div>
 
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-[13px] font-medium text-gray-600"
-            >
-              비밀번호
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="mt-1.5 block w-full rounded-xl border border-gray-200 bg-gray-50/50 px-3.5 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-indigo-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100"
-              placeholder="비밀번호 입력"
-            />
-          </div>
-
-          {error && (
-            <p className="text-sm font-medium text-rose-600">{error}</p>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:bg-indigo-700 hover:shadow-md active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
-          >
-            {loading ? "로그인 중..." : "로그인"}
-          </button>
-        </form>
+        <p className="mt-8 text-center text-[10px] font-medium tracking-[0.2em] text-[var(--color-warm-subtle)] uppercase">
+          이음채플
+        </p>
       </div>
     </div>
   );

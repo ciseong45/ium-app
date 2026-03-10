@@ -37,23 +37,23 @@ export default function GroupCard({
   const role = useRole();
 
   return (
-    <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-[var(--shadow-card)]">
+    <div className="hover-lift rounded-xl border border-[var(--color-warm-border)] bg-white p-5 shadow-[var(--shadow-card)] transition-all duration-300 hover:shadow-[var(--shadow-card-hover)]">
       {/* 그룹 헤더 */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-semibold text-gray-900">{group.name}</h3>
+          <h3 className="font-semibold text-[var(--color-warm-text)]">{group.name}</h3>
           {group.leader && (
-            <p className="text-sm text-gray-500">리더: {group.leader.name}</p>
+            <p className="text-sm text-[var(--color-warm-muted)]">리더: {group.leader.name}</p>
           )}
         </div>
         <div className="flex gap-2">
           {role !== "group_leader" && (
             <button
               onClick={onStartAssign}
-              className={`rounded-xl px-3 py-1.5 text-xs font-medium transition-colors ${
+              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-300 ${
                 isAssigning
-                  ? "bg-indigo-600 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  ? "bg-[#1a1a1a] text-white"
+                  : "border border-[var(--color-warm-border)] bg-white text-[var(--color-warm-text)] hover:border-[var(--color-warm-text)]"
               }`}
             >
               {isAssigning ? "닫기" : "+ 배정"}
@@ -67,7 +67,7 @@ export default function GroupCard({
                   const targetId = Number(e.target.value);
                   if (targetId) onMoveToUpperRoom(targetId);
                 }}
-                className="rounded-xl border border-gray-200 px-2 py-1 text-xs text-gray-500 focus:border-indigo-400 focus:outline-none"
+                className="rounded-lg border border-[var(--color-warm-border)] px-2 py-1 text-xs text-[var(--color-warm-muted)] focus:border-[var(--color-warm-text)] focus:outline-none transition-all duration-300"
               >
                 <option value="" disabled>이동</option>
                 {upperRooms
@@ -80,7 +80,7 @@ export default function GroupCard({
               </select>
               <button
                 onClick={onDelete}
-                className="rounded-xl px-3 py-1.5 text-xs text-rose-400 hover:text-rose-600"
+                className="rounded-lg px-3 py-1.5 text-xs text-rose-400 hover:text-rose-600 transition-all duration-300"
               >
                 삭제
               </button>
@@ -91,19 +91,19 @@ export default function GroupCard({
 
       {/* 배정 패널 */}
       {isAssigning && (
-        <div className="mt-3 rounded-xl border border-indigo-200 bg-indigo-50 p-3">
-          <p className="mb-2 text-xs font-medium text-indigo-700">
+        <div className="mt-3 rounded-xl border border-[var(--color-warm-border)] bg-[var(--color-warm-bg)] p-3">
+          <p className="mb-2 text-xs font-medium text-[var(--color-warm-text)]">
             멤버를 클릭하면 이 그룹에 배정됩니다
           </p>
           {unassignedMembers.length === 0 ? (
-            <p className="text-xs text-gray-400">미배정 멤버가 없습니다.</p>
+            <p className="text-xs text-[var(--color-warm-muted)]">미배정 멤버가 없습니다.</p>
           ) : (
             <div className="flex flex-wrap gap-1.5">
               {unassignedMembers.map((member) => (
                 <button
                   key={member.id}
                   onClick={() => onAssign(member.id)}
-                  className="rounded-full bg-white px-2.5 py-1 text-xs text-gray-700 shadow-sm hover:bg-indigo-100"
+                  className="rounded-full bg-white px-2.5 py-1 text-xs text-[var(--color-warm-text)] shadow-sm hover:bg-[var(--color-warm-border-light)] transition-all duration-300"
                 >
                   {member.name}
                 </button>
@@ -116,28 +116,28 @@ export default function GroupCard({
       {/* 소속 멤버 목록 */}
       <div className="mt-3">
         {members.length === 0 ? (
-          <p className="text-xs text-gray-400">소속 멤버가 없습니다.</p>
+          <p className="text-xs text-[var(--color-warm-muted)]">소속 멤버가 없습니다.</p>
         ) : (
           <div className="space-y-1">
             {members.map((entry) => (
               <div
                 key={entry.id}
-                className="flex items-center justify-between rounded-xl px-2 py-1.5 hover:bg-gray-50/80"
+                className="flex items-center justify-between rounded-xl px-2 py-1.5 hover:bg-[var(--color-warm-bg)] transition-all duration-300"
               >
-                <span className="text-sm text-gray-700">
+                <span className="text-sm text-[var(--color-warm-text)]">
                   {entry.member.name}
                 </span>
                 {role !== "group_leader" && (
                   <button
                     onClick={() => onUnassign(entry.member.id)}
-                    className="text-xs text-gray-400 hover:text-red-500"
+                    className="text-xs text-[var(--color-warm-muted)] hover:text-red-500"
                   >
                     해제
                   </button>
                 )}
               </div>
             ))}
-            <p className="mt-1 text-xs text-gray-400">
+            <p className="mt-1 text-xs text-[var(--color-warm-muted)]">
               {members.length}명
             </p>
           </div>

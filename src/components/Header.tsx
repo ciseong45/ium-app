@@ -12,12 +12,22 @@ const ROLE_LABELS = {
 } as const;
 
 const ROLE_COLORS: Record<string, string> = {
-  admin: "bg-rose-50 text-rose-600 ring-1 ring-rose-100",
-  upper_room_leader: "bg-violet-50 text-violet-600 ring-1 ring-violet-100",
-  group_leader: "bg-indigo-50 text-indigo-600 ring-1 ring-indigo-100",
+  admin: "text-[#1a1a1a]",
+  upper_room_leader: "text-[#1a1a1a]",
+  group_leader: "text-[#1a1a1a]",
 };
 
 const PAGE_TITLES: Record<string, string> = {
+  "/": "Dashboard",
+  "/members": "Members",
+  "/small-groups": "Small Groups",
+  "/attendance": "Attendance",
+  "/new-family": "New Family",
+  "/one-to-one": "Discipleship",
+  "/settings": "Settings",
+};
+
+const PAGE_SUBTITLES: Record<string, string> = {
   "/": "대시보드",
   "/members": "멤버 관리",
   "/small-groups": "순관리",
@@ -35,12 +45,21 @@ function getPageTitle(pathname: string): string {
   return match ? PAGE_TITLES[match] : "";
 }
 
+function getPageSubtitle(pathname: string): string {
+  if (PAGE_SUBTITLES[pathname]) return PAGE_SUBTITLES[pathname];
+  const match = Object.keys(PAGE_SUBTITLES).find(
+    (k) => k !== "/" && pathname.startsWith(k)
+  );
+  return match ? PAGE_SUBTITLES[match] : "";
+}
+
 export default function Header({ onMenuClick }: { onMenuClick: () => void }) {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const router = useRouter();
   const pathname = usePathname();
   const role = useRole();
   const pageTitle = getPageTitle(pathname);
+  const pageSubtitle = getPageSubtitle(pathname);
 
   useEffect(() => {
     const supabase = createClient();
@@ -61,58 +80,46 @@ export default function Header({ onMenuClick }: { onMenuClick: () => void }) {
     router.refresh();
   };
 
-  const initial = userEmail ? userEmail.charAt(0).toUpperCase() : "?";
-
   return (
-    <header className="flex h-16 items-center justify-between bg-white/80 px-4 backdrop-blur-md shadow-[var(--shadow-header)] lg:px-6">
+    <header className="flex h-16 items-center justify-between border-b border-[var(--color-warm-border-light)] bg-white/80 px-5 backdrop-blur-xl lg:px-8">
       {/* 왼쪽: 모바일 메뉴 + 페이지 제목 */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
         <button
           onClick={onMenuClick}
-          className="rounded-xl p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 lg:hidden"
+          className="rounded-lg p-2 text-[var(--color-warm-muted)] transition-colors duration-300 hover:bg-[var(--color-warm-bg)] hover:text-[var(--color-warm-text)] lg:hidden"
         >
-          <svg
-            className="h-5 w-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5"
-            />
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2} d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5" />
           </svg>
         </button>
-        <h1 className="hidden text-[17px] font-semibold tracking-tight text-gray-900 lg:block">
-          {pageTitle}
-        </h1>
+        <div className="hidden lg:block">
+          <h1 className="font-serif text-lg font-light tracking-tight text-[var(--color-warm-text)]">
+            {pageTitle}
+          </h1>
+          <p className="text-[10px] font-medium tracking-[0.15em] text-[var(--color-warm-muted)]">
+            {pageSubtitle}
+          </p>
+        </div>
       </div>
 
       {/* 오른쪽: 유저 정보 + 로그아웃 */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         {userEmail && (
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-xs font-semibold text-white shadow-sm">
-              {initial}
-            </div>
-            <div className="hidden sm:block">
-              <p className="text-sm font-medium text-gray-800">
+            <div className="hidden sm:flex items-center gap-2">
+              <span className="text-[13px] font-medium text-[var(--color-warm-text)]">
                 {userEmail.split("@")[0]}
-              </p>
-              <span
-                className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${ROLE_COLORS[role] ?? "bg-gray-100 text-gray-500"}`}
-              >
+              </span>
+              <span className="text-[10px] font-medium tracking-[0.1em] text-[var(--color-warm-muted)] uppercase">
                 {ROLE_LABELS[role]}
               </span>
             </div>
           </div>
         )}
-        <div className="ml-1 h-5 w-px bg-gray-200 hidden sm:block" />
+        <div className="h-3 w-px bg-[var(--color-warm-border)] hidden sm:block" />
         <button
           onClick={handleSignOut}
-          className="rounded-xl px-3 py-1.5 text-[13px] text-gray-400 transition-all duration-200 hover:bg-gray-100 hover:text-gray-600"
+          className="text-[12px] font-medium tracking-wide text-[var(--color-warm-muted)] transition-colors duration-300 hover:text-[var(--color-warm-text)]"
         >
           로그아웃
         </button>
