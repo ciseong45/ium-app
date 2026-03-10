@@ -41,6 +41,7 @@ export default async function SeasonDetailPage({
   return (
     <SeasonDetail
       season={season}
+      seasons={seasons}
       groups={groups}
       upperRooms={upperRooms}
       unassignedMembers={unassigned}

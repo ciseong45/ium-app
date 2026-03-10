@@ -26,21 +26,28 @@ type Group = {
 type Season = {
   id: number;
   name: string;
+  start_date?: string | null;
+  end_date?: string | null;
   is_active: boolean;
+  created_at?: string;
 };
 
 export default function SeasonDetail({
   season,
+  seasons,
   groups,
   upperRooms,
   unassignedMembers,
   initialGroupMembers,
+  hideHeader = false,
 }: {
   season: Season;
+  seasons?: Season[];
   groups: Group[];
   upperRooms: UpperRoom[];
   unassignedMembers: Member[];
   initialGroupMembers: Record<number, GroupMemberEntry[]>;
+  hideHeader?: boolean;
 }) {
   const router = useRouter();
   const role = useRole();
@@ -178,25 +185,63 @@ export default function SeasonDetail({
     0
   );
 
+  const handleSeasonChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    if (value === "active") {
+      router.push("/small-groups");
+    } else {
+      router.push(`/small-groups/${value}`);
+    }
+  };
+
+  const inactiveSeasons = (seasons ?? []).filter((s) => !s.is_active);
+  const activeSeasonInList = (seasons ?? []).find((s) => s.is_active);
+
   return (
     <div>
-      {/* 헤더 */}
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => router.push("/small-groups")}
-          className="rounded-xl p-1 text-[var(--color-warm-muted)] hover:text-[var(--color-warm-text)] hover:bg-[var(--color-warm-bg)] transition-all duration-300"
-        >
-          ←
-        </button>
-        <div>
-          <h2 className="font-serif text-2xl font-light tracking-tight text-[var(--color-warm-text)]">{season.name}</h2>
-          {season.is_active && (
-            <span className="rounded-full bg-[#edf5ed] px-2 py-0.5 text-xs font-medium text-[#3d6b3d]">
-              활성 시즌
-            </span>
-          )}
+      {/* 헤더 — [seasonId] 페이지에서만 표시 */}
+      {!hideHeader && (
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.push("/small-groups")}
+              className="rounded-lg p-1.5 text-[var(--color-warm-muted)] hover:text-[var(--color-warm-text)] hover:bg-[var(--color-warm-bg)] transition-all duration-300"
+            >
+              ←
+            </button>
+            {/* 시즌 전환 드롭다운 */}
+            {seasons && seasons.length > 0 ? (
+              <select
+                value={season.id}
+                onChange={handleSeasonChange}
+                className="rounded-lg border border-[var(--color-warm-border)] bg-white px-4 py-2 text-sm font-medium text-[var(--color-warm-text)] transition-all duration-300 focus:border-[var(--color-warm-text)] focus:outline-none focus:ring-1 focus:ring-[var(--color-warm-text)]/10"
+              >
+                {activeSeasonInList && (
+                  <optgroup label="활성 시즌">
+                    <option value="active">{activeSeasonInList.name}</option>
+                  </optgroup>
+                )}
+                {inactiveSeasons.length > 0 && (
+                  <optgroup label="이전 시즌">
+                    {inactiveSeasons.map((s) => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </optgroup>
+                )}
+              </select>
+            ) : (
+              <h2 className="font-serif text-2xl font-light tracking-tight text-[var(--color-warm-text)]">
+                {season.name}
+              </h2>
+            )}
+            {!season.is_active && (
+              <span className="rounded-full bg-[var(--color-warm-bg)] border border-[var(--color-warm-border)] px-2 py-0.5 text-[10px] font-medium text-[var(--color-warm-muted)]">
+                비활성
+              </span>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 요약 */}
       <div className="mt-4 flex gap-4 text-sm text-[var(--color-warm-muted)]">
