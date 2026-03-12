@@ -5,12 +5,7 @@
 --   DELETE: admin만
 --
 -- ⚠️ 중요: 코드 배포 성공 확인 후 SQL 실행할 것
-
--- 2A. 역할 확인 헬퍼 함수 (public 스키마에 생성)
-CREATE OR REPLACE FUNCTION public.user_role()
-RETURNS TEXT AS $$
-  SELECT role FROM public.profiles WHERE id = auth.uid();
-$$ LANGUAGE sql SECURITY DEFINER STABLE;
+-- 헬퍼 함수 대신 인라인 서브쿼리 사용 (auth 스키마 권한 문제 회피)
 
 -- ============================================================
 -- members
@@ -19,7 +14,6 @@ DROP POLICY IF EXISTS "members_select" ON members;
 DROP POLICY IF EXISTS "members_insert" ON members;
 DROP POLICY IF EXISTS "members_update" ON members;
 DROP POLICY IF EXISTS "members_delete" ON members;
--- 기존 정책 정리
 DROP POLICY IF EXISTS "members_auth_select" ON members;
 DROP POLICY IF EXISTS "members_auth_insert" ON members;
 DROP POLICY IF EXISTS "members_auth_update" ON members;
@@ -29,13 +23,13 @@ CREATE POLICY "members_auth_select" ON members
   FOR SELECT TO authenticated USING (true);
 CREATE POLICY "members_auth_insert" ON members
   FOR INSERT TO authenticated
-  WITH CHECK (public.user_role() IN ('admin', 'upper_room_leader'));
+  WITH CHECK ((SELECT role FROM public.profiles WHERE id = (SELECT auth.uid())) IN ('admin', 'upper_room_leader'));
 CREATE POLICY "members_auth_update" ON members
   FOR UPDATE TO authenticated
-  USING (public.user_role() IN ('admin', 'upper_room_leader'));
+  USING ((SELECT role FROM public.profiles WHERE id = (SELECT auth.uid())) IN ('admin', 'upper_room_leader'));
 CREATE POLICY "members_auth_delete" ON members
   FOR DELETE TO authenticated
-  USING (public.user_role() = 'admin');
+  USING ((SELECT role FROM public.profiles WHERE id = (SELECT auth.uid())) = 'admin');
 
 -- ============================================================
 -- small_group_seasons
@@ -53,13 +47,13 @@ CREATE POLICY "small_group_seasons_auth_select" ON small_group_seasons
   FOR SELECT TO authenticated USING (true);
 CREATE POLICY "small_group_seasons_auth_insert" ON small_group_seasons
   FOR INSERT TO authenticated
-  WITH CHECK (public.user_role() = 'admin');
+  WITH CHECK ((SELECT role FROM public.profiles WHERE id = (SELECT auth.uid())) = 'admin');
 CREATE POLICY "small_group_seasons_auth_update" ON small_group_seasons
   FOR UPDATE TO authenticated
-  USING (public.user_role() = 'admin');
+  USING ((SELECT role FROM public.profiles WHERE id = (SELECT auth.uid())) = 'admin');
 CREATE POLICY "small_group_seasons_auth_delete" ON small_group_seasons
   FOR DELETE TO authenticated
-  USING (public.user_role() = 'admin');
+  USING ((SELECT role FROM public.profiles WHERE id = (SELECT auth.uid())) = 'admin');
 
 -- ============================================================
 -- small_groups
@@ -77,13 +71,13 @@ CREATE POLICY "small_groups_auth_select" ON small_groups
   FOR SELECT TO authenticated USING (true);
 CREATE POLICY "small_groups_auth_insert" ON small_groups
   FOR INSERT TO authenticated
-  WITH CHECK (public.user_role() = 'admin');
+  WITH CHECK ((SELECT role FROM public.profiles WHERE id = (SELECT auth.uid())) = 'admin');
 CREATE POLICY "small_groups_auth_update" ON small_groups
   FOR UPDATE TO authenticated
-  USING (public.user_role() = 'admin');
+  USING ((SELECT role FROM public.profiles WHERE id = (SELECT auth.uid())) = 'admin');
 CREATE POLICY "small_groups_auth_delete" ON small_groups
   FOR DELETE TO authenticated
-  USING (public.user_role() = 'admin');
+  USING ((SELECT role FROM public.profiles WHERE id = (SELECT auth.uid())) = 'admin');
 
 -- ============================================================
 -- small_group_members
@@ -101,13 +95,13 @@ CREATE POLICY "small_group_members_auth_select" ON small_group_members
   FOR SELECT TO authenticated USING (true);
 CREATE POLICY "small_group_members_auth_insert" ON small_group_members
   FOR INSERT TO authenticated
-  WITH CHECK (public.user_role() IN ('admin', 'upper_room_leader'));
+  WITH CHECK ((SELECT role FROM public.profiles WHERE id = (SELECT auth.uid())) IN ('admin', 'upper_room_leader'));
 CREATE POLICY "small_group_members_auth_update" ON small_group_members
   FOR UPDATE TO authenticated
-  USING (public.user_role() IN ('admin', 'upper_room_leader'));
+  USING ((SELECT role FROM public.profiles WHERE id = (SELECT auth.uid())) IN ('admin', 'upper_room_leader'));
 CREATE POLICY "small_group_members_auth_delete" ON small_group_members
   FOR DELETE TO authenticated
-  USING (public.user_role() IN ('admin', 'upper_room_leader'));
+  USING ((SELECT role FROM public.profiles WHERE id = (SELECT auth.uid())) IN ('admin', 'upper_room_leader'));
 
 -- ============================================================
 -- attendance
@@ -125,13 +119,13 @@ CREATE POLICY "attendance_auth_select" ON attendance
   FOR SELECT TO authenticated USING (true);
 CREATE POLICY "attendance_auth_insert" ON attendance
   FOR INSERT TO authenticated
-  WITH CHECK (public.user_role() IN ('admin', 'upper_room_leader'));
+  WITH CHECK ((SELECT role FROM public.profiles WHERE id = (SELECT auth.uid())) IN ('admin', 'upper_room_leader'));
 CREATE POLICY "attendance_auth_update" ON attendance
   FOR UPDATE TO authenticated
-  USING (public.user_role() IN ('admin', 'upper_room_leader'));
+  USING ((SELECT role FROM public.profiles WHERE id = (SELECT auth.uid())) IN ('admin', 'upper_room_leader'));
 CREATE POLICY "attendance_auth_delete" ON attendance
   FOR DELETE TO authenticated
-  USING (public.user_role() = 'admin');
+  USING ((SELECT role FROM public.profiles WHERE id = (SELECT auth.uid())) = 'admin');
 
 -- ============================================================
 -- new_family
@@ -149,13 +143,13 @@ CREATE POLICY "new_family_auth_select" ON new_family
   FOR SELECT TO authenticated USING (true);
 CREATE POLICY "new_family_auth_insert" ON new_family
   FOR INSERT TO authenticated
-  WITH CHECK (public.user_role() IN ('admin', 'upper_room_leader'));
+  WITH CHECK ((SELECT role FROM public.profiles WHERE id = (SELECT auth.uid())) IN ('admin', 'upper_room_leader'));
 CREATE POLICY "new_family_auth_update" ON new_family
   FOR UPDATE TO authenticated
-  USING (public.user_role() IN ('admin', 'upper_room_leader'));
+  USING ((SELECT role FROM public.profiles WHERE id = (SELECT auth.uid())) IN ('admin', 'upper_room_leader'));
 CREATE POLICY "new_family_auth_delete" ON new_family
   FOR DELETE TO authenticated
-  USING (public.user_role() = 'admin');
+  USING ((SELECT role FROM public.profiles WHERE id = (SELECT auth.uid())) = 'admin');
 
 -- ============================================================
 -- one_to_one
@@ -173,13 +167,13 @@ CREATE POLICY "one_to_one_auth_select" ON one_to_one
   FOR SELECT TO authenticated USING (true);
 CREATE POLICY "one_to_one_auth_insert" ON one_to_one
   FOR INSERT TO authenticated
-  WITH CHECK (public.user_role() IN ('admin', 'upper_room_leader'));
+  WITH CHECK ((SELECT role FROM public.profiles WHERE id = (SELECT auth.uid())) IN ('admin', 'upper_room_leader'));
 CREATE POLICY "one_to_one_auth_update" ON one_to_one
   FOR UPDATE TO authenticated
-  USING (public.user_role() IN ('admin', 'upper_room_leader'));
+  USING ((SELECT role FROM public.profiles WHERE id = (SELECT auth.uid())) IN ('admin', 'upper_room_leader'));
 CREATE POLICY "one_to_one_auth_delete" ON one_to_one
   FOR DELETE TO authenticated
-  USING (public.user_role() = 'admin');
+  USING ((SELECT role FROM public.profiles WHERE id = (SELECT auth.uid())) = 'admin');
 
 -- ============================================================
 -- one_to_one_sessions
@@ -197,13 +191,13 @@ CREATE POLICY "one_to_one_sessions_auth_select" ON one_to_one_sessions
   FOR SELECT TO authenticated USING (true);
 CREATE POLICY "one_to_one_sessions_auth_insert" ON one_to_one_sessions
   FOR INSERT TO authenticated
-  WITH CHECK (public.user_role() IN ('admin', 'upper_room_leader'));
+  WITH CHECK ((SELECT role FROM public.profiles WHERE id = (SELECT auth.uid())) IN ('admin', 'upper_room_leader'));
 CREATE POLICY "one_to_one_sessions_auth_update" ON one_to_one_sessions
   FOR UPDATE TO authenticated
-  USING (public.user_role() IN ('admin', 'upper_room_leader'));
+  USING ((SELECT role FROM public.profiles WHERE id = (SELECT auth.uid())) IN ('admin', 'upper_room_leader'));
 CREATE POLICY "one_to_one_sessions_auth_delete" ON one_to_one_sessions
   FOR DELETE TO authenticated
-  USING (public.user_role() = 'admin');
+  USING ((SELECT role FROM public.profiles WHERE id = (SELECT auth.uid())) = 'admin');
 
 -- ============================================================
 -- upper_rooms
@@ -221,13 +215,13 @@ CREATE POLICY "upper_rooms_auth_select" ON upper_rooms
   FOR SELECT TO authenticated USING (true);
 CREATE POLICY "upper_rooms_auth_insert" ON upper_rooms
   FOR INSERT TO authenticated
-  WITH CHECK (public.user_role() = 'admin');
+  WITH CHECK ((SELECT role FROM public.profiles WHERE id = (SELECT auth.uid())) = 'admin');
 CREATE POLICY "upper_rooms_auth_update" ON upper_rooms
   FOR UPDATE TO authenticated
-  USING (public.user_role() = 'admin');
+  USING ((SELECT role FROM public.profiles WHERE id = (SELECT auth.uid())) = 'admin');
 CREATE POLICY "upper_rooms_auth_delete" ON upper_rooms
   FOR DELETE TO authenticated
-  USING (public.user_role() = 'admin');
+  USING ((SELECT role FROM public.profiles WHERE id = (SELECT auth.uid())) = 'admin');
 
 -- ============================================================
 -- member_status_log
@@ -241,7 +235,7 @@ CREATE POLICY "member_status_log_auth_select" ON member_status_log
   FOR SELECT TO authenticated USING (true);
 CREATE POLICY "member_status_log_auth_insert" ON member_status_log
   FOR INSERT TO authenticated
-  WITH CHECK (public.user_role() IN ('admin', 'upper_room_leader'));
+  WITH CHECK ((SELECT role FROM public.profiles WHERE id = (SELECT auth.uid())) IN ('admin', 'upper_room_leader'));
 
 -- ============================================================
 -- member_leaves
@@ -259,13 +253,13 @@ CREATE POLICY "member_leaves_auth_select" ON member_leaves
   FOR SELECT TO authenticated USING (true);
 CREATE POLICY "member_leaves_auth_insert" ON member_leaves
   FOR INSERT TO authenticated
-  WITH CHECK (public.user_role() IN ('admin', 'upper_room_leader'));
+  WITH CHECK ((SELECT role FROM public.profiles WHERE id = (SELECT auth.uid())) IN ('admin', 'upper_room_leader'));
 CREATE POLICY "member_leaves_auth_update" ON member_leaves
   FOR UPDATE TO authenticated
-  USING (public.user_role() IN ('admin', 'upper_room_leader'));
+  USING ((SELECT role FROM public.profiles WHERE id = (SELECT auth.uid())) IN ('admin', 'upper_room_leader'));
 CREATE POLICY "member_leaves_auth_delete" ON member_leaves
   FOR DELETE TO authenticated
-  USING (public.user_role() = 'admin');
+  USING ((SELECT role FROM public.profiles WHERE id = (SELECT auth.uid())) = 'admin');
 
 -- ============================================================
 -- member_ministry_teams
@@ -283,10 +277,10 @@ CREATE POLICY "member_ministry_teams_auth_select" ON member_ministry_teams
   FOR SELECT TO authenticated USING (true);
 CREATE POLICY "member_ministry_teams_auth_insert" ON member_ministry_teams
   FOR INSERT TO authenticated
-  WITH CHECK (public.user_role() IN ('admin', 'upper_room_leader'));
+  WITH CHECK ((SELECT role FROM public.profiles WHERE id = (SELECT auth.uid())) IN ('admin', 'upper_room_leader'));
 CREATE POLICY "member_ministry_teams_auth_update" ON member_ministry_teams
   FOR UPDATE TO authenticated
-  USING (public.user_role() IN ('admin', 'upper_room_leader'));
+  USING ((SELECT role FROM public.profiles WHERE id = (SELECT auth.uid())) IN ('admin', 'upper_room_leader'));
 CREATE POLICY "member_ministry_teams_auth_delete" ON member_ministry_teams
   FOR DELETE TO authenticated
-  USING (public.user_role() IN ('admin', 'upper_room_leader'));
+  USING ((SELECT role FROM public.profiles WHERE id = (SELECT auth.uid())) IN ('admin', 'upper_room_leader'));
