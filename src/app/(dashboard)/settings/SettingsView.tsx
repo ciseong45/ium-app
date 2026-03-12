@@ -19,7 +19,7 @@ export default function SettingsView({
 }: {
   users: UserEntry[];
   currentUserId: string;
-  members: { id: number; name: string }[];
+  members: { id: number; last_name: string; first_name: string }[];
 }) {
   const router = useRouter();
   const [saving, setSaving] = useState<string | null>(null);
@@ -53,7 +53,8 @@ export default function SettingsView({
 
   const getMemberName = (memberId: number | null) => {
     if (!memberId) return null;
-    return members.find((m) => m.id === memberId)?.name ?? null;
+    const m = members.find((m) => m.id === memberId);
+    return m ? `${m.last_name}${m.first_name}` : null;
   };
 
   return (
@@ -103,7 +104,7 @@ export default function SettingsView({
               <option value="">미연결</option>
               {members.map((m) => (
                 <option key={m.id} value={String(m.id)}>
-                  {m.name}
+                  {m.last_name}{m.first_name}
                 </option>
               ))}
             </select>

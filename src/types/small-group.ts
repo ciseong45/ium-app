@@ -5,7 +5,7 @@ export type UpperRoom = {
   season_id: number;
   name: string;
   leader_id: number | null;
-  leader: { id: number; name: string } | null;
+  leader: { id: number; last_name: string; first_name: string } | null;
   display_order: number;
 };
 
@@ -14,7 +14,7 @@ export type SmallGroup = {
   name: string;
   season_id: number;
   upper_room_id: number;
-  leader: { id: number; name: string } | null;
+  leader: { id: number; last_name: string; first_name: string } | null;
 };
 
 export type GroupMemberEntry = {

@@ -39,18 +39,32 @@ export default function MemberForm({ member }: { member?: Member }) {
 
   return (
     <form onSubmit={handleSubmit} className="max-w-lg space-y-4">
-      {/* 이름 (필수) */}
-      <div>
-        <label className="block text-sm font-medium text-[var(--color-warm-text)]">
-          이름 <span className="text-red-500">*</span>
-        </label>
-        <input
-          name="name"
-          type="text"
-          required
-          defaultValue={member?.name}
-          className={INPUT_CLASS}
-        />
+      {/* 성 + 이름 (필수) */}
+      <div className="grid grid-cols-[1fr_2fr] gap-3">
+        <div>
+          <label className="block text-sm font-medium text-[var(--color-warm-text)]">
+            성 <span className="text-red-500">*</span>
+          </label>
+          <input
+            name="last_name"
+            type="text"
+            required
+            defaultValue={member?.last_name}
+            className={INPUT_CLASS}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-[var(--color-warm-text)]">
+            이름 <span className="text-red-500">*</span>
+          </label>
+          <input
+            name="first_name"
+            type="text"
+            required
+            defaultValue={member?.first_name}
+            className={INPUT_CLASS}
+          />
+        </div>
       </div>
 
       {/* 전화번호 */}

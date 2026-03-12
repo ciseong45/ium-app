@@ -72,12 +72,20 @@ export default function VisitorCardPage() {
           onSubmit={handleSubmit}
           className="rounded-xl border border-[var(--color-warm-border)] bg-white p-8 shadow-[var(--shadow-elevated)] space-y-6"
         >
-          {/* 이름 */}
-          <div>
-            <label className={labelClass}>
-              성도 이름 <span className="text-rose-400">*</span>
-            </label>
-            <input name="name" type="text" required className={inputClass} />
+          {/* 성 + 이름 */}
+          <div className="grid grid-cols-[1fr_2fr] gap-4">
+            <div>
+              <label className={labelClass}>
+                성 <span className="text-rose-400">*</span>
+              </label>
+              <input name="last_name" type="text" required className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>
+                이름 <span className="text-rose-400">*</span>
+              </label>
+              <input name="first_name" type="text" required className={inputClass} />
+            </div>
           </div>
 
           {/* 카카오톡 아이디 */}

@@ -21,7 +21,7 @@ const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: "completed", label: "완료" },
 ];
 
-type SimpleMember = { id: number; name: string };
+type SimpleMember = { id: number; last_name: string; first_name: string };
 
 export default function OneToOneView({
   entries,
@@ -126,7 +126,7 @@ export default function OneToOneView({
                 <option value="">선택</option>
                 {members.map((m) => (
                   <option key={m.id} value={m.id}>
-                    {m.name}
+                    {m.last_name}{m.first_name}
                   </option>
                 ))}
               </select>
@@ -143,7 +143,7 @@ export default function OneToOneView({
                 <option value="">선택</option>
                 {members.map((m) => (
                   <option key={m.id} value={m.id}>
-                    {m.name}
+                    {m.last_name}{m.first_name}
                   </option>
                 ))}
               </select>

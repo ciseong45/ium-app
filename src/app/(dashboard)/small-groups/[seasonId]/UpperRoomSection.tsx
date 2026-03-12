@@ -12,7 +12,7 @@ type Group = {
   name: string;
   season_id: number;
   upper_room_id: number;
-  leader: { id: number; name: string } | null;
+  leader: { id: number; last_name: string; first_name: string } | null;
 };
 
 export default function UpperRoomSection({
@@ -133,7 +133,7 @@ export default function UpperRoomSection({
             )}
             <div className="flex items-center gap-2 text-sm text-[var(--color-warm-muted)]">
               {upperRoom.leader ? (
-                <span>다락방장: {upperRoom.leader.name}</span>
+                <span>다락방장: {upperRoom.leader.last_name}{upperRoom.leader.first_name}</span>
               ) : (
                 <span className="text-[var(--color-warm-subtle)]">다락방장 미지정</span>
               )}
@@ -182,7 +182,7 @@ export default function UpperRoomSection({
             <option value="">미지정</option>
             {allMembers.map((m) => (
               <option key={m.id} value={String(m.id)}>
-                {m.name}
+                {m.last_name}{m.first_name}
               </option>
             ))}
           </select>

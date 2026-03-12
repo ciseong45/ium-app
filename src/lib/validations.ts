@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 export const memberSchema = z.object({
-  name: z.string().min(1, "이름은 필수입니다.").max(50, "이름이 너무 깁니다."),
+  last_name: z.string().min(1, "성은 필수입니다.").max(10, "성이 너무 깁니다."),
+  first_name: z.string().min(1, "이름은 필수입니다.").max(40, "이름이 너무 깁니다."),
   phone: z.string().max(20).nullable(),
   email: z.string().email("올바른 이메일 형식이 아닙니다.").nullable(),
   gender: z.enum(["M", "F"]).nullable(),
@@ -15,7 +16,8 @@ export const memberSchema = z.object({
 });
 
 export const visitorCardSchema = z.object({
-  name: z.string().min(1, "이름은 필수입니다.").max(50),
+  last_name: z.string().min(1, "성은 필수입니다.").max(10),
+  first_name: z.string().min(1, "이름은 필수입니다.").max(40),
   phone: z.string().max(20).nullable(),
   kakao_id: z.string().max(50).nullable(),
   gender: z.enum(["M", "F"]).nullable(),

@@ -19,7 +19,7 @@ const STEPS = [
   { step: 3, label: "3주차 교육", color: "bg-[#edf5ed] text-[#3d6b3d]" },
 ];
 
-type SimpleMember = { id: number; name: string };
+type SimpleMember = { id: number; last_name: string; first_name: string };
 
 export default function NewFamilyView({
   families,
@@ -73,8 +73,8 @@ export default function NewFamilyView({
     }
   };
 
-  const handleDelete = async (id: number, name: string) => {
-    if (!confirm(`${name}님을 새가족 목록에서 삭제하시겠습니까?`)) return;
+  const handleDelete = async (id: number, fullName: string) => {
+    if (!confirm(`${fullName}님을 새가족 목록에서 삭제하시겠습니까?`)) return;
     const result = await deleteNewFamily(id);
     if (result.success) {
       router.refresh();
@@ -163,7 +163,7 @@ export default function NewFamilyView({
                 key={f.id}
                 className="rounded-full bg-[#f5f0e0] px-3 py-1 text-sm text-[#8a7a56]"
               >
-                {f.member.name}
+                {f.member.last_name}{f.member.first_name}
               </span>
             ))}
           </div>
@@ -188,10 +188,20 @@ export default function NewFamilyView({
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <label className="block text-sm font-medium text-[var(--color-warm-text)]">
+                성 <span className="text-red-500">*</span>
+              </label>
+              <input
+                name="last_name"
+                required
+                className={INPUT_CLASS}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-warm-text)]">
                 이름 <span className="text-red-500">*</span>
               </label>
               <input
-                name="name"
+                name="first_name"
                 required
                 className={INPUT_CLASS}
               />
@@ -230,7 +240,7 @@ export default function NewFamilyView({
                 <option value="">선택 안 함</option>
                 {members.map((m) => (
                   <option key={m.id} value={m.id}>
-                    {m.name}
+                    {m.last_name}{m.first_name}
                   </option>
                 ))}
               </select>
@@ -271,7 +281,7 @@ export default function NewFamilyView({
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold text-[var(--color-warm-text)]">
-                      {family.member.name}
+                      {family.member.last_name}{family.member.first_name}
                     </h3>
                     <span
                       className={`rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -291,14 +301,14 @@ export default function NewFamilyView({
                       <span>{family.member.phone}</span>
                     )}
                     {family.assignee && (
-                      <span>담당: {family.assignee.name}</span>
+                      <span>담당: {family.assignee.last_name}{family.assignee.first_name}</span>
                     )}
                   </div>
                 </div>
                 {role === "admin" && (
                   <button
                     onClick={() =>
-                      handleDelete(family.id, family.member.name)
+                      handleDelete(family.id, `${family.member.last_name}${family.member.first_name}`)
                     }
                     className="text-xs text-red-400 hover:text-red-600"
                   >

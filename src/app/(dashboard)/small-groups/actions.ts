@@ -95,7 +95,7 @@ export async function getUpperRoomsBySeason(seasonId: number) {
   const { supabase } = await requireAuth();
   const { data, error } = await supabase
     .from("upper_rooms")
-    .select("*, leader:members!leader_id(id, name)")
+    .select("*, leader:members!leader_id(id, last_name, first_name)")
     .eq("season_id", seasonId)
     .order("display_order");
   if (error) return [];
@@ -104,7 +104,7 @@ export async function getUpperRoomsBySeason(seasonId: number) {
     season_id: d.season_id as number,
     name: d.name as string,
     leader_id: d.leader_id as number | null,
-    leader: d.leader as { id: number; name: string } | null,
+    leader: d.leader as { id: number; last_name: string; first_name: string } | null,
     display_order: d.display_order as number,
   }));
 }
@@ -139,7 +139,7 @@ export async function getGroupsBySeason(seasonId: number) {
   const { supabase } = await requireAuth();
   const { data, error } = await supabase
     .from("small_groups")
-    .select("*, leader:members!leader_id(id, name)")
+    .select("*, leader:members!leader_id(id, last_name, first_name)")
     .eq("season_id", seasonId)
     .order("name");
   if (error) return [];
@@ -273,7 +273,8 @@ export async function getUnassignedMembers(seasonId: number) {
     .from("members")
     .select("*")
     .in("status", ["active", "attending"])
-    .order("name");
+    .order("last_name")
+    .order("first_name");
 
   if (assignedIds.length > 0) {
     query = query.not("id", "in", `(${assignedIds.join(",")})`);

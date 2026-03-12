@@ -11,7 +11,7 @@ export async function getOneToOnes(status?: string) {
   let query = supabase
     .from("one_to_one")
     .select(
-      "*, mentor:members!mentor_id(id, name), mentee:members!mentee_id(id, name)"
+      "*, mentor:members!mentor_id(id, last_name, first_name), mentee:members!mentee_id(id, last_name, first_name)"
     )
     .order("created_at", { ascending: false });
 

@@ -24,11 +24,12 @@ export async function fetchActiveMembers(
 ) {
   const { data, error } = await supabase
     .from("members")
-    .select("id, name")
+    .select("id, last_name, first_name")
     .in("status", statusFilter)
-    .order("name");
+    .order("last_name")
+    .order("first_name");
   if (error) return [];
-  return data as { id: number; name: string }[];
+  return data as { id: number; last_name: string; first_name: string }[];
 }
 
 // ===== 상태 변경 이력 기록 =====

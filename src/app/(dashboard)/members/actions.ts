@@ -19,7 +19,8 @@ export async function getMembers(
   let query = supabase
     .from("members")
     .select("*")
-    .order("name", { ascending: true });
+    .order("last_name", { ascending: true })
+    .order("first_name", { ascending: true });
 
   if (status && status !== "all") {
     // "재적" 필터: active, attending, inactive 포함
@@ -31,7 +32,7 @@ export async function getMembers(
   }
 
   if (search) {
-    query = query.or(`name.ilike.%${search}%,phone.ilike.%${search}%`);
+    query = query.or(`last_name.ilike.%${search}%,first_name.ilike.%${search}%,phone.ilike.%${search}%`);
   }
 
   if (schoolOrWork && schoolOrWork !== "all") {
@@ -92,7 +93,7 @@ export async function getMembersWithGroups(
   if (activeSeason) {
     const { data: groups } = await supabase
       .from("small_groups")
-      .select("id, name, upper_room_id, leader:members!leader_id(name)")
+      .select("id, name, upper_room_id, leader:members!leader_id(last_name, first_name)")
       .eq("season_id", activeSeason.id);
 
     const { data: upperRooms } = await supabase
@@ -105,7 +106,7 @@ export async function getMembersWithGroups(
       .select("member_id, group_id");
 
     const activeGroupIds = new Set((groups || []).map((g: { id: number }) => g.id));
-    const groupMap = new Map<number, { id: number; name: string; upper_room_id: number; leader: { name: string } | null }>();
+    const groupMap = new Map<number, { id: number; name: string; upper_room_id: number; leader: { last_name: string; first_name: string } | null }>();
     (groups || []).forEach((g: any) => groupMap.set(g.id, g));
 
     const upperRoomMap = new Map<number, string>();
@@ -118,7 +119,7 @@ export async function getMembersWithGroups(
           memberGroupMap.set(a.member_id, {
             group_id: group.id,
             group_name: group.name,
-            leader_name: group.leader?.name || null,
+            leader_name: group.leader ? `${group.leader.last_name}${group.leader.first_name}` : null,
             upper_room_id: group.upper_room_id,
             upper_room_name: upperRoomMap.get(group.upper_room_id) || "",
           });
@@ -227,7 +228,7 @@ export async function getMemberGroupInfo(memberId: number) {
 
   const { data: group } = await supabase
     .from("small_groups")
-    .select("id, name, upper_room_id, leader:members!leader_id(name)")
+    .select("id, name, upper_room_id, leader:members!leader_id(last_name, first_name)")
     .eq("season_id", activeSeason.id)
     .in("id", groupIds)
     .single();
@@ -248,7 +249,7 @@ export async function getMemberGroupInfo(memberId: number) {
   return {
     group_id: group.id,
     group_name: group.name,
-    leader_name: (group.leader as any)?.name || null,
+    leader_name: (group.leader as any) ? `${(group.leader as any).last_name}${(group.leader as any).first_name}` : null,
     upper_room_id: group.upper_room_id,
     upper_room_name: upperRoomName,
   };
@@ -282,7 +283,8 @@ export async function createMember(formData: FormData): Promise<ActionResult> {
 
   try {
     const member = memberSchema.parse({
-      name: formData.get("name"),
+      last_name: formData.get("last_name"),
+      first_name: formData.get("first_name"),
       phone: formData.get("phone") || null,
       email: formData.get("email") || null,
       gender: formData.get("gender") || null,
@@ -314,7 +316,8 @@ export async function updateMember(id: number, formData: FormData): Promise<Acti
 
   try {
     const member = memberSchema.parse({
-      name: formData.get("name"),
+      last_name: formData.get("last_name"),
+      first_name: formData.get("first_name"),
       phone: formData.get("phone") || null,
       email: formData.get("email") || null,
       gender: formData.get("gender") || null,
@@ -622,7 +625,7 @@ export async function updateMemberMinistryTeams(
 
 // ===== CSV 내보내기/가져오기 =====
 
-const CSV_HEADERS = ["이름", "전화번호", "이메일", "성별", "생년월일", "주소", "상태", "카카오톡ID", "세례입교", "학교/직장", "메모"] as const;
+const CSV_HEADERS = ["성", "이름", "전화번호", "이메일", "성별", "생년월일", "주소", "상태", "카카오톡ID", "세례입교", "학교/직장", "메모"] as const;
 
 const GENDER_KR: Record<string, string> = { M: "남", F: "여" };
 const GENDER_EN: Record<string, string> = { 남: "M", 여: "F" };
@@ -680,15 +683,17 @@ export async function exportMembersCSV(): Promise<{ success: true; csv: string }
 
   const { data, error } = await supabase
     .from("members")
-    .select("name, phone, email, gender, birth_date, address, status, kakao_id, is_baptized, school_or_work, notes")
-    .order("name", { ascending: true });
+    .select("last_name, first_name, phone, email, gender, birth_date, address, status, kakao_id, is_baptized, school_or_work, notes")
+    .order("last_name", { ascending: true })
+    .order("first_name", { ascending: true });
 
   if (error) return { success: false, error: "멤버 목록을 불러오지 못했습니다." };
 
   const header = CSV_HEADERS.join(",");
   const rows = (data ?? []).map((m) => {
     return [
-      escapeCsvField(m.name ?? ""),
+      escapeCsvField(m.last_name ?? ""),
+      escapeCsvField(m.first_name ?? ""),
       escapeCsvField(m.phone ?? ""),
       escapeCsvField(m.email ?? ""),
       m.gender ? (GENDER_KR[m.gender] ?? "") : "",
@@ -707,7 +712,8 @@ export async function exportMembersCSV(): Promise<{ success: true; csv: string }
 
 export type ImportRow = {
   row: number;
-  name: string;
+  last_name: string;
+  first_name: string;
   error?: string;
 };
 
@@ -727,7 +733,8 @@ export async function importMembersCSV(
   // 헤더 매핑 — 한국어/영어 모두 지원
   const headerMap: Record<string, number> = {};
   const HEADER_ALIASES: Record<string, string> = {
-    이름: "name", name: "name",
+    성: "last_name", last_name: "last_name",
+    이름: "first_name", first_name: "first_name",
     전화번호: "phone", phone: "phone",
     이메일: "email", email: "email",
     성별: "gender", gender: "gender",
@@ -745,8 +752,8 @@ export async function importMembersCSV(
     if (key) headerMap[key] = i;
   });
 
-  if (headerMap["name"] === undefined) {
-    return { success: false, error: "CSV에 '이름' 열이 없습니다." };
+  if (headerMap["last_name"] === undefined || headerMap["first_name"] === undefined) {
+    return { success: false, error: "CSV에 '성'과 '이름' 열이 필요합니다." };
   }
 
   const toInsert: Record<string, unknown>[] = [];
@@ -754,10 +761,11 @@ export async function importMembersCSV(
 
   for (let i = 1; i < lines.length; i++) {
     const fields = parseCsvLine(lines[i]);
-    const name = fields[headerMap["name"]] ?? "";
+    const last_name = fields[headerMap["last_name"]] ?? "";
+    const first_name = fields[headerMap["first_name"]] ?? "";
 
-    if (!name) {
-      skipped.push({ row: i + 1, name: "(빈 이름)", error: "이름이 비어있습니다." });
+    if (!last_name || !first_name) {
+      skipped.push({ row: i + 1, last_name: last_name || "(빈 성)", first_name: first_name || "(빈 이름)", error: "성과 이름은 필수입니다." });
       continue;
     }
 
@@ -770,12 +778,13 @@ export async function importMembersCSV(
 
     const emailRaw = headerMap["email"] !== undefined ? fields[headerMap["email"]] ?? "" : "";
     if (emailRaw && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailRaw)) {
-      skipped.push({ row: i + 1, name, error: "이메일 형식이 올바르지 않습니다." });
+      skipped.push({ row: i + 1, last_name, first_name, error: "이메일 형식이 올바르지 않습니다." });
       continue;
     }
 
     toInsert.push({
-      name,
+      last_name,
+      first_name,
       phone: headerMap["phone"] !== undefined ? fields[headerMap["phone"]] || null : null,
       email: emailRaw || null,
       gender: gender || null,
@@ -815,7 +824,7 @@ export async function importMembersCSV(
 }
 
 export async function downloadCSVTemplate(): Promise<string> {
-  return "\uFEFF" + CSV_HEADERS.join(",") + "\n홍길동,010-1234-5678,hong@email.com,남,1995-03-15,서울시 강남구,출석,hong_kakao,O,한국대학교,";
+  return "\uFEFF" + CSV_HEADERS.join(",") + "\n홍,길동,010-1234-5678,hong@email.com,남,1995-03-15,서울시 강남구,출석,hong_kakao,O,한국대학교,";
 }
 
 export async function getMemberMinistryTeams(memberId: number) {

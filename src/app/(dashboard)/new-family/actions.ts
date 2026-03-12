@@ -21,7 +21,7 @@ export async function getNewFamilies(seasonId?: number) {
   let query = supabase
     .from("new_family")
     .select(
-      "*, member:members!member_id(id, name, phone), assignee:members!assigned_to(id, name)"
+      "*, member:members!member_id(id, last_name, first_name, phone), assignee:members!assigned_to(id, last_name, first_name)"
     );
 
   if (seasonId) {
@@ -33,7 +33,7 @@ export async function getNewFamilies(seasonId?: number) {
 
   // 이름순 정렬
   return (data as NewFamilyEntry[]).sort((a, b) =>
-    a.member.name.localeCompare(b.member.name, "ko")
+    `${a.member.last_name}${a.member.first_name}`.localeCompare(`${b.member.last_name}${b.member.first_name}`, "ko")
   );
 }
 
@@ -41,8 +41,9 @@ export async function createNewFamily(formData: FormData): Promise<ActionResult>
   const { supabase, role } = await requireAuth();
   if (role === "group_leader") return { success: false, error: "권한이 없습니다." };
 
-  const name = (formData.get("name") as string)?.trim();
-  if (!name) return { success: false, error: "이름은 필수입니다." };
+  const last_name = (formData.get("last_name") as string)?.trim();
+  const first_name = (formData.get("first_name") as string)?.trim();
+  if (!last_name || !first_name) return { success: false, error: "성과 이름은 필수입니다." };
 
   const phone = (formData.get("phone") as string) || null;
   const firstVisit = formData.get("first_visit") as string;
@@ -53,7 +54,7 @@ export async function createNewFamily(formData: FormData): Promise<ActionResult>
   // 먼저 멤버 등록
   const { data: member, error: memberError } = await supabase
     .from("members")
-    .insert({ name, phone, status: "new_family" })
+    .insert({ last_name, first_name, phone, status: "new_family" })
     .select("id")
     .single();
 

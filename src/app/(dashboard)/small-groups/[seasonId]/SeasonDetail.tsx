@@ -20,7 +20,7 @@ type Group = {
   name: string;
   season_id: number;
   upper_room_id: number;
-  leader: { id: number; name: string } | null;
+  leader: { id: number; last_name: string; first_name: string } | null;
 };
 
 type Season = {
@@ -66,7 +66,7 @@ export default function SeasonDetail({
   const allMembers = [
     ...allAssignedMembers,
     ...localUnassigned,
-  ].sort((a, b) => a.name.localeCompare(b.name, "ko"));
+  ].sort((a, b) => `${a.last_name}${a.first_name}`.localeCompare(`${b.last_name}${b.first_name}`, "ko"));
 
   // 다락방별 순(그룹) 매핑
   const groupsByUpperRoom = (upperRoomId: number) =>
@@ -112,7 +112,7 @@ export default function SeasonDetail({
     if (!result.success) {
       // 롤백
       setLocalUnassigned((prev) =>
-        [...prev, member].sort((a, b) => a.name.localeCompare(b.name, "ko"))
+        [...prev, member].sort((a, b) => `${a.last_name}${a.first_name}`.localeCompare(`${b.last_name}${b.first_name}`, "ko"))
       );
       setGroupMembers((prev) => ({
         ...prev,
@@ -139,7 +139,7 @@ export default function SeasonDetail({
     }));
     setLocalUnassigned((prev) =>
       [...prev, entry.member].sort((a, b) =>
-        a.name.localeCompare(b.name, "ko")
+        `${a.last_name}${a.first_name}`.localeCompare(`${b.last_name}${b.first_name}`, "ko")
       )
     );
 
@@ -290,7 +290,7 @@ export default function SeasonDetail({
                 key={member.id}
                 className="rounded-full bg-white ring-1 ring-[var(--color-warm-border)] px-3 py-1 text-sm text-[var(--color-warm-text)]"
               >
-                {member.name}
+                {member.last_name}{member.first_name}
               </span>
             ))}
           </div>

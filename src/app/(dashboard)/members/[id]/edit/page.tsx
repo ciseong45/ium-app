@@ -19,7 +19,7 @@ export default async function EditMemberPage({
     <div>
       <h2 className="font-serif text-2xl font-light tracking-tight text-[var(--color-warm-text)]">멤버 수정</h2>
       <p className="mt-2 text-sm text-[var(--color-warm-muted)]">
-        {member.name}님의 정보를 수정합니다.
+        {member.last_name}{member.first_name}님의 정보를 수정합니다.
       </p>
       <div className="mt-6">
         <MemberForm member={member} />

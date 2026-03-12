@@ -72,7 +72,7 @@ export default function MemberDetail({
         : "bg-[var(--color-warm-bg)]";
 
   const handleDelete = async () => {
-    if (!confirm(`정말 ${member.name}님을 삭제하시겠습니까?`)) return;
+    if (!confirm(`정말 ${member.last_name}${member.first_name}님을 삭제하시겠습니까?`)) return;
     setDeleting(true);
     try {
       await deleteMember(member.id);
@@ -106,7 +106,7 @@ export default function MemberDetail({
 
   const handleReturn = async () => {
     if (!activeLeave) return;
-    if (!confirm(`${member.name}님의 복귀를 처리하시겠습니까?`)) return;
+    if (!confirm(`${member.last_name}${member.first_name}님의 복귀를 처리하시겠습니까?`)) return;
     try {
       await returnFromLeave(member.id, activeLeave.id);
       router.refresh();
@@ -182,7 +182,7 @@ export default function MemberDetail({
           {/* 이름 + 상태 배지 */}
           <div className="flex items-start justify-between">
             <div>
-              <h2 className="font-serif text-2xl font-light tracking-tight text-[var(--color-warm-text)]">{member.name}</h2>
+              <h2 className="font-serif text-2xl font-light tracking-tight text-[var(--color-warm-text)]">{member.last_name}{member.first_name}</h2>
               <div className="mt-2 flex items-center gap-2">
                 <span
                   className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${mainStatus.color}`}

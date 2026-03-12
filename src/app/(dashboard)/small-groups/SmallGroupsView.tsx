@@ -24,7 +24,7 @@ type Group = {
   name: string;
   season_id: number;
   upper_room_id: number;
-  leader: { id: number; name: string } | null;
+  leader: { id: number; last_name: string; first_name: string } | null;
 };
 
 export default function SmallGroupsView({

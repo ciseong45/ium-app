@@ -2,7 +2,8 @@ export type MemberStatus = "active" | "attending" | "inactive" | "removed" | "on
 
 export type Member = {
   id: number;
-  name: string;
+  last_name: string;
+  first_name: string;
   phone: string | null;
   email: string | null;
   gender: "M" | "F" | null;

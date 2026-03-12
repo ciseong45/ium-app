@@ -8,7 +8,7 @@ type Group = {
   id: number;
   name: string;
   upper_room_id: number;
-  leader: { id: number; name: string } | null;
+  leader: { id: number; last_name: string; first_name: string } | null;
 };
 
 export default function GroupCard({
@@ -43,7 +43,7 @@ export default function GroupCard({
         <div>
           <h3 className="font-semibold text-[var(--color-warm-text)]">{group.name}</h3>
           {group.leader && (
-            <p className="text-sm text-[var(--color-warm-muted)]">리더: {group.leader.name}</p>
+            <p className="text-sm text-[var(--color-warm-muted)]">리더: {group.leader.last_name}{group.leader.first_name}</p>
           )}
         </div>
         <div className="flex gap-2">
@@ -105,7 +105,7 @@ export default function GroupCard({
                   onClick={() => onAssign(member.id)}
                   className="rounded-full bg-white px-2.5 py-1 text-xs text-[var(--color-warm-text)] shadow-sm hover:bg-[var(--color-warm-border-light)] transition-all duration-300"
                 >
-                  {member.name}
+                  {member.last_name}{member.first_name}
                 </button>
               ))}
             </div>
@@ -125,7 +125,7 @@ export default function GroupCard({
                 className="flex items-center justify-between rounded-xl px-2 py-1.5 hover:bg-[var(--color-warm-bg)] transition-all duration-300"
               >
                 <span className="text-sm text-[var(--color-warm-text)]">
-                  {entry.member.name}
+                  {entry.member.last_name}{entry.member.first_name}
                 </span>
                 {role !== "group_leader" && (
                   <button

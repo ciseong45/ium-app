@@ -17,18 +17,19 @@ export async function getUsers(): Promise<UserEntry[]> {
   return (data ?? []) as UserEntry[];
 }
 
-export async function getLinkableMembers(): Promise<{ id: number; name: string }[]> {
+export async function getLinkableMembers(): Promise<{ id: number; last_name: string; first_name: string }[]> {
   const { supabase, role } = await requireAuth();
   if (role !== "admin") return [];
 
   const { data, error } = await supabase
     .from("members")
-    .select("id, name")
+    .select("id, last_name, first_name")
     .in("status", ["active", "attending"])
-    .order("name");
+    .order("last_name")
+    .order("first_name");
 
   if (error) return [];
-  return data as { id: number; name: string }[];
+  return data as { id: number; last_name: string; first_name: string }[];
 }
 
 export async function linkMemberToUser(

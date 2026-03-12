@@ -21,7 +21,7 @@ export async function getMyGroups(): Promise<GroupOption[]> {
   if (!activeSeason) return [];
 
   const selectFields =
-    "id, name, upper_room:upper_rooms!upper_room_id(name), leader:members!leader_id(name)";
+    "id, name, upper_room:upper_rooms!upper_room_id(name), leader:members!leader_id(last_name, first_name)";
 
   let data: any[] | null = null;
 
@@ -61,7 +61,7 @@ export async function getMyGroups(): Promise<GroupOption[]> {
     id: g.id as number,
     name: g.name as string,
     upper_room_name: (g.upper_room as any)?.name ?? "",
-    leader_name: (g.leader as any)?.name ?? null,
+    leader_name: (g.leader as any) ? `${(g.leader as any).last_name}${(g.leader as any).first_name}` : null,
   }));
 }
 
@@ -71,13 +71,13 @@ export async function getGroupMembersForAttendance(groupId: number) {
   const { supabase } = await requireAuth();
   const { data, error } = await supabase
     .from("small_group_members")
-    .select("member:members!member_id(id, name)")
+    .select("member:members!member_id(id, last_name, first_name)")
     .eq("group_id", groupId)
     .order("created_at");
   if (error || !data) return [];
   return (data as any[]).map((d) => ({
     id: d.member.id as number,
-    name: d.member.name as string,
+    name: `${d.member.last_name}${d.member.first_name}` as string,
   }));
 }
 

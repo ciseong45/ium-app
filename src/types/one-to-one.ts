@@ -2,8 +2,8 @@ export type OneToOneStatus = "active" | "completed" | "paused";
 
 export type OneToOneEntry = {
   id: number;
-  mentor: { id: number; name: string };
-  mentee: { id: number; name: string };
+  mentor: { id: number; last_name: string; first_name: string };
+  mentee: { id: number; last_name: string; first_name: string };
   status: OneToOneStatus;
   started_at: string;
   completed_at: string | null;

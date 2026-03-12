@@ -87,7 +87,7 @@ export default function OneToOneCard({
         >
           <div className="flex items-center gap-2">
             <h3 className="font-semibold text-[var(--color-warm-text)]">
-              {entry.mentor.name} → {entry.mentee.name}
+              {entry.mentor.last_name}{entry.mentor.first_name} → {entry.mentee.last_name}{entry.mentee.first_name}
             </h3>
             <span
               className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[entry.status]}`}

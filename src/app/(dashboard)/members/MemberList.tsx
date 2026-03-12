@@ -85,7 +85,7 @@ export default function MemberList({
 
     const getValue = (m: MemberWithGroup): string => {
       switch (sortKey) {
-        case "name": return m.name;
+        case "name": return `${m.last_name}${m.first_name}`;
         case "phone": return m.phone || "";
         case "gender": return m.gender || "";
         case "group": return m.group_info?.group_name || "";
@@ -424,7 +424,7 @@ export default function MemberList({
                           }`} />
                           <div className="min-w-0">
                             <p className="font-medium text-[var(--color-warm-text)] truncate">
-                              {member.name}
+                              {member.last_name}{member.first_name}
                             </p>
                             {member.birth_date && (
                               <p className="mt-0.5 text-[11px] text-[var(--color-warm-subtle)]">

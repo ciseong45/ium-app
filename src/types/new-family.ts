@@ -15,6 +15,6 @@ export type NewFamilyEntry = {
   season_id: number | null;
   notes: string | null;
   created_at: string;
-  member: { id: number; name: string; phone: string | null };
-  assignee: { id: number; name: string } | null;
+  member: { id: number; last_name: string; first_name: string; phone: string | null };
+  assignee: { id: number; last_name: string; first_name: string } | null;
 };

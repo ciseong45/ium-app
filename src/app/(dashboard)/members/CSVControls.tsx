@@ -169,7 +169,7 @@ export default function CSVControls({ role }: { role: UserRole }) {
                     <ul className="mt-1 max-h-32 space-y-0.5 overflow-y-auto text-xs text-[#a08e64]">
                       {importResult.skipped.map((s, i) => (
                         <li key={i}>
-                          {s.row}행: {s.name} — {s.error}
+                          {s.row}행: {s.last_name}{s.first_name} — {s.error}
                         </li>
                       ))}
                     </ul>

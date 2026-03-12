@@ -9,7 +9,8 @@ export async function submitVisitorCard(formData: FormData): Promise<ActionResul
 
   try {
     const data = visitorCardSchema.parse({
-      name: formData.get("name"),
+      last_name: formData.get("last_name"),
+      first_name: formData.get("first_name"),
       phone: formData.get("phone") || null,
       kakao_id: formData.get("kakao_id") || null,
       gender: formData.get("gender") || null,
@@ -28,7 +29,8 @@ export async function submitVisitorCard(formData: FormData): Promise<ActionResul
     const { data: member, error: memberError } = await supabase
       .from("members")
       .insert({
-        name: data.name,
+        last_name: data.last_name,
+        first_name: data.first_name,
         phone: data.phone,
         gender: data.gender,
         birth_date: data.birth_date,
