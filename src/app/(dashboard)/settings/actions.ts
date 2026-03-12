@@ -44,7 +44,10 @@ export async function linkMemberToUser(
     member_id_to_link: memberId,
   });
 
-  if (error) return { success: false, error: error.message };
+  if (error) {
+    console.error("linkMemberToUser failed:", error.message);
+    return { success: false, error: "멤버 연결에 실패했습니다." };
+  }
   return { success: true };
 }
 
@@ -64,6 +67,9 @@ export async function updateUserRole(
     new_role: newRole,
   });
 
-  if (error) return { success: false, error: error.message };
+  if (error) {
+    console.error("updateUserRole failed:", error.message);
+    return { success: false, error: "역할 변경에 실패했습니다." };
+  }
   return { success: true };
 }

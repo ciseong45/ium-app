@@ -14,6 +14,7 @@ export default async function EditMemberPage({
     requireAuth(),
   ]);
   if (role === "group_leader") redirect("/members");
+  if (!member) redirect("/members");
 
   return (
     <div>

@@ -3,8 +3,30 @@
 import { createClient } from "@/lib/supabase/server";
 import { visitorCardSchema, type ActionResult } from "@/lib/validations";
 import { ZodError } from "zod";
+import { headers } from "next/headers";
+
+// IP 기반 인메모리 rate limiter (시간당 5건)
+const submissions = new Map<string, number[]>();
+const RATE_LIMIT_WINDOW = 60 * 60 * 1000; // 1시간
+const MAX_SUBMISSIONS = 5;
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const timestamps = (submissions.get(ip) || []).filter(t => now - t < RATE_LIMIT_WINDOW);
+  if (timestamps.length >= MAX_SUBMISSIONS) return false;
+  timestamps.push(now);
+  submissions.set(ip, timestamps);
+  return true;
+}
 
 export async function submitVisitorCard(formData: FormData): Promise<ActionResult> {
+  // Rate limiting
+  const headersList = await headers();
+  const ip = headersList.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  if (!checkRateLimit(ip)) {
+    return { success: false, error: "너무 많은 요청입니다. 잠시 후 다시 시도해주세요." };
+  }
+
   const supabase = await createClient();
 
   try {

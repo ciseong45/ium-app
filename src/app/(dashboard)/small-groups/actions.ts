@@ -224,7 +224,7 @@ export async function getGroupMembers(groupId: number) {
   const { supabase } = await requireAuth();
   const { data, error } = await supabase
     .from("small_group_members")
-    .select("*, member:members(*)")
+    .select("*, member:members(id, last_name, first_name, status, phone, email, gender, birth_date, address, kakao_id, is_baptized, school_or_work, notes, created_at, updated_at)")
     .eq("group_id", groupId)
     .order("created_at");
   if (error) return [];
@@ -245,7 +245,7 @@ export async function getAllGroupMembersForSeason(seasonId: number) {
   const groupIds = groups.map((g: { id: number }) => g.id);
   const { data, error } = await supabase
     .from("small_group_members")
-    .select("id, group_id, member:members(*)")
+    .select("id, group_id, member:members(id, last_name, first_name, status, phone, email, gender, birth_date, address, kakao_id, is_baptized, school_or_work, notes, created_at, updated_at)")
     .in("group_id", groupIds)
     .order("created_at");
 
@@ -271,7 +271,7 @@ export async function getUnassignedMembers(seasonId: number) {
   // 재적/출석 멤버 중 미배정 멤버 — DB 레벨에서 필터링
   let query = supabase
     .from("members")
-    .select("*")
+    .select("id, last_name, first_name, status, phone, email, gender, birth_date, address, kakao_id, is_baptized, school_or_work, notes, created_at, updated_at")
     .in("status", ["active", "attending"])
     .order("last_name")
     .order("first_name");

@@ -4,8 +4,9 @@ import { requireAuth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { memberSchema, type ActionResult } from "@/lib/validations";
 import { STATUS_LABELS, type MemberStatus, type LeaveType, type MemberWithGroup, type MinistryTeam } from "@/types/member";
-import { ZodError } from "zod";
+import { z, ZodError } from "zod";
 import { expireAdjustingMembers, insertStatusLog, ensureNewFamilyEntry, getActiveSeason } from "@/lib/queries";
+import { escapeCsvField, parseCsvLine } from "@/lib/csv";
 
 export async function getMembers(
   search?: string,
@@ -18,7 +19,7 @@ export async function getMembers(
 
   let query = supabase
     .from("members")
-    .select("*")
+    .select("id, last_name, first_name, phone, email, gender, birth_date, address, status, kakao_id, is_baptized, school_or_work, notes, created_at, updated_at")
     .order("last_name", { ascending: true })
     .order("first_name", { ascending: true });
 
@@ -32,7 +33,8 @@ export async function getMembers(
   }
 
   if (search) {
-    query = query.or(`last_name.ilike.%${search}%,first_name.ilike.%${search}%,phone.ilike.%${search}%`);
+    const sanitized = search.replace(/[%_]/g, '\\$&');
+    query = query.or(`last_name.ilike.%${sanitized}%,first_name.ilike.%${sanitized}%,phone.ilike.%${sanitized}%`);
   }
 
   if (schoolOrWork && schoolOrWork !== "all") {
@@ -260,7 +262,7 @@ export async function getMember(id: number) {
 
   const { data, error } = await supabase
     .from("members")
-    .select("*")
+    .select("id, last_name, first_name, phone, email, gender, birth_date, address, status, kakao_id, is_baptized, school_or_work, notes, created_at, updated_at")
     .eq("id", id)
     .single();
 
@@ -481,7 +483,7 @@ export async function getMemberLeaves(memberId: number) {
   const { supabase } = await requireAuth();
   const { data, error } = await supabase
     .from("member_leaves")
-    .select("*")
+    .select("id, member_id, leave_type, reason, start_date, expected_return, actual_return, created_at")
     .eq("member_id", memberId)
     .order("created_at", { ascending: false });
   if (error) return [];
@@ -638,45 +640,6 @@ const STATUS_LABEL_TO_EN: Record<string, MemberStatus> = Object.fromEntries(
 // STATUS_LABELS 그대로 사용 (영문 → 한글)
 const STATUS_EN_TO_KR = STATUS_LABELS;
 
-function escapeCsvField(value: string): string {
-  if (value.includes(",") || value.includes('"') || value.includes("\n")) {
-    return `"${value.replace(/"/g, '""')}"`;
-  }
-  return value;
-}
-
-function parseCsvLine(line: string): string[] {
-  const fields: string[] = [];
-  let current = "";
-  let inQuotes = false;
-
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-    if (inQuotes) {
-      if (char === '"') {
-        if (i + 1 < line.length && line[i + 1] === '"') {
-          current += '"';
-          i++;
-        } else {
-          inQuotes = false;
-        }
-      } else {
-        current += char;
-      }
-    } else {
-      if (char === '"') {
-        inQuotes = true;
-      } else if (char === ",") {
-        fields.push(current.trim());
-        current = "";
-      } else {
-        current += char;
-      }
-    }
-  }
-  fields.push(current.trim());
-  return fields;
-}
 
 export async function exportMembersCSV(): Promise<{ success: true; csv: string } | { success: false; error: string }> {
   const { supabase } = await requireAuth();
@@ -777,7 +740,7 @@ export async function importMembersCSV(
       (["active", "attending", "inactive", "removed", "on_leave", "new_family", "adjusting"].includes(statusRaw) ? statusRaw : "active");
 
     const emailRaw = headerMap["email"] !== undefined ? fields[headerMap["email"]] ?? "" : "";
-    if (emailRaw && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailRaw)) {
+    if (emailRaw && !z.string().email().safeParse(emailRaw).success) {
       skipped.push({ row: i + 1, last_name, first_name, error: "이메일 형식이 올바르지 않습니다." });
       continue;
     }
@@ -811,9 +774,10 @@ export async function importMembersCSV(
     const batch = toInsert.slice(i, i + BATCH);
     const { error: insertError } = await supabase.from("members").insert(batch);
     if (insertError) {
+      console.error("CSV import batch insert failed:", insertError.message);
       return {
         success: false,
-        error: `${imported}건 삽입 후 오류 발생: ${insertError.message}`,
+        error: `${imported}건 삽입 후 오류가 발생했습니다.`,
       };
     }
     imported += batch.length;
