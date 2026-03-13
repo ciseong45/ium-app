@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" rx="96" fill="#0f0f0f"/>
+  <text x="256" y="300" text-anchor="middle" font-family="Georgia, serif" font-weight="300" font-size="180" fill="#faf9f7" letter-spacing="-8">I:UM</text>
+  <line x1="136" y1="340" x2="376" y2="340" stroke="#faf9f7" stroke-width="1.5" opacity="0.4"/>
+</svg>

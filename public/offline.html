@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>오프라인 - 이음채플</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      background-color: #faf9f7;
+      color: #1a1a1a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 1rem;
+    }
+    .container {
+      text-align: center;
+      max-width: 400px;
+      animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .divider {
+      width: 40px;
+      height: 1px;
+      background: #c4c4c4;
+      margin: 0 auto 1.5rem;
+    }
+    .icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+    h1 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.5rem;
+      font-weight: 300;
+      letter-spacing: -0.01em;
+      margin-bottom: 0.75rem;
+    }
+    p {
+      font-size: 0.875rem;
+      color: #a3a3a3;
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+    }
+    button {
+      background: #1a1a1a;
+      color: white;
+      border: none;
+      padding: 0.625rem 1.25rem;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover { background: #333; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">📡</div>
+    <div class="divider"></div>
+    <h1>오프라인 상태입니다</h1>
+    <p>인터넷에 연결되어 있지 않습니다.<br />연결이 복구되면 자동으로 새로고침됩니다.</p>
+    <button onclick="window.location.reload()">다시 시도</button>
+  </div>
+  <script>
+    window.addEventListener("online", function() {
+      window.location.reload();
+    });
+  </script>
+</body>
+</html>

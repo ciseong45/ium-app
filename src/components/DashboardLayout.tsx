@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
+import OfflineBanner from "./ui/OfflineBanner";
+import InstallPrompt from "./ui/InstallPrompt";
 
 export default function DashboardLayout({
   children,
@@ -13,6 +15,8 @@ export default function DashboardLayout({
 
   return (
     <div className="grain-overlay flex h-screen bg-[var(--color-warm-bg)]">
+      <OfflineBanner />
+      <InstallPrompt />
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header onMenuClick={() => setSidebarOpen(true)} />

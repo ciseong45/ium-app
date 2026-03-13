@@ -32,6 +32,12 @@
   --ease-editorial: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* ─── iOS safe area ─── */
+body {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
 /* ─── Smooth scrollbar ─── */
 * {
   scrollbar-width: thin;

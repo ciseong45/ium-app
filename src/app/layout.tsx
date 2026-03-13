@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { DM_Sans, Cormorant_Garamond, Noto_Sans_KR } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -25,6 +25,28 @@ const notoSansKR = Noto_Sans_KR({
 export const metadata: Metadata = {
   title: "이음채플 관리시스템",
   description: "이음채플 통합 관리 시스템",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "이음채플",
+  },
+  icons: {
+    icon: "/icons/icon-192x192.png",
+    apple: "/icons/apple-touch-icon.png",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  themeColor: "#0f0f0f",
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
