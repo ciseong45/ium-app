@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DM_Sans, Cormorant_Garamond, Noto_Sans_KR } from "next/font/google";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -35,6 +36,15 @@ export default function RootLayout({
     <html lang="ko">
       <body className={`${dmSans.variable} ${cormorant.variable} ${notoSansKR.variable} font-sans antialiased`}>
         {children}
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            style: {
+              fontFamily: "var(--font-dm-sans), var(--font-noto-sans-kr), sans-serif",
+              fontSize: "13px",
+            },
+          }}
+        />
       </body>
     </html>
   );

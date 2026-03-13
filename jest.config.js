@@ -14,4 +14,10 @@ module.exports = {
       },
     ],
   },
+  setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
+  collectCoverageFrom: [
+    "src/lib/**/*.{ts,tsx}",
+    "src/components/**/*.{ts,tsx}",
+    "!src/**/*.d.ts",
+  ],
 };
