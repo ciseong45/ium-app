@@ -19,11 +19,14 @@ export async function GET(request: Request) {
 
       if (!existing) {
         const meta = session.user.user_metadata;
-        await supabase.from("profiles").insert({
+        const { error: insertError } = await supabase.from("profiles").insert({
           id: session.user.id,
           name: meta?.full_name || meta?.name || session.user.email,
           role: "group_leader",
         });
+        if (insertError) {
+          console.error("프로필 생성 실패:", insertError.message);
+        }
       }
     }
   }
