@@ -36,19 +36,20 @@ export default function OneToOneCard({
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (expanded) {
-      setLoadingSessions(true);
-      getSessions(entry.id)
-        .then((data) => {
-          setSessions(data);
-        })
-        .catch(() => {
-          setSessions([]);
-        })
-        .finally(() => {
-          setLoadingSessions(false);
-        });
-    }
+    if (!expanded) return;
+    let cancelled = false;
+    const fetchSessions = async () => {
+      try {
+        const data = await getSessions(entry.id);
+        if (!cancelled) setSessions(data);
+      } catch {
+        if (!cancelled) setSessions([]);
+      } finally {
+        if (!cancelled) setLoadingSessions(false);
+      }
+    };
+    fetchSessions();
+    return () => { cancelled = true; };
   }, [expanded, entry.id]);
 
   const handleAddSession = async (e: React.FormEvent<HTMLFormElement>) => {

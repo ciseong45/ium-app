@@ -1,9 +1,8 @@
 import { requireAuth } from "@/lib/auth";
-import { getActiveSeason } from "@/lib/queries";
 import Link from "next/link";
 
 export default async function DashboardPage() {
-  const { supabase, user, role, linkedMemberId } = await requireAuth();
+  const { supabase, role, linkedMemberId } = await requireAuth();
 
   // 병렬로 모든 통계 데이터 가져오기
   const [
@@ -87,7 +86,7 @@ export default async function DashboardPage() {
     upper_room_name: string;
     member_count: number;
   };
-  let myGroups: MyGroupInfo[] = [];
+  const myGroups: MyGroupInfo[] = [];
 
   if (linkedMemberId && activeSeasonRes.data) {
     const seasonId = activeSeasonRes.data.id;
@@ -109,7 +108,7 @@ export default async function DashboardPage() {
           myGroups.push({
             id: g.id,
             name: g.name,
-            upper_room_name: (g.upper_room as any)?.name ?? "",
+            upper_room_name: (g.upper_room as { name: string } | null)?.name ?? "",
             member_count: count ?? 0,
           });
         }
@@ -140,7 +139,7 @@ export default async function DashboardPage() {
               myGroups.push({
                 id: g.id,
                 name: g.name,
-                upper_room_name: (g.upper_room as any)?.name ?? "",
+                upper_room_name: (g.upper_room as { name: string } | null)?.name ?? "",
                 member_count: count ?? 0,
               });
             }

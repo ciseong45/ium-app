@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use server";
 
 import { requireAuth } from "@/lib/auth";
@@ -91,7 +92,7 @@ export async function getMembersWithGroups(
     .eq("is_active", true)
     .single();
 
-  let memberGroupMap = new Map<number, { group_id: number; group_name: string; leader_name: string | null; upper_room_id: number; upper_room_name: string }>();
+  const memberGroupMap = new Map<number, { group_id: number; group_name: string; leader_name: string | null; upper_room_id: number; upper_room_name: string }>();
   if (activeSeason) {
     const { data: groups } = await supabase
       .from("small_groups")

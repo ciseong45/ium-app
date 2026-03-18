@@ -1,5 +1,6 @@
 import { getMembersWithGroups, getFilterOptions } from "./actions";
 import { requireAuth } from "@/lib/auth";
+import Link from "next/link";
 import MemberList from "./MemberList";
 import CSVControls from "./CSVControls";
 
@@ -40,12 +41,12 @@ export default async function MembersPage({
         <div className="flex items-center gap-2">
           <CSVControls role={role} />
           {role !== "group_leader" && (
-            <a
+            <Link
               href="/members/new"
               className="rounded-lg bg-[#1a1a1a] px-5 py-2.5 text-sm font-medium text-white transition-all duration-300 hover:bg-[#333]"
             >
               + 멤버 등록
-            </a>
+            </Link>
           )}
         </div>
       </div>
