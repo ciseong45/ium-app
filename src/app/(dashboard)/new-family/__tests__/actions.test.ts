@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { requireAuth } from "@/lib/auth";
-import { insertStatusLog, fetchActiveMembers } from "@/lib/queries";
+import { insertStatusLog } from "@/lib/queries";
 import { revalidatePath } from "next/cache";
 
 jest.mock("@/lib/auth");
@@ -36,7 +37,7 @@ function createQueryMock(
   ].forEach((m) => {
     mock[m] = jest.fn().mockReturnValue(mock);
   });
-  mock.then = (resolve: Function) => resolve(result);
+  mock.then = (resolve: (value: unknown) => void) => resolve(result);
   return mock;
 }
 

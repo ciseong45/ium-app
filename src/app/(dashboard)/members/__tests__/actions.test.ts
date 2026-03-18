@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { requireAuth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
-import { insertStatusLog, ensureNewFamilyEntry } from "@/lib/queries";
+import { insertStatusLog } from "@/lib/queries";
 
 jest.mock("@/lib/auth");
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
@@ -39,7 +40,7 @@ function createQueryMock(result: { data?: any; error?: any } = { data: null, err
     mock[m] = jest.fn().mockReturnValue(mock);
   });
   // When awaited, resolve to result
-  mock.then = (resolve: Function) => resolve(result);
+  mock.then = (resolve: (value: unknown) => void) => resolve(result);
   return mock;
 }
 
@@ -86,7 +87,7 @@ describe("createMember", () => {
 
   it("admin 역할일 때 멤버를 생성한다", async () => {
     const { supabase, queryMock } = setupAuth({ role: "admin" });
-    queryMock.then = (resolve: Function) => resolve({ data: null, error: null });
+    queryMock.then = (resolve: (value: unknown) => void) => resolve({ data: null, error: null });
 
     const result = await createMember(buildMemberFormData());
 
@@ -118,7 +119,7 @@ describe("createMember", () => {
 
   it("DB 에러 시 일반 에러 메시지 반환", async () => {
     const { queryMock } = setupAuth({ role: "admin" });
-    queryMock.then = (resolve: Function) =>
+    queryMock.then = (resolve: (value: unknown) => void) =>
       resolve({ data: null, error: { message: "db error" } });
 
     const result = await createMember(buildMemberFormData());
@@ -138,13 +139,9 @@ describe("updateMember", () => {
     const selectMock = createQueryMock({ data: { status: "active" }, error: null });
     const updateMock = createQueryMock({ data: null, error: null });
 
-    let callCount = 0;
-    supabase.from.mockImplementation(() => {
-      callCount++;
-      // First from("members") call is for select("status"), second is for update
-      if (callCount === 1) return selectMock;
-      return updateMock;
-    });
+    supabase.from
+      .mockReturnValueOnce(selectMock)
+      .mockReturnValue(updateMock);
 
     const result = await updateMember(1, buildMemberFormData({ status: "active" }));
 
@@ -166,12 +163,9 @@ describe("updateMember", () => {
     const selectMock = createQueryMock({ data: { status: "active" }, error: null });
     const updateMock = createQueryMock({ data: null, error: null });
 
-    let callCount = 0;
-    supabase.from.mockImplementation(() => {
-      callCount++;
-      if (callCount === 1) return selectMock;
-      return updateMock;
-    });
+    supabase.from
+      .mockReturnValueOnce(selectMock)
+      .mockReturnValue(updateMock);
 
     const result = await updateMember(1, buildMemberFormData({ status: "attending" }));
 
@@ -191,7 +185,7 @@ describe("deleteMember", () => {
 
   it("admin만 삭제 가능", async () => {
     const { queryMock } = setupAuth({ role: "admin" });
-    queryMock.then = (resolve: Function) => resolve({ data: null, error: null });
+    queryMock.then = (resolve: (value: unknown) => void) => resolve({ data: null, error: null });
 
     const result = await deleteMember(1);
 
@@ -209,7 +203,7 @@ describe("deleteMember", () => {
 
   it("DB 에러 시 일반 메시지", async () => {
     const { queryMock } = setupAuth({ role: "admin" });
-    queryMock.then = (resolve: Function) =>
+    queryMock.then = (resolve: (value: unknown) => void) =>
       resolve({ data: null, error: { message: "fk constraint" } });
 
     const result = await deleteMember(1);
@@ -231,7 +225,7 @@ describe("deleteMembers", () => {
 
   it("admin만 삭제 가능", async () => {
     const { queryMock } = setupAuth({ role: "admin" });
-    queryMock.then = (resolve: Function) => resolve({ data: null, error: null });
+    queryMock.then = (resolve: (value: unknown) => void) => resolve({ data: null, error: null });
 
     const result = await deleteMembers([1, 2, 3]);
 
@@ -293,7 +287,7 @@ describe("exportMembersCSV", () => {
 
   it("CSV 형식으로 멤버 데이터 내보내기", async () => {
     const { queryMock } = setupAuth({ role: "admin" });
-    queryMock.then = (resolve: Function) =>
+    queryMock.then = (resolve: (value: unknown) => void) =>
       resolve({
         data: [
           {
@@ -355,7 +349,7 @@ describe("importMembersCSV", () => {
 
   it("정상적인 CSV 가져오기", async () => {
     const { queryMock } = setupAuth({ role: "admin" });
-    queryMock.then = (resolve: Function) => resolve({ data: null, error: null });
+    queryMock.then = (resolve: (value: unknown) => void) => resolve({ data: null, error: null });
 
     const csv = "성,이름,전화번호\n홍,길동,010-1234-5678\n김,철수,010-9876-5432";
     const result = await importMembersCSV(csv);

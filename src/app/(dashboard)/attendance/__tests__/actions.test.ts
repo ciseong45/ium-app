@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { requireAuth } from "@/lib/auth";
 import { getActiveSeason } from "@/lib/queries";
 import { revalidatePath } from "next/cache";
@@ -22,7 +23,7 @@ function createQueryMock(result: { data?: any; error?: any } = { data: null, err
       mock[m] = jest.fn().mockReturnValue(mock);
     }
   );
-  mock.then = (resolve: Function) => resolve(result);
+  mock.then = (resolve: (value: unknown) => void) => resolve(result);
   return mock;
 }
 
@@ -174,8 +175,6 @@ describe("getGroupAttendance", () => {
     const sgQuery = createQueryMock({ data: sgMembersData });
     const attQuery = createQueryMock({ data: attendanceData });
 
-    // We need the same supabase.from to return different mocks per table
-    let callCount = 0;
     const supabase = {
       from: jest.fn((table: string) => {
         if (table === "small_group_members") return sgQuery;

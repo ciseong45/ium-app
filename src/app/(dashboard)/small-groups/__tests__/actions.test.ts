@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { requireAuth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
@@ -31,7 +32,7 @@ function createQueryMock(
   ].forEach((m) => {
     mock[m] = jest.fn().mockReturnValue(mock);
   });
-  mock.then = (resolve: Function) => resolve(result);
+  mock.then = (resolve: (value: unknown) => void) => resolve(result);
   return mock;
 }
 

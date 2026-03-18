@@ -1,5 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { requireAuth } from "@/lib/auth";
-import { fetchActiveMembers } from "@/lib/queries";
 import { revalidatePath } from "next/cache";
 
 jest.mock("@/lib/auth");
@@ -33,7 +33,7 @@ function createQueryMock(
   ].forEach((m) => {
     mock[m] = jest.fn().mockReturnValue(mock);
   });
-  mock.then = (resolve: Function) => resolve(result);
+  mock.then = (resolve: (value: unknown) => void) => resolve(result);
   return mock;
 }
 
@@ -183,9 +183,7 @@ describe("addSession", () => {
     const insertMock = createQueryMock({ data: null, error: null });
 
     const supabase = {
-      from: jest.fn().mockImplementation((table: string) => {
-        // from이 호출될 때마다 다른 mock 반환
-        // 첫 번째: select (기존 세션 조회), 두 번째: insert (새 세션 추가)
+      from: jest.fn().mockImplementation(() => {
         if (supabase.from.mock.calls.length <= 1) {
           return existingSessionsMock;
         }
