@@ -10,7 +10,7 @@ export async function getSeasons() {
   const { supabase } = await requireAuth();
   const { data, error } = await supabase
     .from("small_group_seasons")
-    .select("*")
+    .select("id, name, is_active, created_at")
     .order("created_at", { ascending: false });
   if (error) return [] as Season[];
   return data as Season[];

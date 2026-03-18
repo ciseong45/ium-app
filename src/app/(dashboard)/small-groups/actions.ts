@@ -10,7 +10,7 @@ export async function getSeasons() {
   const { supabase } = await requireAuth();
   const { data, error } = await supabase
     .from("small_group_seasons")
-    .select("*")
+    .select("id, name, is_active, start_date, end_date, created_at")
     .order("created_at", { ascending: false });
   if (error) return [];
   return data;
@@ -20,7 +20,7 @@ export async function getActiveSeason() {
   const { supabase } = await requireAuth();
   const { data } = await supabase
     .from("small_group_seasons")
-    .select("*")
+    .select("id, name, is_active, start_date, end_date, created_at")
     .eq("is_active", true)
     .single();
   return data;
@@ -95,7 +95,7 @@ export async function getUpperRoomsBySeason(seasonId: number) {
   const { supabase } = await requireAuth();
   const { data, error } = await supabase
     .from("upper_rooms")
-    .select("*, leader:members!leader_id(id, last_name, first_name)")
+    .select("id, season_id, name, leader_id, display_order, leader:members!leader_id(id, last_name, first_name)")
     .eq("season_id", seasonId)
     .order("display_order");
   if (error) return [];
@@ -224,7 +224,7 @@ export async function getGroupMembers(groupId: number) {
   const { supabase } = await requireAuth();
   const { data, error } = await supabase
     .from("small_group_members")
-    .select("*, member:members(id, last_name, first_name, status, phone, email, gender, birth_date, address, kakao_id, is_baptized, school_or_work, notes, created_at, updated_at)")
+    .select("id, group_id, member:members(id, last_name, first_name, status, phone, email, gender, birth_date, address, kakao_id, is_baptized, school_or_work, notes, created_at, updated_at)")
     .eq("group_id", groupId)
     .order("created_at");
   if (error) return [];

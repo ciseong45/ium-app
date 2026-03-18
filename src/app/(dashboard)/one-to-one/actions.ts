@@ -73,7 +73,7 @@ export async function getSessions(oneToOneId: number) {
   const { supabase } = await requireAuth();
   const { data, error } = await supabase
     .from("one_to_one_sessions")
-    .select("*")
+    .select("id, one_to_one_id, session_date, session_number, notes")
     .eq("one_to_one_id", oneToOneId)
     .order("session_number", { ascending: true });
   if (error) return [] as SessionEntry[];

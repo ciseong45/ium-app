@@ -134,7 +134,7 @@ export async function getMembersWithGroups(
   const memberIds = members.map((m: { id: number }) => m.id);
   const { data: mtAssignments } = await supabase
     .from("member_ministry_teams")
-    .select("member_id, ministry_team:ministry_teams(*)")
+    .select("member_id, ministry_team:ministry_teams(id, name, category, display_order)")
     .in("member_id", memberIds);
 
   const memberTeamMap = new Map<number, MinistryTeam[]>();
@@ -169,7 +169,7 @@ export async function getFilterOptions() {
     getActiveSeason(supabase),
     supabase.from("members").select("school_or_work").not("school_or_work", "is", null).order("school_or_work"),
     supabase.from("members").select("birth_date").not("birth_date", "is", null).order("birth_date", { ascending: false }),
-    supabase.from("ministry_teams").select("*").order("display_order"),
+    supabase.from("ministry_teams").select("id, name, category, display_order").order("display_order"),
   ]);
 
   // 시즌 의존 쿼리: 순 + 다락방 정보
@@ -795,7 +795,7 @@ export async function getMemberMinistryTeams(memberId: number) {
   const { supabase } = await requireAuth();
   const { data } = await supabase
     .from("member_ministry_teams")
-    .select("ministry_team:ministry_teams(*)")
+    .select("ministry_team:ministry_teams(id, name, category, display_order)")
     .eq("member_id", memberId);
   if (!data) return [];
   return data.map((d: any) => d.ministry_team).filter(Boolean) as MinistryTeam[];

@@ -18,6 +18,7 @@ module.exports = {
   collectCoverageFrom: [
     "src/lib/**/*.{ts,tsx}",
     "src/components/**/*.{ts,tsx}",
+    "src/app/**/actions.ts",
     "!src/**/*.d.ts",
   ],
 };

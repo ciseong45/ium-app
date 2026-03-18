@@ -99,7 +99,7 @@ export async function getGroupAttendance(
 
   const { data, error } = await supabase
     .from("attendance")
-    .select("*")
+    .select("id, member_id, week_date, status, prayer_request, prayer_note")
     .in("member_id", memberIds)
     .eq("week_date", weekDate);
 
@@ -202,7 +202,7 @@ export async function getGroupRecentAttendance(groupId: number, weeks: number = 
 
   const { data, error } = await supabase
     .from("attendance")
-    .select("*")
+    .select("id, member_id, week_date, status, prayer_request, prayer_note")
     .in("member_id", memberIds)
     .in("week_date", dates)
     .order("week_date", { ascending: false });
