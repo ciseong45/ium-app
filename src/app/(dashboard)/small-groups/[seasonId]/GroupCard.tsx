@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { Member } from "@/types/member";
 import type { GroupMemberEntry, UpperRoom } from "@/types/small-group";
 import { useRole } from "@/lib/RoleContext";
@@ -124,9 +125,12 @@ export default function GroupCard({
                 key={entry.id}
                 className="flex items-center justify-between rounded-xl px-2 py-1.5 hover:bg-[var(--color-warm-bg)] transition-all duration-300"
               >
-                <span className="text-sm text-[var(--color-warm-text)]">
+                <Link
+                  href={`/members/${entry.member.id}`}
+                  className="text-sm text-[var(--color-warm-text)] hover:underline"
+                >
                   {entry.member.last_name}{entry.member.first_name}
-                </span>
+                </Link>
                 {role !== "group_leader" && (
                   <button
                     onClick={() => onUnassign(entry.member.id)}
