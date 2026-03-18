@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use server";
 
 import { requireAuth } from "@/lib/auth";
@@ -99,14 +100,13 @@ export async function getUpperRoomsBySeason(seasonId: number) {
     .eq("season_id", seasonId)
     .order("display_order");
   if (error) return [];
-  type UpperRoomRow = { id: number; season_id: number; name: string; leader_id: number | null; display_order: number; leader: { id: number; last_name: string; first_name: string } | null };
-  return (data ?? []).map((d: UpperRoomRow) => ({
-    id: d.id,
-    season_id: d.season_id,
-    name: d.name,
-    leader_id: d.leader_id,
-    leader: d.leader,
-    display_order: d.display_order,
+  return (data ?? []).map((d: any) => ({
+    id: d.id as number,
+    season_id: d.season_id as number,
+    name: d.name as string,
+    leader_id: d.leader_id as number | null,
+    leader: d.leader as { id: number; last_name: string; first_name: string } | null,
+    display_order: d.display_order as number,
   }));
 }
 
@@ -251,11 +251,10 @@ export async function getAllGroupMembersForSeason(seasonId: number) {
     .order("created_at");
 
   if (error) return [];
-  type GroupMemberRow = { id: number; group_id: number; member: import("@/types/member").Member };
-  return (data ?? []).map((d: GroupMemberRow) => ({
-    id: d.id,
-    group_id: d.group_id,
-    member: d.member,
+  return (data ?? []).map((d: any) => ({
+    id: d.id as number,
+    group_id: d.group_id as number,
+    member: d.member as import("@/types/member").Member,
   }));
 }
 

@@ -108,7 +108,7 @@ export default async function DashboardPage() {
           myGroups.push({
             id: g.id,
             name: g.name,
-            upper_room_name: (g.upper_room as { name: string } | null)?.name ?? "",
+            upper_room_name: (g.upper_room as unknown as { name: string } | null)?.name ?? "",
             member_count: count ?? 0,
           });
         }
@@ -139,7 +139,7 @@ export default async function DashboardPage() {
               myGroups.push({
                 id: g.id,
                 name: g.name,
-                upper_room_name: (g.upper_room as { name: string } | null)?.name ?? "",
+                upper_room_name: (g.upper_room as unknown as { name: string } | null)?.name ?? "",
                 member_count: count ?? 0,
               });
             }
