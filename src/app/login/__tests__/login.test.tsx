@@ -8,6 +8,7 @@ import LoginPage from "../page";
 // Mock next/navigation
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: jest.fn(), refresh: jest.fn() }),
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 // Mock supabase client
