@@ -9,6 +9,7 @@ const ROLE_LABELS = {
   admin: "관리자",
   upper_room_leader: "다락방장",
   group_leader: "순장",
+  pending: "승인 대기",
 } as const;
 
 const ROLE_COLORS: Record<string, string> = {
