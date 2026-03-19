@@ -13,6 +13,10 @@ export default async function Layout({ children }: { children: React.ReactNode }
     redirect("/login");
   }
 
+  if (role === "pending") {
+    redirect("/pending");
+  }
+
   return (
     <RoleProvider role={role}>
       <DashboardLayout>{children}</DashboardLayout>

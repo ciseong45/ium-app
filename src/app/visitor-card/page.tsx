@@ -9,10 +9,25 @@ const inputClass =
 const labelClass =
   "block text-[11px] font-medium uppercase tracking-[0.15em] text-[var(--color-warm-muted)]";
 
+const pillClass = (selected: boolean) =>
+  `px-5 py-2.5 text-[13px] tracking-wide rounded-full border transition-all duration-300 cursor-pointer ${
+    selected
+      ? "border-[var(--color-warm-text)] bg-[var(--color-warm-text)] text-white shadow-sm"
+      : "border-[var(--color-warm-border)] text-[var(--color-warm-muted)] hover:border-[var(--color-warm-text)] hover:text-[var(--color-warm-text)]"
+  }`;
+
+const selectClass =
+  "mt-2 block w-full appearance-none border border-[var(--color-warm-border)] rounded-lg bg-transparent px-3 py-2.5 text-[13px] tracking-wide text-[var(--color-warm-text)] transition-all duration-300 focus:border-[var(--color-warm-text)] focus:outline-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%239a9084%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22M6%209l6%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px] bg-[right_8px_center] bg-no-repeat";
+
 export default function VisitorCardPage() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
+  const [baptism, setBaptism] = useState("");
+  const [gender, setGender] = useState("");
+  const [birthYear, setBirthYear] = useState("");
+  const [birthMonth, setBirthMonth] = useState("");
+  const [birthDay, setBirthDay] = useState("");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -115,18 +130,17 @@ export default function VisitorCardPage() {
             <label className={labelClass}>
               세례 입교 여부 <span className="text-rose-400">*</span>
             </label>
-            <div className="mt-3 flex gap-4">
+            <input type="hidden" name="baptism" value={baptism} required />
+            <div className="mt-3 flex flex-wrap gap-2.5">
               {["성인세례", "입교", "해당 없음"].map((option) => (
-                <label key={option} className="flex items-center gap-1.5">
-                  <input
-                    type="radio"
-                    name="baptism"
-                    value={option}
-                    required
-                    className="text-[#1a1a1a] accent-[#1a1a1a]"
-                  />
-                  <span className="text-sm text-[var(--color-warm-text)]">{option}</span>
-                </label>
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setBaptism(option)}
+                  className={pillClass(baptism === option)}
+                >
+                  {option}
+                </button>
               ))}
             </div>
           </div>
@@ -136,7 +150,47 @@ export default function VisitorCardPage() {
             <label className={labelClass}>
               생년월일 <span className="text-rose-400">*</span>
             </label>
-            <input name="birth_date" type="date" required className={inputClass} />
+            <input
+              type="hidden"
+              name="birth_date"
+              value={birthYear && birthMonth && birthDay ? `${birthYear}-${birthMonth.padStart(2, "0")}-${birthDay.padStart(2, "0")}` : ""}
+              required
+            />
+            <div className="mt-2 grid grid-cols-3 gap-3">
+              <select
+                value={birthYear}
+                onChange={(e) => setBirthYear(e.target.value)}
+                className={`${selectClass} ${!birthYear ? "text-[var(--color-warm-subtle)]" : ""}`}
+                required
+              >
+                <option value="" disabled>Year</option>
+                {Array.from({ length: 30 }, (_, i) => 2006 - i).map((y) => (
+                  <option key={y} value={String(y)}>{y}</option>
+                ))}
+              </select>
+              <select
+                value={birthMonth}
+                onChange={(e) => setBirthMonth(e.target.value)}
+                className={`${selectClass} ${!birthMonth ? "text-[var(--color-warm-subtle)]" : ""}`}
+                required
+              >
+                <option value="" disabled>Month</option>
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                  <option key={m} value={String(m)}>{m}월</option>
+                ))}
+              </select>
+              <select
+                value={birthDay}
+                onChange={(e) => setBirthDay(e.target.value)}
+                className={`${selectClass} ${!birthDay ? "text-[var(--color-warm-subtle)]" : ""}`}
+                required
+              >
+                <option value="" disabled>Day</option>
+                {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                  <option key={d} value={String(d)}>{d}일</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* 학교/직장 */}
@@ -152,15 +206,18 @@ export default function VisitorCardPage() {
             <label className={labelClass}>
               성별 <span className="text-rose-400">*</span>
             </label>
-            <div className="mt-3 flex gap-5">
-              <label className="flex items-center gap-1.5">
-                <input type="radio" name="gender" value="M" required className="accent-[#1a1a1a]" />
-                <span className="text-sm text-[var(--color-warm-text)]">남</span>
-              </label>
-              <label className="flex items-center gap-1.5">
-                <input type="radio" name="gender" value="F" className="accent-[#1a1a1a]" />
-                <span className="text-sm text-[var(--color-warm-text)]">여</span>
-              </label>
+            <input type="hidden" name="gender" value={gender} required />
+            <div className="mt-3 flex gap-2.5">
+              {[{ label: "남", value: "M" }, { label: "여", value: "F" }].map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setGender(opt.value)}
+                  className={pillClass(gender === opt.value)}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
           </div>
 

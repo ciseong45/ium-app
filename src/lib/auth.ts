@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 
-export type UserRole = "admin" | "upper_room_leader" | "group_leader";
+export type UserRole = "admin" | "upper_room_leader" | "group_leader" | "pending";
 
 export async function requireAuth() {
   const supabase = await createClient();
