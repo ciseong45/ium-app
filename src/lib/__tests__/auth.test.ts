@@ -69,15 +69,14 @@ describe("requireAuth", () => {
     expect(result.user).toEqual({ id: "user-1" });
   });
 
-  it("프로필 없으면 group_leader 기본값 사용", async () => {
+  it("프로필 없으면 에러 발생", async () => {
     const mockSupabase = createMockSupabase({
       user: { id: "user-2" },
       profile: null,
     });
     mockedCreateClient.mockResolvedValue(mockSupabase as ReturnType<typeof createClient> extends Promise<infer T> ? T : never);
 
-    const result = await requireAuth();
-    expect(result.role).toBe("group_leader");
+    await expect(requireAuth()).rejects.toThrow("프로필을 찾을 수 없습니다.");
   });
 
   it("linked_member_id가 없으면 null 반환", async () => {

@@ -19,8 +19,12 @@ export async function requireAuth() {
     .eq("id", user.id)
     .single();
 
-  const role: UserRole = (profile?.role as UserRole) || "group_leader";
-  const linkedMemberId: number | null = (profile?.linked_member_id as number) ?? null;
+  if (!profile) {
+    throw new Error("프로필을 찾을 수 없습니다. 관리자에게 문의하세요.");
+  }
+
+  const role: UserRole = profile.role as UserRole;
+  const linkedMemberId: number | null = (profile.linked_member_id as number) ?? null;
 
   return { supabase, user, role, linkedMemberId };
 }

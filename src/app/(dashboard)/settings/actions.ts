@@ -73,3 +73,44 @@ export async function updateUserRole(
   }
   return { success: true };
 }
+
+export async function deleteUser(
+  targetUserId: string
+): Promise<{ success: boolean; error?: string }> {
+  const { supabase, user, role } = await requireAuth();
+  if (role !== "admin") return { success: false, error: "권한이 없습니다." };
+  if (user.id === targetUserId)
+    return { success: false, error: "자신의 계정은 삭제할 수 없습니다." };
+
+  const { error } = await supabase.rpc("admin_delete_user", {
+    target_user_id: targetUserId,
+  });
+
+  if (error) {
+    console.error("deleteUser failed:", error.message);
+    return { success: false, error: "사용자 삭제에 실패했습니다." };
+  }
+  return { success: true };
+}
+
+export async function updateUserName(
+  targetUserId: string,
+  newName: string
+): Promise<{ success: boolean; error?: string }> {
+  const { supabase, role } = await requireAuth();
+  if (role !== "admin") return { success: false, error: "권한이 없습니다." };
+
+  const trimmed = newName.trim();
+  if (!trimmed) return { success: false, error: "이름을 입력해주세요." };
+
+  const { error } = await supabase.rpc("admin_update_user_name", {
+    target_user_id: targetUserId,
+    new_name: trimmed,
+  });
+
+  if (error) {
+    console.error("updateUserName failed:", error.message);
+    return { success: false, error: "이름 변경에 실패했습니다." };
+  }
+  return { success: true };
+}

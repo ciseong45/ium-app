@@ -13,7 +13,7 @@ export default async function SettingsPage() {
     <div>
       <h2 className="font-serif text-2xl font-light tracking-tight text-[var(--color-warm-text)]">설정</h2>
       <p className="mt-2 text-sm text-[var(--color-warm-muted)]">
-        사용자 역할과 멤버 연결을 관리합니다.
+        팀원 승인, 역할 변경, 프로필 관리를 할 수 있습니다.
       </p>
       <SettingsView users={users} currentUserId={user.id} members={members} />
     </div>

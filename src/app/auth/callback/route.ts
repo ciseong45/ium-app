@@ -45,6 +45,7 @@ export async function GET(request: Request) {
       const { error: insertError } = await supabase.from("profiles").insert({
         id: session.user.id,
         name: meta?.full_name || meta?.name || session.user.email,
+        email: session.user.email,
         role: "pending",
       });
       if (insertError) {
