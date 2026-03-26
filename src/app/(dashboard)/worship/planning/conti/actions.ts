@@ -100,7 +100,7 @@ export async function saveConti(
     .single();
 
   if (contiError || !conti)
-    return { success: false, error: "콘티 저장에 실패했습니다." };
+    return { success: false, error: `콘티 저장에 실패했습니다: ${contiError?.message}` };
 
   // 2. 기존 곡 삭제 후 새로 입력
   await supabase
@@ -131,7 +131,7 @@ export async function saveConti(
       .insert(rows);
 
     if (songError)
-      return { success: false, error: "곡 목록 저장에 실패했습니다." };
+      return { success: false, error: `곡 목록 저장에 실패했습니다: ${songError.message}` };
 
     // 3. 곡 라이브러리에 자동 추가 (중복 무시)
     for (const s of songs) {
