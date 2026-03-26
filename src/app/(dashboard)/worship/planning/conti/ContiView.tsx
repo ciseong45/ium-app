@@ -2,8 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useMemo } from "react";
-import { saveConti, uploadSheetMusic, deleteSheetMusic } from "./actions";
+import { saveConti, deleteSheetMusic } from "./actions";
 import type { ContiSongDraft } from "./actions";
+import { createClient } from "@/lib/supabase/client";
 import type {
   WorshipConti,
   ContiSong,
@@ -153,14 +154,34 @@ export default function ContiView({
   };
 
   const handleSheetUpload = async (index: number, file: File) => {
-    const formData = new FormData();
-    formData.append("file", file);
-    const result = await uploadSheetMusic(formData);
-    if (result.success && result.url) {
-      updateSong(index, "sheet_music_url", result.url);
-    } else {
-      alert(result.error || "악보 업로드에 실패했습니다.");
+    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const allowed = ["jpg", "jpeg", "png", "webp"];
+    if (!allowed.includes(ext)) {
+      alert("JPG, PNG, WEBP만 업로드 가능합니다.");
+      return;
     }
+    if (file.size > 5 * 1024 * 1024) {
+      alert("파일 크기는 5MB 이하만 가능합니다.");
+      return;
+    }
+
+    const supabase = createClient();
+    const fileName = `sheet-music/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("conti-assets")
+      .upload(fileName, file, { contentType: file.type, upsert: false });
+
+    if (uploadError) {
+      alert(`업로드 실패: ${uploadError.message}`);
+      return;
+    }
+
+    const { data: urlData } = supabase.storage
+      .from("conti-assets")
+      .getPublicUrl(fileName);
+
+    updateSong(index, "sheet_music_url", urlData.publicUrl);
   };
 
   const handleSheetDelete = async (index: number) => {
