@@ -5,6 +5,7 @@ import {
   insertStatusLog,
   ensureNewFamilyEntry,
   expireAdjustingMembers,
+  markDroppedOutNewFamilies,
 } from "@/lib/queries";
 
 // ===== Mock Supabase 헬퍼 =====
@@ -262,6 +263,93 @@ describe("expireAdjustingMembers", () => {
     const client = buildMockClient(fromMock);
 
     const result = await expireAdjustingMembers(client, [1]);
+    expect(result).toEqual([]);
+  });
+});
+
+// ===== markDroppedOutNewFamilies =====
+
+describe("markDroppedOutNewFamilies", () => {
+  it("4주 이상 정체된 새가족을 이탈 처리", async () => {
+    const fiveWeeksAgo = new Date();
+    fiveWeeksAgo.setDate(fiveWeeksAgo.getDate() - 35);
+
+    const updateInMock = jest.fn().mockResolvedValue({ error: null });
+    const updateMock = jest.fn().mockReturnValue({ in: updateInMock });
+    const membersUpdateInMock = jest.fn().mockResolvedValue({ error: null });
+    const membersUpdateMock = jest.fn().mockReturnValue({ in: membersUpdateInMock });
+    const insertMock = jest.fn().mockResolvedValue({ error: null });
+
+    const fromMock = jest.fn().mockImplementation((table: string) => {
+      if (table === "new_family") {
+        return {
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              lt: jest.fn().mockReturnValue({
+                lt: jest.fn().mockResolvedValue({
+                  data: [
+                    { id: 1, member_id: 10, step_updated_at: fiveWeeksAgo.toISOString() },
+                  ],
+                }),
+              }),
+            }),
+          }),
+          update: updateMock,
+        };
+      }
+      if (table === "members") {
+        return { update: membersUpdateMock };
+      }
+      if (table === "member_status_log") {
+        return { insert: insertMock };
+      }
+      return {};
+    });
+    const client = buildMockClient(fromMock);
+
+    const result = await markDroppedOutNewFamilies(client);
+    expect(result).toEqual([10]);
+
+    // new_family 업데이트 확인
+    expect(updateMock).toHaveBeenCalledWith(
+      expect.objectContaining({ dropped_out: true })
+    );
+
+    // members 상태 inactive로 전환 확인
+    expect(membersUpdateMock).toHaveBeenCalledWith({ status: "inactive" });
+    expect(membersUpdateInMock).toHaveBeenCalledWith("id", [10]);
+
+    // status_log 기록 확인
+    expect(insertMock).toHaveBeenCalledWith([
+      expect.objectContaining({
+        member_id: 10,
+        old_status: "new_family",
+        new_status: "inactive",
+      }),
+    ]);
+  });
+
+  it("4주 미만 정체 새가족은 이탈 처리하지 않음", async () => {
+    const twoWeeksAgo = new Date();
+    twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+
+    const fromMock = jest.fn().mockImplementation((table: string) => {
+      if (table === "new_family") {
+        return {
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              lt: jest.fn().mockReturnValue({
+                lt: jest.fn().mockResolvedValue({ data: [] }),
+              }),
+            }),
+          }),
+        };
+      }
+      return {};
+    });
+    const client = buildMockClient(fromMock);
+
+    const result = await markDroppedOutNewFamilies(client);
     expect(result).toEqual([]);
   });
 });

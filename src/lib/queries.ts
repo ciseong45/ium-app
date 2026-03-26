@@ -73,6 +73,54 @@ export async function ensureNewFamilyEntry(
   });
 }
 
+// ===== 4주 이상 정체 새가족 자동 이탈 처리 =====
+
+export async function markDroppedOutNewFamilies(
+  supabase: SupabaseClient
+): Promise<number[]> {
+  const fourWeeksAgo = new Date();
+  fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 28);
+
+  // step < 3이고 dropped_out=false이며 4주 이상 정체된 새가족 조회
+  const { data: stalled } = await supabase
+    .from("new_family")
+    .select("id, member_id, step_updated_at")
+    .eq("dropped_out", false)
+    .lt("step", 3)
+    .lt("step_updated_at", fourWeeksAgo.toISOString());
+
+  const targets = (stalled ?? []).filter((s) => s.member_id);
+
+  if (targets.length === 0) return [];
+
+  const targetIds = targets.map((t) => t.id);
+  const memberIds = targets.map((t) => t.member_id as number);
+
+  // new_family 이탈 처리
+  await supabase
+    .from("new_family")
+    .update({ dropped_out: true, dropped_out_at: new Date().toISOString() })
+    .in("id", targetIds);
+
+  // 멤버 상태 inactive로 전환
+  await supabase
+    .from("members")
+    .update({ status: "inactive" })
+    .in("id", memberIds);
+
+  // 상태 이력 기록
+  await supabase.from("member_status_log").insert(
+    memberIds.map((id) => ({
+      member_id: id,
+      old_status: "new_family",
+      new_status: "inactive",
+      changed_by: null,
+    }))
+  );
+
+  return memberIds;
+}
+
 // ===== 적응중 멤버 만료 일괄 처리 =====
 
 export async function expireAdjustingMembers(

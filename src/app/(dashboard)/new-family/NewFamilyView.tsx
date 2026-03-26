@@ -6,6 +6,7 @@ import {
   createNewFamily,
   updateStep,
   deleteNewFamily,
+  restoreNewFamily,
 } from "./actions";
 import type { NewFamilyEntry, Season } from "@/types/new-family";
 import { useRole } from "@/lib/RoleContext";
@@ -37,6 +38,8 @@ export default function NewFamilyView({
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [stepFilter, setStepFilter] = useState<number | null>(null);
+  const [showDroppedOut, setShowDroppedOut] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(false);
 
   const activeSeason = seasons.find((s) => s.is_active);
 
@@ -83,20 +86,35 @@ export default function NewFamilyView({
     }
   };
 
-  // 단계별 통계
-  const stepCounts = useMemo(() => STEPS.map((s) => ({
-    ...s,
-    count: families.filter((f) => f.step === s.step).length,
-  })), [families]);
+  const handleRestore = async (id: number, fullName: string) => {
+    if (!confirm(`${fullName}님을 새가족 과정으로 복귀시키겠습니까? (1주차부터 다시 시작)`)) return;
+    const result = await restoreNewFamily(id);
+    if (result.success) {
+      router.refresh();
+    } else {
+      alert(result.error);
+    }
+  };
 
-  // 2주 이상 단계 변화 없는 새가족
+  // 진행 중 / 등록 완료 / 이탈 분리
+  const inProgressFamilies = useMemo(() => families.filter((f) => !f.dropped_out && f.step < 3), [families]);
+  const completedFamilies = useMemo(() => families.filter((f) => !f.dropped_out && f.step === 3), [families]);
+  const droppedOutFamilies = useMemo(() => families.filter((f) => f.dropped_out), [families]);
+
+  // 단계별 통계 (진행 중만)
+  const stepCounts = useMemo(() => STEPS.filter((s) => s.step < 3).map((s) => ({
+    ...s,
+    count: inProgressFamilies.filter((f) => f.step === s.step).length,
+  })), [inProgressFamilies]);
+
+  // 2주 이상 단계 변화 없는 새가족 (진행 중만)
   const stalled = useMemo(() => {
     const twoWeeksAgo = new Date();
     twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-    return families.filter(
-      (f) => f.step < 3 && new Date(f.step_updated_at) < twoWeeksAgo
+    return inProgressFamilies.filter(
+      (f) => new Date(f.step_updated_at) < twoWeeksAgo
     );
-  }, [families]);
+  }, [inProgressFamilies]);
 
   return (
     <div>
@@ -149,6 +167,22 @@ export default function NewFamilyView({
             </span>
           </button>
         ))}
+        {completedFamilies.length > 0 && (
+          <div className="flex min-w-[100px] flex-col items-center rounded-xl border border-[#c8e6c9] bg-[#e8f5e9] p-5">
+            <span className="text-xs text-[#3d6b3d]">등록 완료</span>
+            <span className="mt-1 text-2xl font-bold text-[#2e7d32]">
+              {completedFamilies.length}
+            </span>
+          </div>
+        )}
+        {droppedOutFamilies.length > 0 && (
+          <div className="flex min-w-[100px] flex-col items-center rounded-xl border border-red-200 bg-red-50 p-5">
+            <span className="text-xs text-red-400">이탈</span>
+            <span className="mt-1 text-2xl font-bold text-red-500">
+              {droppedOutFamilies.length}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* 장기 미진행 경고 */}
@@ -265,12 +299,12 @@ export default function NewFamilyView({
         </form>
       )}
 
-      {/* 새가족 목록 */}
-      {families.length === 0 ? (
+      {/* 진행 중 새가족 목록 */}
+      {inProgressFamilies.length === 0 && completedFamilies.length === 0 && droppedOutFamilies.length === 0 ? (
         <EmptyState message="등록된 새가족이 없습니다." />
       ) : (
         <div className="mt-6 space-y-3">
-          {families
+          {inProgressFamilies
             .filter((f) => stepFilter === null || f.step === stepFilter)
             .map((family) => (
             <div
@@ -283,16 +317,8 @@ export default function NewFamilyView({
                     <h3 className="font-semibold text-[var(--color-warm-text)]">
                       {family.member.last_name}{family.member.first_name}
                     </h3>
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                        family.step === 3
-                          ? "bg-[#edf5ed] text-[#3d6b3d]"
-                          : STEPS[family.step - 1].color
-                      }`}
-                    >
-                      {family.step === 3
-                        ? "등록 완료"
-                        : STEPS[family.step - 1].label}
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STEPS[family.step - 1].color}`}>
+                      {STEPS[family.step - 1].label}
                     </span>
                   </div>
                   <div className="mt-1 flex gap-3 text-sm text-[var(--color-warm-muted)]">
@@ -337,6 +363,120 @@ export default function NewFamilyView({
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* 등록 완료 새가족 섹션 */}
+      {completedFamilies.length > 0 && (
+        <div className="mt-8">
+          <button
+            onClick={() => setShowCompleted(!showCompleted)}
+            className="flex items-center gap-2 text-sm font-semibold text-[#2e7d32] hover:text-[#1b5e20] transition-colors"
+          >
+            <span className={`inline-block transition-transform ${showCompleted ? "rotate-90" : ""}`}>
+              ▶
+            </span>
+            등록 완료 ({completedFamilies.length}명)
+          </button>
+
+          {showCompleted && (
+            <div className="mt-3 space-y-3">
+              {completedFamilies.map((family) => (
+                <div
+                  key={family.id}
+                  className="rounded-xl border border-[#c8e6c9] bg-[#f1f8e9]/50 p-5"
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-[var(--color-warm-text)]">
+                          {family.member.last_name}{family.member.first_name}
+                        </h3>
+                        <span className="rounded-full bg-[#edf5ed] px-2 py-0.5 text-xs font-medium text-[#3d6b3d]">
+                          등록 완료
+                        </span>
+                      </div>
+                      <div className="mt-1 flex gap-3 text-sm text-[var(--color-warm-muted)]">
+                        <span>첫 방문: {family.first_visit}</span>
+                        <span>완료일: {new Date(family.step_updated_at).toLocaleDateString("ko-KR")}</span>
+                        {family.assignee && (
+                          <span>담당: {family.assignee.last_name}{family.assignee.first_name}</span>
+                        )}
+                      </div>
+                    </div>
+                    {role === "admin" && (
+                      <button
+                        onClick={() =>
+                          handleDelete(family.id, `${family.member.last_name}${family.member.first_name}`)
+                        }
+                        className="text-xs text-red-400 hover:text-red-600"
+                      >
+                        삭제
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 이탈 새가족 섹션 */}
+      {droppedOutFamilies.length > 0 && (
+        <div className="mt-8">
+          <button
+            onClick={() => setShowDroppedOut(!showDroppedOut)}
+            className="flex items-center gap-2 text-sm font-semibold text-red-400 hover:text-red-600 transition-colors"
+          >
+            <span className={`inline-block transition-transform ${showDroppedOut ? "rotate-90" : ""}`}>
+              ▶
+            </span>
+            이탈 새가족 ({droppedOutFamilies.length}명)
+          </button>
+
+          {showDroppedOut && (
+            <div className="mt-3 space-y-3">
+              {droppedOutFamilies.map((family) => (
+                <div
+                  key={family.id}
+                  className="rounded-xl border border-red-200 bg-red-50/50 p-5"
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-[var(--color-warm-text)]">
+                          {family.member.last_name}{family.member.first_name}
+                        </h3>
+                        <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-500">
+                          이탈
+                        </span>
+                      </div>
+                      <div className="mt-1 flex gap-3 text-sm text-[var(--color-warm-muted)]">
+                        <span>첫 방문: {family.first_visit}</span>
+                        {family.dropped_out_at && (
+                          <span>이탈일: {new Date(family.dropped_out_at).toLocaleDateString("ko-KR")}</span>
+                        )}
+                        {family.assignee && (
+                          <span>담당: {family.assignee.last_name}{family.assignee.first_name}</span>
+                        )}
+                      </div>
+                    </div>
+                    {role !== "group_leader" && (
+                      <button
+                        onClick={() =>
+                          handleRestore(family.id, `${family.member.last_name}${family.member.first_name}`)
+                        }
+                        className="rounded-lg border border-[var(--color-warm-border)] bg-white px-3 py-1.5 text-xs font-medium text-[var(--color-warm-text)] transition-all duration-300 hover:border-[var(--color-warm-text)]"
+                      >
+                        복귀
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

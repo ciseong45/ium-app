@@ -58,6 +58,7 @@ let createNewFamily: typeof import("../actions").createNewFamily;
 let updateStep: typeof import("../actions").updateStep;
 let updateAssignee: typeof import("../actions").updateAssignee;
 let deleteNewFamily: typeof import("../actions").deleteNewFamily;
+let restoreNewFamily: typeof import("../actions").restoreNewFamily;
 
 beforeAll(async () => {
   const mod = await import("../actions");
@@ -65,6 +66,7 @@ beforeAll(async () => {
   updateStep = mod.updateStep;
   updateAssignee = mod.updateAssignee;
   deleteNewFamily = mod.deleteNewFamily;
+  restoreNewFamily = mod.restoreNewFamily;
 });
 
 beforeEach(() => {
@@ -279,5 +281,87 @@ describe("deleteNewFamily", () => {
 
     const result = await deleteNewFamily(1);
     expect(result).toEqual({ success: false, error: "권한이 없습니다." });
+  });
+});
+
+// ─── restoreNewFamily ──────────────────────────────────────────────
+
+describe("restoreNewFamily", () => {
+  it("group_leader는 권한 없음", async () => {
+    setupAuth("group_leader");
+    const result = await restoreNewFamily(1);
+    expect(result).toEqual({ success: false, error: "권한이 없습니다." });
+  });
+
+  it("정상 복귀: dropped_out=false, step=1로 리셋 + 멤버 상태 new_family 복원", async () => {
+    // new_family.update (dropped_out=false, step=1) → eq 성공
+    const updateMock = createQueryMock({ data: null, error: null });
+    // new_family.select("member_id") → eq → single → { member_id: 10 }
+    const familySelectMock = createQueryMock({
+      data: { member_id: 10 },
+      error: null,
+    });
+    // members.update({ status: "new_family" }) → eq 성공
+    const memberUpdateMock = createQueryMock({ data: null, error: null });
+    // members.select("status") → eq → single → { status: "inactive" }
+    const memberSelectMock = createQueryMock({
+      data: { status: "inactive" },
+      error: null,
+    });
+
+    let newFamilyCallCount = 0;
+    let membersCallCount = 0;
+
+    const supabase = {
+      from: jest.fn((table: string) => {
+        if (table === "new_family") {
+          newFamilyCallCount++;
+          return newFamilyCallCount === 1 ? updateMock : familySelectMock;
+        }
+        if (table === "members") {
+          membersCallCount++;
+          return membersCallCount === 1 ? memberSelectMock : memberUpdateMock;
+        }
+        return createQueryMock();
+      }),
+    };
+
+    requireAuthMock.mockResolvedValue({
+      supabase: supabase as any,
+      user: { id: "user-1" } as any,
+      role: "admin" as any,
+      linkedMemberId: 1,
+    });
+
+    insertStatusLogMock.mockResolvedValue(undefined);
+
+    const result = await restoreNewFamily(1);
+
+    expect(result).toEqual({ success: true });
+
+    // new_family 테이블 업데이트 확인
+    expect(updateMock.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        dropped_out: false,
+        step: 1,
+      })
+    );
+
+    // members 상태 복원 확인
+    expect(memberUpdateMock.update).toHaveBeenCalledWith({
+      status: "new_family",
+    });
+
+    // insertStatusLog 호출 확인
+    expect(insertStatusLogMock).toHaveBeenCalledWith(
+      supabase,
+      10,
+      "inactive",
+      "new_family",
+      "user-1"
+    );
+
+    expect(revalidatePath).toHaveBeenCalledWith("/new-family");
+    expect(revalidatePath).toHaveBeenCalledWith("/members");
   });
 });

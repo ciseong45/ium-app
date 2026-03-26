@@ -144,6 +144,51 @@ export async function deleteNewFamily(id: number): Promise<ActionResult> {
   return { success: true };
 }
 
+export async function restoreNewFamily(id: number): Promise<ActionResult> {
+  const { supabase, user, role } = await requireAuth();
+  if (role === "group_leader") return { success: false, error: "권한이 없습니다." };
+
+  // dropped_out 해제, step=1로 리셋
+  const { error } = await supabase
+    .from("new_family")
+    .update({
+      dropped_out: false,
+      dropped_out_at: null,
+      step: 1,
+      step_updated_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+  if (error) return { success: false, error: "복귀 처리에 실패했습니다." };
+
+  // 멤버 상태 new_family로 복원
+  const { data: family } = await supabase
+    .from("new_family")
+    .select("member_id")
+    .eq("id", id)
+    .single();
+
+  if (family) {
+    const { data: member } = await supabase
+      .from("members")
+      .select("status")
+      .eq("id", family.member_id)
+      .single();
+
+    if (member) {
+      await supabase
+        .from("members")
+        .update({ status: "new_family" })
+        .eq("id", family.member_id);
+
+      await insertStatusLog(supabase, family.member_id, member.status, "new_family", user.id);
+    }
+  }
+
+  revalidatePath("/new-family");
+  revalidatePath("/members");
+  return { success: true };
+}
+
 export async function getActiveMembers() {
   const { supabase } = await requireAuth();
   return fetchActiveMembers(supabase, ["active", "attending", "adjusting"]);
