@@ -49,13 +49,30 @@ export async function getRecentContis(
 
 // ── 콘티 저장 ──
 
+export type ContiSongDraft = {
+  title: string;
+  song_key: string | null;
+  notes: string | null;
+  bpm: number | null;
+  time_signature: string | null;
+  artist: string | null;
+  reference_url: string | null;
+  song_form: string | null;
+  session_notes: string | null;
+  singer_notes: string | null;
+  engineer_notes: string | null;
+};
+
 export async function saveConti(
   serviceDate: string,
   serviceType: ServiceType,
   leaderId: number | null,
   theme: string | null,
   notes: string | null,
-  songs: { title: string; song_key: string | null; notes: string | null }[]
+  scripture: string | null,
+  description: string | null,
+  discussionQuestions: string | null,
+  songs: ContiSongDraft[]
 ): Promise<ActionResult> {
   const { supabase, role } = await requireAuth();
   if (role === "group_leader")
@@ -71,6 +88,9 @@ export async function saveConti(
         leader_member_id: leaderId,
         theme,
         notes,
+        scripture,
+        description,
+        discussion_questions: discussionQuestions,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "service_date,service_type" }
@@ -94,6 +114,14 @@ export async function saveConti(
       title: s.title,
       song_key: s.song_key,
       notes: s.notes,
+      bpm: s.bpm,
+      time_signature: s.time_signature,
+      artist: s.artist,
+      reference_url: s.reference_url,
+      song_form: s.song_form,
+      session_notes: s.session_notes,
+      singer_notes: s.singer_notes,
+      engineer_notes: s.engineer_notes,
     }));
 
     const { error: songError } = await supabase
@@ -107,7 +135,10 @@ export async function saveConti(
     for (const s of songs) {
       await supabase
         .from("songs")
-        .upsert({ title: s.title, default_key: s.song_key }, { onConflict: "title,artist" })
+        .upsert(
+          { title: s.title, artist: s.artist, default_key: s.song_key },
+          { onConflict: "title,artist" }
+        )
         .select()
         .maybeSingle();
     }

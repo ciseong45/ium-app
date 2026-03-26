@@ -1,5 +1,6 @@
 import { getConti, getRecentContis } from "./actions";
 import { getWorshipMembers } from "../../members/actions";
+import { getLineup } from "../lineup/actions";
 import ContiView from "./ContiView";
 import type { ServiceType } from "@/types/worship";
 
@@ -18,10 +19,11 @@ export default async function ContiPage({
   const selectedDate = params.date || defaultDate;
   const serviceType = (params.type || "주일") as ServiceType;
 
-  const [contiData, members, recentContis] = await Promise.all([
+  const [contiData, members, recentContis, lineupData] = await Promise.all([
     getConti(selectedDate, serviceType),
     getWorshipMembers(),
     getRecentContis(12),
+    getLineup(selectedDate),
   ]);
 
   return (
@@ -32,6 +34,7 @@ export default async function ContiPage({
       recentContis={recentContis}
       selectedDate={selectedDate}
       serviceType={serviceType}
+      lineupSlots={lineupData.slots}
     />
   );
 }

@@ -81,6 +81,9 @@ export type WorshipConti = {
   service_type: ServiceType;
   theme: string | null;
   notes: string | null;
+  scripture: string | null;
+  description: string | null;
+  discussion_questions: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -92,6 +95,14 @@ export type ContiSong = {
   title: string;
   song_key: string | null;
   notes: string | null;
+  bpm: number | null;
+  time_signature: string | null;
+  artist: string | null;
+  reference_url: string | null;
+  song_form: string | null;
+  session_notes: string | null;
+  singer_notes: string | null;
+  engineer_notes: string | null;
 };
 
 export type Song = {
