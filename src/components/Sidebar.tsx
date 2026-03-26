@@ -63,6 +63,30 @@ function CogIcon({ className }: { className?: string }) {
   );
 }
 
+function MusicNoteIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.2} stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 11-.99-3.467l2.31-.66a2.25 2.25 0 001.632-2.163zm0 0V4.846a2.25 2.25 0 00-1.632-2.163L9.345 1.06a1.803 1.803 0 00-2.345 1.718v7.472m0 0a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 10.99 3.467l2.31-.66A2.25 2.25 0 009 13.25z" />
+    </svg>
+  );
+}
+
+function DocumentTextIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.2} stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+    </svg>
+  );
+}
+
+function CalendarIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.2} stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+    </svg>
+  );
+}
+
 // ── 메뉴 구성 ──
 
 type MenuItem = {
@@ -71,13 +95,36 @@ type MenuItem = {
   icon: React.ComponentType<{ className?: string }>;
 };
 
-const menuItems: MenuItem[] = [
-  { href: "/", label: "대시보드", icon: HomeIcon },
-  { href: "/members", label: "멤버 관리", icon: UsersIcon },
-  { href: "/small-groups", label: "순관리", icon: ClipboardIcon },
-  { href: "/attendance", label: "출석 관리", icon: CheckCircleIcon },
-  { href: "/new-family", label: "새가족", icon: UserPlusIcon },
-  { href: "/one-to-one", label: "1:1 양육", icon: BookOpenIcon },
+type MenuSection = {
+  title: string;
+  items: MenuItem[];
+};
+
+const menuSections: MenuSection[] = [
+  {
+    title: "총괄",
+    items: [
+      { href: "/", label: "대시보드", icon: HomeIcon },
+      { href: "/weekly", label: "주간 자료", icon: DocumentTextIcon },
+      { href: "/events", label: "행사", icon: CalendarIcon },
+    ],
+  },
+  {
+    title: "목양",
+    items: [
+      { href: "/members", label: "멤버 관리", icon: UsersIcon },
+      { href: "/small-groups", label: "순관리", icon: ClipboardIcon },
+      { href: "/attendance", label: "출석 관리", icon: CheckCircleIcon },
+      { href: "/new-family", label: "새가족", icon: UserPlusIcon },
+      { href: "/one-to-one", label: "1:1 양육", icon: BookOpenIcon },
+    ],
+  },
+  {
+    title: "예배",
+    items: [
+      { href: "/worship", label: "예배 관리", icon: MusicNoteIcon },
+    ],
+  },
 ];
 
 // ── 사이드바 ──
@@ -123,31 +170,37 @@ export default function Sidebar({
         </div>
 
         {/* 메인 네비게이션 */}
-        <nav className="mt-8 flex-1 space-y-0.5 px-3">
-          <p className="mb-3 px-3 text-[9px] font-medium uppercase tracking-[0.25em] text-white/25">
-            Navigation
-          </p>
-          {menuItems.map((item) => {
-            const active = isActive(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={onClose}
-                className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] transition-all duration-300 ${
-                  active
-                    ? "bg-white/[0.07] text-white/90 font-medium"
-                    : "text-white/40 hover:bg-white/[0.03] hover:text-white/70"
-                }`}
-              >
-                {active && (
-                  <span className="absolute left-0 top-1/2 h-4 w-[2px] -translate-y-1/2 rounded-r-full bg-white/60" />
-                )}
-                <item.icon className={`h-[17px] w-[17px] shrink-0 transition-colors duration-300 ${active ? "text-white/70" : "text-white/25 group-hover:text-white/50"}`} />
-                {item.label}
-              </Link>
-            );
-          })}
+        <nav className="mt-6 flex-1 overflow-y-auto px-3">
+          {menuSections.map((section, si) => (
+            <div key={section.title} className={si > 0 ? "mt-6" : ""}>
+              <p className="mb-2 px-3 text-[9px] font-medium uppercase tracking-[0.25em] text-white/25">
+                {section.title}
+              </p>
+              <div className="space-y-0.5">
+                {section.items.map((item) => {
+                  const active = isActive(item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={onClose}
+                      className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] transition-all duration-300 ${
+                        active
+                          ? "bg-white/[0.07] text-white/90 font-medium"
+                          : "text-white/40 hover:bg-white/[0.03] hover:text-white/70"
+                      }`}
+                    >
+                      {active && (
+                        <span className="absolute left-0 top-1/2 h-4 w-[2px] -translate-y-1/2 rounded-r-full bg-white/60" />
+                      )}
+                      <item.icon className={`h-[17px] w-[17px] shrink-0 transition-colors duration-300 ${active ? "text-white/70" : "text-white/25 group-hover:text-white/50"}`} />
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
         {/* 설정 (하단 분리) */}

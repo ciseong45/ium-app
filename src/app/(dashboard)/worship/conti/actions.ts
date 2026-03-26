@@ -1,0 +1,134 @@
+"use server";
+
+import { requireAuth } from "@/lib/auth";
+import { revalidatePath } from "next/cache";
+import type { ActionResult } from "@/lib/validations";
+import type { WorshipConti, ContiSong, Song, ServiceType } from "@/types/worship";
+
+// ── 콘티 조회 ──
+
+export async function getConti(
+  serviceDate: string,
+  serviceType: ServiceType = "주일"
+): Promise<{ conti: WorshipConti | null; songs: ContiSong[] }> {
+  const { supabase } = await requireAuth();
+
+  const { data: conti } = await supabase
+    .from("worship_contis")
+    .select("*")
+    .eq("service_date", serviceDate)
+    .eq("service_type", serviceType)
+    .single();
+
+  if (!conti) return { conti: null, songs: [] };
+
+  const { data: songs } = await supabase
+    .from("worship_conti_songs")
+    .select("*")
+    .eq("conti_id", conti.id)
+    .order("song_order");
+
+  return {
+    conti: conti as WorshipConti,
+    songs: (songs || []) as ContiSong[],
+  };
+}
+
+export async function getRecentContis(
+  count: number = 12
+): Promise<WorshipConti[]> {
+  const { supabase } = await requireAuth();
+  const { data, error } = await supabase
+    .from("worship_contis")
+    .select("*, leader:members!leader_member_id(last_name, first_name)")
+    .order("service_date", { ascending: false })
+    .limit(count);
+  if (error) return [];
+  return data as WorshipConti[];
+}
+
+// ── 콘티 저장 ──
+
+export async function saveConti(
+  serviceDate: string,
+  serviceType: ServiceType,
+  leaderId: number | null,
+  theme: string | null,
+  notes: string | null,
+  songs: { title: string; song_key: string | null; notes: string | null }[]
+): Promise<ActionResult> {
+  const { supabase, role } = await requireAuth();
+  if (role === "group_leader")
+    return { success: false, error: "권한이 없습니다." };
+
+  // 1. upsert conti
+  const { data: conti, error: contiError } = await supabase
+    .from("worship_contis")
+    .upsert(
+      {
+        service_date: serviceDate,
+        service_type: serviceType,
+        leader_member_id: leaderId,
+        theme,
+        notes,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "service_date,service_type" }
+    )
+    .select("id")
+    .single();
+
+  if (contiError || !conti)
+    return { success: false, error: "콘티 저장에 실패했습니다." };
+
+  // 2. 기존 곡 삭제 후 새로 입력
+  await supabase
+    .from("worship_conti_songs")
+    .delete()
+    .eq("conti_id", conti.id);
+
+  if (songs.length > 0) {
+    const rows = songs.map((s, i) => ({
+      conti_id: conti.id,
+      song_order: i + 1,
+      title: s.title,
+      song_key: s.song_key,
+      notes: s.notes,
+    }));
+
+    const { error: songError } = await supabase
+      .from("worship_conti_songs")
+      .insert(rows);
+
+    if (songError)
+      return { success: false, error: "곡 목록 저장에 실패했습니다." };
+
+    // 3. 곡 라이브러리에 자동 추가 (중복 무시)
+    for (const s of songs) {
+      await supabase
+        .from("songs")
+        .upsert({ title: s.title, default_key: s.song_key }, { onConflict: "title,artist" })
+        .select()
+        .maybeSingle();
+    }
+  }
+
+  revalidatePath("/worship/conti");
+  return { success: true };
+}
+
+// ── 곡 라이브러리 검색 ──
+
+export async function searchSongs(query: string): Promise<Song[]> {
+  const { supabase } = await requireAuth();
+  if (!query || query.length < 1) return [];
+
+  const { data, error } = await supabase
+    .from("songs")
+    .select("*")
+    .ilike("title", `%${query}%`)
+    .limit(10);
+
+  if (error) return [];
+  return data as Song[];
+}

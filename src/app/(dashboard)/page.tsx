@@ -11,6 +11,8 @@ export default async function DashboardPage() {
     attendanceRes,
     newFamilyRes,
     oneToOneRes,
+    worshipMembersRes,
+    upcomingEventsRes,
   ] = await Promise.all([
     // 재적/출석 멤버 수
     supabase
@@ -45,6 +47,18 @@ export default async function DashboardPage() {
       .from("one_to_one")
       .select("id", { count: "exact", head: true })
       .eq("status", "active"),
+    // 찬양팀 인원
+    supabase
+      .from("member_ministry_teams")
+      .select("id", { count: "exact", head: true })
+      .eq("ministry_team_id", 1),
+    // 다가올 행사
+    supabase
+      .from("events")
+      .select("id, name, start_date")
+      .gte("start_date", new Date().toISOString().split("T")[0])
+      .order("start_date")
+      .limit(3),
   ]);
 
   // 멤버 수
@@ -78,6 +92,12 @@ export default async function DashboardPage() {
 
   // 양육 수
   const oneToOneCount = oneToOneRes.count ?? 0;
+
+  // 찬양팀 수
+  const worshipMemberCount = worshipMembersRes.count ?? 0;
+
+  // 다가올 행사
+  const upcomingEvents = upcomingEventsRes.data ?? [];
 
   // 내 순/다락방 정보 (순장, 다락방장용)
   type MyGroupInfo = {
@@ -227,6 +247,22 @@ export default async function DashboardPage() {
             unit="건"
             description="진행 중"
             href="/one-to-one"
+          />
+          <DashboardCard
+            label="Worship"
+            title="찬양팀"
+            value={`${worshipMemberCount}`}
+            unit="명"
+            description="사역자"
+            href="/worship"
+          />
+          <DashboardCard
+            label="Events"
+            title="행사"
+            value={`${upcomingEvents.length}`}
+            unit="건"
+            description={upcomingEvents.length > 0 ? (upcomingEvents[0] as { name: string }).name : "예정 없음"}
+            href="/events"
           />
         </div>
       </section>
