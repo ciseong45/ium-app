@@ -273,7 +273,7 @@ export async function getUnassignedMembers(seasonId: number) {
   let query = supabase
     .from("members")
     .select("id, last_name, first_name, status, phone, email, gender, birth_date, address, kakao_id, is_baptized, school_or_work, notes, created_at, updated_at")
-    .in("status", ["active", "attending"])
+    .in("status", ["active", "attending", "adjusting"])
     .order("last_name")
     .order("first_name");
 
