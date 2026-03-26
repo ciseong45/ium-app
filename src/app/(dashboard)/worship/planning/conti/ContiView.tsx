@@ -66,11 +66,11 @@ export default function ContiView({
   );
 
   const handleDateChange = (date: string) => {
-    router.push(`/worship/conti?date=${date}&type=${serviceType}`);
+    router.push(`/worship/planning/conti?date=${date}&type=${serviceType}`);
   };
 
   const handleTypeChange = (type: string) => {
-    router.push(`/worship/conti?date=${selectedDate}&type=${type}`);
+    router.push(`/worship/planning/conti?date=${selectedDate}&type=${type}`);
   };
 
   const addSong = () => {
@@ -162,7 +162,7 @@ export default function ContiView({
               key={`${c.service_date}-${c.service_type}`}
               onClick={() =>
                 router.push(
-                  `/worship/conti?date=${c.service_date}&type=${c.service_type}`
+                  `/worship/planning/conti?date=${c.service_date}&type=${c.service_type}`
                 )
               }
               className={`shrink-0 rounded-full px-3 py-1.5 text-xs transition-all ${

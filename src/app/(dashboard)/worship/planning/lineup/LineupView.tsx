@@ -155,7 +155,7 @@ export default function LineupView({
   };
 
   const handleDateChange = (date: string) => {
-    router.push(`/worship/lineup?date=${date}`);
+    router.push(`/worship/planning/lineup?date=${date}`);
   };
 
   const formatDate = (dateStr: string) => {

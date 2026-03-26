@@ -122,7 +122,8 @@ const menuSections: MenuSection[] = [
   {
     title: "예배",
     items: [
-      { href: "/worship", label: "예배 관리", icon: MusicNoteIcon },
+      { href: "/worship/members", label: "예배팀 관리", icon: UsersIcon },
+      { href: "/worship/planning", label: "예배기획", icon: MusicNoteIcon },
     ],
   },
 ];

@@ -1,33 +1,39 @@
 import {
   getPositions,
   getWorshipMembers,
+  getNonWorshipMembers,
   getMemberPositions,
   getRecentWorshipAttendance,
+  getMemberSchedules,
 } from "./actions";
-import WorshipTeamView from "./WorshipTeamView";
+import WorshipMembersView from "./WorshipMembersView";
 
-export default async function WorshipTeamPage({
+export default async function WorshipMembersPage({
   searchParams,
 }: {
   searchParams: Promise<{ tab?: string }>;
 }) {
   const params = await searchParams;
 
-  const [positions, members, memberPositions, recentAttendance] =
+  const [positions, members, nonMembers, memberPositions, recentAttendance, schedules] =
     await Promise.all([
       getPositions(),
       getWorshipMembers(),
+      getNonWorshipMembers(),
       getMemberPositions(),
       getRecentWorshipAttendance(8),
+      getMemberSchedules(),
     ]);
 
   return (
-    <WorshipTeamView
+    <WorshipMembersView
       positions={positions}
       members={members}
+      nonMembers={nonMembers}
       memberPositions={memberPositions}
       recentAttendance={recentAttendance}
-      currentTab={params.tab || "positions"}
+      schedules={schedules}
+      currentTab={params.tab || "members"}
     />
   );
 }

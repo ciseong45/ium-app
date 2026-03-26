@@ -113,7 +113,7 @@ export async function saveConti(
     }
   }
 
-  revalidatePath("/worship/conti");
+  revalidatePath("/worship/planning/conti");
   return { success: true };
 }
 

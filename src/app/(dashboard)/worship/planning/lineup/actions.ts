@@ -104,7 +104,7 @@ export async function saveLineup(
       return { success: false, error: "슬롯 저장에 실패했습니다." };
   }
 
-  revalidatePath("/worship/lineup");
+  revalidatePath("/worship/planning/lineup");
   return { success: true };
 }
 
@@ -120,6 +120,6 @@ export async function deleteLineup(serviceDate: string): Promise<ActionResult> {
 
   if (error) return { success: false, error: "삭제에 실패했습니다." };
 
-  revalidatePath("/worship/lineup");
+  revalidatePath("/worship/planning/lineup");
   return { success: true };
 }

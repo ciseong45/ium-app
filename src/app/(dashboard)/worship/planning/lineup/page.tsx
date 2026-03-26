@@ -1,5 +1,5 @@
 import { getLineup, getRecentLineups } from "./actions";
-import { getPositions, getWorshipMembers, getMemberPositions } from "../team/actions";
+import { getPositions, getWorshipMembers, getMemberPositions } from "../../members/actions";
 import LineupView from "./LineupView";
 
 export default async function LineupPage({

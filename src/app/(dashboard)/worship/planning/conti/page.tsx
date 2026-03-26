@@ -1,5 +1,5 @@
 import { getConti, getRecentContis } from "./actions";
-import { getWorshipMembers } from "../team/actions";
+import { getWorshipMembers } from "../../members/actions";
 import ContiView from "./ContiView";
 import type { ServiceType } from "@/types/worship";
 

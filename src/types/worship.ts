@@ -101,6 +101,32 @@ export type Song = {
   default_key: string | null;
 };
 
+// --- Worship Member Schedule Types ---
+
+export type ScheduleType = "off" | "oot" | "etc";
+
+export const SCHEDULE_TYPE_LABELS: Record<ScheduleType, string> = {
+  off: "Off",
+  oot: "OOT",
+  etc: "기타",
+};
+
+export const SCHEDULE_TYPE_COLORS: Record<ScheduleType, string> = {
+  off: "bg-[#fef3e8] text-[#b05a20]",
+  oot: "bg-[#ede8f5] text-[#5b47a0]",
+  etc: "bg-[#f5f0e0] text-[#8a7a56]",
+};
+
+export type WorshipMemberSchedule = {
+  id: number;
+  member_id: number;
+  start_date: string;
+  end_date: string;
+  type: ScheduleType;
+  note: string | null;
+  created_at: string;
+};
+
 // --- View Types (joined data) ---
 
 export type WorshipMemberWithPositions = {
