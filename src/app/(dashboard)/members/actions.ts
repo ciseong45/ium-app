@@ -25,9 +25,9 @@ export async function getMembers(
     .order("first_name", { ascending: true });
 
   if (status && status !== "all") {
-    // "재적" 필터: active, attending, inactive 포함
+    // "재적" 필터: active, attending, inactive, adjusting 포함
     if (status === "active") {
-      query = query.in("status", ["active", "attending", "inactive"]);
+      query = query.in("status", ["active", "attending", "inactive", "adjusting"]);
     } else {
       query = query.eq("status", status);
     }
