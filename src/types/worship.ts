@@ -103,6 +103,7 @@ export type ContiSong = {
   session_notes: string | null;
   singer_notes: string | null;
   engineer_notes: string | null;
+  sheet_music_url: string | null;
 };
 
 export type Song = {

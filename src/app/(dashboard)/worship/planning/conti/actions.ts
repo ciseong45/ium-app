@@ -61,6 +61,7 @@ export type ContiSongDraft = {
   session_notes: string | null;
   singer_notes: string | null;
   engineer_notes: string | null;
+  sheet_music_url: string | null;
 };
 
 export async function saveConti(
@@ -122,6 +123,7 @@ export async function saveConti(
       session_notes: s.session_notes,
       singer_notes: s.singer_notes,
       engineer_notes: s.engineer_notes,
+      sheet_music_url: s.sheet_music_url,
     }));
 
     const { error: songError } = await supabase
@@ -145,6 +147,63 @@ export async function saveConti(
   }
 
   revalidatePath("/worship/planning/conti");
+  return { success: true };
+}
+
+// ── 악보 이미지 업로드 ──
+
+export async function uploadSheetMusic(
+  formData: FormData
+): Promise<{ success: boolean; url?: string; error?: string }> {
+  const { supabase, role } = await requireAuth();
+  if (role === "group_leader")
+    return { success: false, error: "권한이 없습니다." };
+
+  const file = formData.get("file") as File | null;
+  if (!file) return { success: false, error: "파일이 없습니다." };
+
+  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const allowed = ["jpg", "jpeg", "png", "webp"];
+  if (!allowed.includes(ext))
+    return { success: false, error: "JPG, PNG, WEBP만 업로드 가능합니다." };
+
+  if (file.size > 5 * 1024 * 1024)
+    return { success: false, error: "파일 크기는 5MB 이하만 가능합니다." };
+
+  const fileName = `sheet-music/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("conti-assets")
+    .upload(fileName, file, { contentType: file.type, upsert: false });
+
+  if (uploadError)
+    return { success: false, error: `업로드 실패: ${uploadError.message}` };
+
+  const { data: urlData } = supabase.storage
+    .from("conti-assets")
+    .getPublicUrl(fileName);
+
+  return { success: true, url: urlData.publicUrl };
+}
+
+export async function deleteSheetMusic(
+  url: string
+): Promise<ActionResult> {
+  const { supabase, role } = await requireAuth();
+  if (role === "group_leader")
+    return { success: false, error: "권한이 없습니다." };
+
+  // extract path from public URL
+  const match = url.match(/conti-assets\/(.+)$/);
+  if (!match) return { success: false, error: "잘못된 URL입니다." };
+
+  const { error } = await supabase.storage
+    .from("conti-assets")
+    .remove([match[1]]);
+
+  if (error)
+    return { success: false, error: `삭제 실패: ${error.message}` };
+
   return { success: true };
 }
 

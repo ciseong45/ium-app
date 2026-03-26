@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useMemo } from "react";
-import { saveConti } from "./actions";
+import { saveConti, uploadSheetMusic, deleteSheetMusic } from "./actions";
 import type { ContiSongDraft } from "./actions";
 import type {
   WorshipConti,
@@ -57,6 +57,7 @@ function makeSongDraft(s?: ContiSong): ContiSongDraft {
     session_notes: s?.session_notes || null,
     singer_notes: s?.singer_notes || null,
     engineer_notes: s?.engineer_notes || null,
+    sheet_music_url: s?.sheet_music_url || null,
   };
 }
 
@@ -148,6 +149,50 @@ export default function ContiView({
       const next = [...prev];
       [next[index], next[newIndex]] = [next[newIndex], next[index]];
       return next;
+    });
+  };
+
+  const handleSheetUpload = async (index: number, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const result = await uploadSheetMusic(formData);
+    if (result.success && result.url) {
+      updateSong(index, "sheet_music_url", result.url);
+    } else {
+      alert(result.error || "악보 업로드에 실패했습니다.");
+    }
+  };
+
+  const handleSheetDelete = async (index: number) => {
+    const url = songList[index].sheet_music_url;
+    if (!url) return;
+    const result = await deleteSheetMusic(url);
+    if (result.success) {
+      updateSong(index, "sheet_music_url", null);
+    } else {
+      alert(result.error || "악보 삭제에 실패했습니다.");
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    const { generateContiPdf } = await import("./generateContiPdf");
+    const leaderName = leaderId
+      ? (() => {
+          const m = members.find((m) => m.id === leaderId);
+          return m ? `${m.last_name}${m.first_name}` : "";
+        })()
+      : "";
+    await generateContiPdf({
+      date: selectedDate,
+      serviceType,
+      theme,
+      scripture,
+      description,
+      discussionQuestions,
+      leaderName,
+      notes,
+      songs: songList,
+      lineupByPosition,
     });
   };
 
@@ -322,6 +367,8 @@ export default function ContiView({
                 onUpdate={(field, value) => updateSong(i, field, value)}
                 onMove={(dir) => moveSong(i, dir)}
                 onRemove={() => removeSong(i)}
+                onSheetUpload={(file) => handleSheetUpload(i, file)}
+                onSheetDelete={() => handleSheetDelete(i)}
               />
             ))}
           </div>
@@ -351,13 +398,23 @@ export default function ContiView({
           />
         </div>
 
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className={`${BTN_PRIMARY_CLASS} w-full`}
-        >
-          {saving ? "저장 중..." : "콘티 저장"}
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className={`${BTN_PRIMARY_CLASS} flex-1`}
+          >
+            {saving ? "저장 중..." : "콘티 저장"}
+          </button>
+          {conti && (
+            <button
+              onClick={handleDownloadPdf}
+              className={`${BTN_SECONDARY_CLASS} shrink-0`}
+            >
+              PDF 다운로드
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -375,6 +432,8 @@ function SongCard({
   onUpdate,
   onMove,
   onRemove,
+  onSheetUpload,
+  onSheetDelete,
 }: {
   index: number;
   song: ContiSongDraft;
@@ -385,7 +444,10 @@ function SongCard({
   onUpdate: (field: keyof ContiSongDraft, value: string | number | null) => void;
   onMove: (dir: -1 | 1) => void;
   onRemove: () => void;
+  onSheetUpload: (file: File) => void;
+  onSheetDelete: () => void;
 }) {
+  const [uploading, setUploading] = useState(false);
   return (
     <div className={CARD_CLASS}>
       {/* 헤더 — 항상 표시 */}
@@ -489,6 +551,54 @@ function SongCard({
               placeholder="예: Intro(4) - V - PC - 한마디 - V - PCx2 - Cx4 - Tagx2 - Outro(4)"
               className="mt-1 w-full rounded-md border border-[var(--color-warm-border)] bg-white px-2 py-1.5 text-xs"
             />
+          </div>
+
+          {/* 악보 이미지 */}
+          <div className="mb-4">
+            <label className="text-[10px] font-medium text-[var(--color-warm-muted)]">악보</label>
+            {song.sheet_music_url ? (
+              <div className="mt-1 space-y-2">
+                <div className="relative overflow-hidden rounded-lg border border-[var(--color-warm-border)]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={song.sheet_music_url}
+                    alt={`${song.title} 악보`}
+                    className="w-full"
+                  />
+                </div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onSheetDelete(); }}
+                  className="text-xs text-rose-400 hover:text-rose-600"
+                >
+                  악보 삭제
+                </button>
+              </div>
+            ) : (
+              <label className="mt-1 flex cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-[var(--color-warm-border)] p-6 transition-colors hover:border-[var(--color-warm-muted)] hover:bg-[var(--color-warm-bg)]">
+                <div className="text-center">
+                  <p className="text-xs text-[var(--color-warm-muted)]">
+                    {uploading ? "업로드 중..." : "클릭하여 악보 이미지 업로드"}
+                  </p>
+                  <p className="mt-1 text-[10px] text-[var(--color-warm-muted)]">
+                    JPG, PNG, WEBP (최대 5MB)
+                  </p>
+                </div>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  disabled={uploading}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setUploading(true);
+                    await onSheetUpload(file);
+                    setUploading(false);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            )}
           </div>
 
           {/* 세션/싱어/엔지니어 노트 */}
