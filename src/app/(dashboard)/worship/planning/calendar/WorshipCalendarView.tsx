@@ -158,7 +158,7 @@ export default function WorshipCalendarView({ year, month, lineups, contis }: Pr
                 {dayContis.map((c) => (
                   <Link
                     key={c.id}
-                    href={`/worship/planning/conti?date=${dateStr}&type=${c.service_type}`}
+                    href={`/worship/planning/conti/edit?date=${dateStr}&type=${c.service_type}`}
                     className={`mb-0.5 block rounded px-1.5 py-0.5 text-[10px] font-medium hover:opacity-80 transition-opacity ${
                       SERVICE_TYPE_COLORS[c.service_type as ServiceType]
                     }`}

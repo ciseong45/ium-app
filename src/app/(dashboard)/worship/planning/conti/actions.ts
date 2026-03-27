@@ -34,17 +34,28 @@ export async function getConti(
   };
 }
 
+export type ContiListItem = WorshipConti & {
+  leader?: { last_name: string; first_name: string } | null;
+  song_count: number;
+};
+
 export async function getRecentContis(
   count: number = 12
-): Promise<WorshipConti[]> {
+): Promise<ContiListItem[]> {
   const { supabase } = await requireAuth();
   const { data, error } = await supabase
     .from("worship_contis")
-    .select("*, leader:members!leader_member_id(last_name, first_name)")
+    .select(
+      "*, leader:members!leader_member_id(last_name, first_name), worship_conti_songs(count)"
+    )
     .order("service_date", { ascending: false })
     .limit(count);
   if (error) return [];
-  return data as WorshipConti[];
+  return (data || []).map((c) => ({
+    ...c,
+    song_count:
+      (c.worship_conti_songs as unknown as { count: number }[])?.[0]?.count ?? 0,
+  })) as ContiListItem[];
 }
 
 // ── 콘티 저장 ──
@@ -147,6 +158,7 @@ export async function saveConti(
   }
 
   revalidatePath("/worship/planning/conti");
+  revalidatePath("/worship/planning/conti/edit");
   return { success: true };
 }
 

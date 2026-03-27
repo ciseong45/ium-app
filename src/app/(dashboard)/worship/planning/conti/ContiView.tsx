@@ -29,11 +29,12 @@ type LineupSlotWithMember = WorshipLineupSlot & {
   position_name: string;
 };
 
+import Link from "next/link";
+
 type Props = {
   conti: WorshipConti | null;
   songs: ContiSong[];
   members: Member[];
-  recentContis: WorshipConti[];
   selectedDate: string;
   serviceType: ServiceType;
   lineupSlots: LineupSlotWithMember[];
@@ -66,7 +67,6 @@ export default function ContiView({
   conti,
   songs: initialSongs,
   members,
-  recentContis,
   selectedDate,
   serviceType,
   lineupSlots,
@@ -113,11 +113,11 @@ export default function ContiView({
   }, [lineupSlots]);
 
   const handleDateChange = (date: string) => {
-    router.push(`/worship/planning/conti?date=${date}&type=${serviceType}`);
+    router.push(`/worship/planning/conti/edit?date=${date}&type=${serviceType}`);
   };
 
   const handleTypeChange = (type: string) => {
-    router.push(`/worship/planning/conti?date=${selectedDate}&type=${type}`);
+    router.push(`/worship/planning/conti/edit?date=${selectedDate}&type=${type}`);
   };
 
   const addSong = () => {
@@ -252,58 +252,42 @@ export default function ContiView({
     setSaving(false);
   };
 
-  const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr + "T00:00:00");
-    return `${d.getMonth() + 1}/${d.getDate()}`;
-  };
-
   return (
     <div>
       {/* 헤더 */}
-      <div className="mb-6 flex items-end justify-between">
-        <div>
-          <p className={SECTION_LABEL_CLASS}>Conti</p>
-          <h1 className={PAGE_TITLE_CLASS}>예배 콘티</h1>
-        </div>
-        <div className="flex items-center gap-3">
-          <select
-            value={serviceType}
-            onChange={(e) => handleTypeChange(e.target.value)}
-            className="rounded-lg border border-[var(--color-warm-border)] bg-white px-3 py-2 text-sm"
-          >
-            {Object.entries(SERVICE_TYPE_LABELS).map(([key, label]) => (
-              <option key={key} value={key}>{label}</option>
-            ))}
-          </select>
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => handleDateChange(e.target.value)}
-            className="rounded-lg border border-[var(--color-warm-border)] bg-white px-3 py-2 text-sm"
-          />
+      <div className="mb-6">
+        <Link
+          href="/worship/planning/conti"
+          className="mb-3 inline-flex items-center gap-1 text-xs text-[var(--color-warm-muted)] transition-colors hover:text-[var(--color-warm-text)]"
+        >
+          ← 목록으로
+        </Link>
+        <div className="flex items-end justify-between">
+          <div>
+            <p className={SECTION_LABEL_CLASS}>Conti</p>
+            <h1 className={PAGE_TITLE_CLASS}>
+              {conti ? "콘티 수정" : "새 콘티 작성"}
+            </h1>
+          </div>
+          <div className="flex items-center gap-3">
+            <select
+              value={serviceType}
+              onChange={(e) => handleTypeChange(e.target.value)}
+              className="rounded-lg border border-[var(--color-warm-border)] bg-white px-3 py-2 text-sm"
+            >
+              {Object.entries(SERVICE_TYPE_LABELS).map(([key, label]) => (
+                <option key={key} value={key}>{label}</option>
+              ))}
+            </select>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => handleDateChange(e.target.value)}
+              className="rounded-lg border border-[var(--color-warm-border)] bg-white px-3 py-2 text-sm"
+            />
+          </div>
         </div>
       </div>
-
-      {/* 최근 콘티 */}
-      {recentContis.length > 0 && (
-        <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
-          {recentContis.map((c) => (
-            <button
-              key={`${c.service_date}-${c.service_type}`}
-              onClick={() =>
-                router.push(`/worship/planning/conti?date=${c.service_date}&type=${c.service_type}`)
-              }
-              className={`shrink-0 rounded-full px-3 py-1.5 text-xs transition-all ${
-                c.service_date === selectedDate && c.service_type === serviceType
-                  ? "bg-[#1a1a1a] text-white"
-                  : "bg-[var(--color-warm-bg)] text-[var(--color-warm-secondary)] hover:bg-[var(--color-warm-border)]"
-              }`}
-            >
-              {formatDate(c.service_date)} {c.service_type !== "주일" && c.service_type}
-            </button>
-          ))}
-        </div>
-      )}
 
       <div className="space-y-6">
         {/* ── 1. 예배 정보 카드 ── */}
