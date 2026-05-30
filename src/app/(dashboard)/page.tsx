@@ -171,6 +171,30 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-12 animate-fade-in">
+      {/* 공지 */}
+      <section>
+        <p className="text-[9px] font-medium uppercase tracking-[0.25em] text-[var(--color-warm-muted)]">
+          Notice
+        </p>
+        <div className="editorial-divider mt-2 mb-5" />
+        <Link
+          href="/summer-apply"
+          className="group flex flex-col gap-4 rounded-xl border border-[var(--color-warm-border)] bg-white p-6 hover-lift sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div>
+            <p className="font-serif text-xl font-light tracking-tight text-[var(--color-warm-text)]">
+              2026 여름순 신청
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-[var(--color-warm-muted)]">
+              새가족과 방문자가 직접 신청할 수 있는 공개 신청폼입니다.
+            </p>
+          </div>
+          <span className="text-sm font-medium text-[var(--color-warm-muted)] transition-all duration-300 group-hover:text-[var(--color-warm-text)] group-hover:translate-x-0.5">
+            신청폼 열기 →
+          </span>
+        </Link>
+      </section>
+
       {/* 내 순 바로가기 (순장/다락방장) */}
       {myGroups.length > 0 && (
         <section>
