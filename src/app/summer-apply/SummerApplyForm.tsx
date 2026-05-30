@@ -82,7 +82,6 @@ export default function SummerApplyForm({ seasonId }: { seasonId: number }) {
               name="name"
               type="text"
               required
-              placeholder="홍길동"
               className={inputClass}
             />
           </div>
@@ -92,7 +91,6 @@ export default function SummerApplyForm({ seasonId }: { seasonId: number }) {
             <input
               name="phone"
               type="tel"
-              placeholder="010-0000-0000"
               className={inputClass}
             />
           </div>
