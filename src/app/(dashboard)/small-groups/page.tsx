@@ -5,6 +5,7 @@ import {
   getAllGroupMembersForSeason,
   getUpperRoomsBySeason,
 } from "./actions";
+import { getPool } from "./applications-actions";
 import SmallGroupsView from "./SmallGroupsView";
 import type { GroupMemberEntry } from "@/types/small-group";
 
@@ -14,11 +15,12 @@ export default async function SmallGroupsPage() {
 
   // 활성 시즌이 있으면 해당 시즌의 모든 데이터 병렬 로드
   if (activeSeason) {
-    const [groups, unassigned, allGroupMembers, upperRooms] = await Promise.all([
+    const [groups, unassigned, allGroupMembers, upperRooms, pool] = await Promise.all([
       getGroupsBySeason(activeSeason.id),
       getUnassignedMembers(activeSeason.id),
       getAllGroupMembersForSeason(activeSeason.id),
       getUpperRoomsBySeason(activeSeason.id),
+      getPool(activeSeason.id),
     ]);
 
     const groupMembersMap: Record<number, GroupMemberEntry[]> = {};
@@ -36,6 +38,7 @@ export default async function SmallGroupsPage() {
         upperRooms={upperRooms}
         unassignedMembers={unassigned}
         initialGroupMembers={groupMembersMap}
+        initialPool={pool}
       />
     );
   }
@@ -48,6 +51,7 @@ export default async function SmallGroupsPage() {
       upperRooms={[]}
       unassignedMembers={[]}
       initialGroupMembers={{}}
+      initialPool={[]}
     />
   );
 }
