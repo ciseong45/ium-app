@@ -18,9 +18,11 @@ export default function GroupCard({
   isAssigning,
   unassignedMembers,
   upperRooms,
+  canAssignMembers = true,
   onStartAssign,
   onAssign,
   onUnassign,
+  onUnassignApplication,
   onDelete,
   onMoveToUpperRoom,
 }: {
@@ -29,9 +31,11 @@ export default function GroupCard({
   isAssigning: boolean;
   unassignedMembers: Member[];
   upperRooms: UpperRoom[];
+  canAssignMembers?: boolean;
   onStartAssign: () => void;
   onAssign: (memberId: number) => void;
   onUnassign: (memberId: number) => void;
+  onUnassignApplication: (applicationId: number) => void;
   onDelete: () => void;
   onMoveToUpperRoom: (upperRoomId: number) => void;
 }) {
@@ -48,7 +52,7 @@ export default function GroupCard({
           )}
         </div>
         <div className="flex gap-2">
-          {role !== "group_leader" && (
+          {canAssignMembers && role !== "group_leader" && (
             <button
               onClick={onStartAssign}
               className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-300 ${
@@ -122,18 +126,40 @@ export default function GroupCard({
           <div className="space-y-1">
             {members.map((entry) => (
               <div
-                key={entry.id}
+                key={`${entry.kind ?? "member"}-${entry.id}`}
                 className="flex items-center justify-between rounded-xl px-2 py-1.5 hover:bg-[var(--color-warm-bg)] transition-all duration-300"
               >
-                <Link
-                  href={`/members/${entry.member.id}`}
-                  className="text-sm text-[var(--color-warm-text)] hover:underline"
-                >
-                  {entry.member.last_name}{entry.member.first_name}
-                </Link>
+                {entry.kind === "application" ? (
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-sm text-[var(--color-warm-text)]">
+                        {entry.application.name}
+                      </span>
+                      <span className="rounded-full bg-[var(--color-warm-bg)] px-2 py-0.5 text-[10px] text-[var(--color-warm-muted)]">
+                        {entry.application.source === "form" ? "폼신청" : "관리자"}
+                      </span>
+                    </div>
+                    {(entry.application.phone || entry.application.note) && (
+                      <p className="truncate text-xs text-[var(--color-warm-muted)]">
+                        {[entry.application.phone, entry.application.note].filter(Boolean).join(" · ")}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <Link
+                    href={`/members/${entry.member.id}`}
+                    className="text-sm text-[var(--color-warm-text)] hover:underline"
+                  >
+                    {entry.member.last_name}{entry.member.first_name}
+                  </Link>
+                )}
                 {role !== "group_leader" && (
                   <button
-                    onClick={() => onUnassign(entry.member.id)}
+                    onClick={() =>
+                      entry.kind === "application"
+                        ? onUnassignApplication(entry.application.id)
+                        : onUnassign(entry.member.id)
+                    }
                     className="text-xs text-[var(--color-warm-muted)] hover:text-red-500"
                   >
                     해제

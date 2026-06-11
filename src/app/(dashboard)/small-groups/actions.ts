@@ -251,11 +251,40 @@ export async function getAllGroupMembersForSeason(seasonId: number) {
     .order("created_at");
 
   if (error) return [];
-  return (data ?? []).map((d: any) => ({
+
+  const memberEntries = (data ?? []).map((d: any) => ({
     id: d.id as number,
     group_id: d.group_id as number,
+    kind: "member" as const,
     member: d.member as import("@/types/member").Member,
   }));
+
+  const { data: assignedApplications } = await supabase
+    .from("small_group_applications")
+    .select("id, member_id, assigned_group_id, name, phone, source, note, applied_at")
+    .eq("season_id", seasonId)
+    .eq("status", "assigned")
+    .in("assigned_group_id", groupIds)
+    .order("applied_at");
+
+  const applicationEntries = (assignedApplications ?? [])
+    .filter((d: any) => d.assigned_group_id !== null)
+    .map((d: any) => ({
+      id: d.id as number,
+      group_id: d.assigned_group_id as number,
+      kind: "application" as const,
+      application: {
+        id: d.id as number,
+        member_id: d.member_id as number | null,
+        name: d.name as string,
+        phone: d.phone as string | null,
+        source: d.source as "form" | "admin",
+        note: d.note as string | null,
+        applied_at: d.applied_at as string,
+      },
+    }));
+
+  return [...memberEntries, ...applicationEntries];
 }
 
 export async function getUnassignedMembers(seasonId: number) {

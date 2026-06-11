@@ -59,7 +59,6 @@ export async function addApplication(formData: FormData): Promise<ActionResult> 
 export async function assignFromPool({
   applicationId,
   groupId,
-  memberId,
   seasonId,
 }: {
   applicationId: number;
@@ -70,15 +69,6 @@ export async function assignFromPool({
   const { supabase, role } = await requireAuth();
   if (role === "group_leader") return { success: false, error: "권한이 없습니다." };
 
-  // 기존 멤버면 small_group_members에 배정
-  if (memberId !== null) {
-    const { error: insertError } = await supabase
-      .from("small_group_members")
-      .insert({ group_id: groupId, member_id: memberId });
-    if (insertError) return { success: false, error: "멤버 배정에 실패했습니다." };
-  }
-
-  // 신청 상태 업데이트
   const { error: updateError } = await supabase
     .from("small_group_applications")
     .update({ status: "assigned", assigned_group_id: groupId })
@@ -105,6 +95,7 @@ export async function cancelAssignment({
   if (role === "group_leader") return { success: false, error: "권한이 없습니다." };
 
   if (memberId !== null) {
+    // 이전 버전에서 기존 멤버 신청자를 small_group_members에 넣은 경우를 정리한다.
     const { error: deleteError } = await supabase
       .from("small_group_members")
       .delete()

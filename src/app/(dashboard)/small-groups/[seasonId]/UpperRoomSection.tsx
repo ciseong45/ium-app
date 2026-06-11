@@ -29,6 +29,8 @@ export default function UpperRoomSection({
   onSetAssigningTo,
   onAssign,
   onUnassign,
+  onUnassignApplication,
+  canAssignMembers,
   onDeleteGroup,
   onCreateGroup,
   onUpdateUpperRoom,
@@ -48,6 +50,8 @@ export default function UpperRoomSection({
   onSetAssigningTo: (groupId: number | null) => void;
   onAssign: (groupId: number, memberId: number) => void;
   onUnassign: (groupId: number, memberId: number) => void;
+  onUnassignApplication: (groupId: number, applicationId: number) => void;
+  canAssignMembers: boolean;
   onDeleteGroup: (groupId: number, groupName: string) => void;
   onCreateGroup: (upperRoomId: number, formData: FormData) => void;
   onUpdateUpperRoom: (id: number, formData: FormData) => void;
@@ -243,8 +247,9 @@ export default function UpperRoomSection({
                   group={group}
                   members={groupMembers[group.id] || []}
                   isAssigning={assigningTo === group.id}
-                  unassignedMembers={unassignedMembers}
+                  unassignedMembers={canAssignMembers ? unassignedMembers : []}
                   upperRooms={allUpperRooms}
+                  canAssignMembers={canAssignMembers}
                   onStartAssign={() =>
                     onSetAssigningTo(
                       assigningTo === group.id ? null : group.id
@@ -252,6 +257,9 @@ export default function UpperRoomSection({
                   }
                   onAssign={(memberId) => onAssign(group.id, memberId)}
                   onUnassign={(memberId) => onUnassign(group.id, memberId)}
+                  onUnassignApplication={(applicationId) =>
+                    onUnassignApplication(group.id, applicationId)
+                  }
                   onDelete={() => onDeleteGroup(group.id, group.name)}
                   onMoveToUpperRoom={(upperRoomId) =>
                     onMoveGroupToUpperRoom(group.id, upperRoomId)

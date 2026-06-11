@@ -6,8 +6,7 @@ import {
   getUpperRoomsBySeason,
 } from "../actions";
 import { getPool } from "../applications-actions";
-import SeasonDetail from "./SeasonDetail";
-import PoolSection from "./PoolSection";
+import SeasonTabs from "../SeasonTabs";
 import type { Member } from "@/types/member";
 import type { GroupMemberEntry } from "@/types/small-group";
 
@@ -40,19 +39,15 @@ export default async function SeasonDetailPage({
     );
   }
 
-  const groupList = groups.map((g) => ({ id: g.id, name: g.name }));
-
   return (
-    <>
-      <SeasonDetail
-        season={season}
-        seasons={seasons}
-        groups={groups}
-        upperRooms={upperRooms}
-        unassignedMembers={unassigned as Member[]}
-        initialGroupMembers={groupMembersMap}
-      />
-      <PoolSection seasonId={id} initialPool={pool} groups={groupList} />
-    </>
+    <SeasonTabs
+      season={season}
+      seasons={seasons}
+      groups={groups}
+      upperRooms={upperRooms}
+      unassignedMembers={unassigned as Member[]}
+      initialGroupMembers={groupMembersMap}
+      initialPool={pool}
+    />
   );
 }

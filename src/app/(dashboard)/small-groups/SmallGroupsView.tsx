@@ -4,8 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createSeason, deleteSeason } from "./actions";
 import { useRole } from "@/lib/RoleContext";
-import SeasonDetail from "./[seasonId]/SeasonDetail";
-import PoolSection from "./[seasonId]/PoolSection";
+import SeasonTabs from "./SeasonTabs";
 import EmptyState from "@/components/ui/EmptyState";
 import { INPUT_CLASS } from "@/components/ui/constants";
 import type { Member } from "@/types/member";
@@ -199,22 +198,16 @@ export default function SmallGroupsView({
       {/* 메인 콘텐츠: 활성 시즌 상세 or EmptyState */}
       <div className="mt-6">
         {activeSeason ? (
-          <>
-            <SeasonDetail
-              season={activeSeason}
-              seasons={seasons}
-              groups={groups}
-              upperRooms={upperRooms}
-              unassignedMembers={unassignedMembers}
-              initialGroupMembers={initialGroupMembers}
-              hideHeader
-            />
-            <PoolSection
-              seasonId={activeSeason.id}
-              initialPool={initialPool}
-              groups={groups.map((group) => ({ id: group.id, name: group.name }))}
-            />
-          </>
+          <SeasonTabs
+            season={activeSeason}
+            seasons={seasons}
+            groups={groups}
+            upperRooms={upperRooms}
+            unassignedMembers={unassignedMembers}
+            initialGroupMembers={initialGroupMembers}
+            initialPool={initialPool}
+            hideHeader
+          />
         ) : (
           <EmptyState message="활성 시즌이 없습니다. 새 시즌을 만들어주세요." />
         )}

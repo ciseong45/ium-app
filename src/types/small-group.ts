@@ -17,8 +17,26 @@ export type SmallGroup = {
   leader: { id: number; last_name: string; first_name: string } | null;
 };
 
-export type GroupMemberEntry = {
+export type GroupMemberApplication = {
   id: number;
-  group_id: number;
-  member: Member;
+  member_id: number | null;
+  name: string;
+  phone: string | null;
+  source: "form" | "admin";
+  note: string | null;
+  applied_at: string;
 };
+
+export type GroupMemberEntry =
+  | {
+      id: number;
+      group_id: number;
+      kind?: "member";
+      member: Member;
+    }
+  | {
+      id: number;
+      group_id: number;
+      kind: "application";
+      application: GroupMemberApplication;
+    };

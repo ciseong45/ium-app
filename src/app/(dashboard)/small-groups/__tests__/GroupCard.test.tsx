@@ -72,6 +72,7 @@ const baseProps = {
   onStartAssign: jest.fn(),
   onAssign: jest.fn(),
   onUnassign: jest.fn(),
+  onUnassignApplication: jest.fn(),
   onDelete: jest.fn(),
   onMoveToUpperRoom: jest.fn(),
 };
@@ -85,5 +86,34 @@ describe("GroupCard - 멤버 이름 클릭 시 상세 페이지 링크", () => {
 
     const link2 = screen.getByRole("link", { name: "이영희" });
     expect(link2).toHaveAttribute("href", "/members/3");
+  });
+
+  it("회원으로 등록되지 않은 배정 신청자도 순 카드에 표시된다", () => {
+    render(
+      <GroupCard
+        {...baseProps}
+        members={[
+          {
+            id: 200,
+            group_id: 1,
+            kind: "application",
+            application: {
+              id: 77,
+              member_id: null,
+              name: "최여름",
+              phone: "010-9999-0000",
+              source: "form",
+              note: "방문자",
+              applied_at: "2026-06-01",
+            },
+          },
+        ]}
+      />
+    );
+
+    expect(screen.getByText("최여름")).toBeInTheDocument();
+    expect(screen.getByText("폼신청")).toBeInTheDocument();
+    expect(screen.getByText("010-9999-0000 · 방문자")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "최여름" })).not.toBeInTheDocument();
   });
 });

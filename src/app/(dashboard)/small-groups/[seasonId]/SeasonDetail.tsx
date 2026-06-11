@@ -10,10 +10,10 @@ import {
   updateUpperRoom,
   moveGroupToUpperRoom,
 } from "../actions";
+import { cancelAssignment } from "../applications-actions";
 import type { Member } from "@/types/member";
 import type { UpperRoom, GroupMemberEntry } from "@/types/small-group";
 import UpperRoomSection from "./UpperRoomSection";
-import { useRole } from "@/lib/RoleContext";
 
 type Group = {
   id: number;
@@ -32,6 +32,12 @@ type Season = {
   created_at?: string;
 };
 
+function isMemberEntry(
+  entry: GroupMemberEntry
+): entry is Extract<GroupMemberEntry, { member: Member }> {
+  return entry.kind !== "application";
+}
+
 export default function SeasonDetail({
   season,
   seasons,
@@ -40,6 +46,7 @@ export default function SeasonDetail({
   unassignedMembers,
   initialGroupMembers,
   hideHeader = false,
+  enableMemberAssignment = true,
 }: {
   season: Season;
   seasons?: Season[];
@@ -48,9 +55,9 @@ export default function SeasonDetail({
   unassignedMembers: Member[];
   initialGroupMembers: Record<number, GroupMemberEntry[]>;
   hideHeader?: boolean;
+  enableMemberAssignment?: boolean;
 }) {
   const router = useRouter();
-  const role = useRole();
   const [loading, setLoading] = useState(false);
   const [assigningTo, setAssigningTo] = useState<number | null>(null);
   const [showGroupForm, setShowGroupForm] = useState<number | null>(null);
@@ -62,6 +69,7 @@ export default function SeasonDetail({
   // 전체 멤버 목록 (다락방장 선택용) = 모든 배정된 멤버 + 미배정 멤버
   const allAssignedMembers = Object.values(groupMembers)
     .flat()
+    .filter(isMemberEntry)
     .map((e) => e.member);
   const allMembers = [
     ...allAssignedMembers,
@@ -117,7 +125,7 @@ export default function SeasonDetail({
       setGroupMembers((prev) => ({
         ...prev,
         [groupId]: (prev[groupId] || []).filter(
-          (e) => e.member.id !== memberId
+          (e) => !isMemberEntry(e) || e.member.id !== memberId
         ),
       }));
       alert(result.error);
@@ -126,15 +134,15 @@ export default function SeasonDetail({
 
   const handleUnassign = async (groupId: number, memberId: number) => {
     const entry = (groupMembers[groupId] || []).find(
-      (e) => e.member.id === memberId
+      (e) => isMemberEntry(e) && e.member.id === memberId
     );
-    if (!entry) return;
+    if (!entry || !isMemberEntry(entry)) return;
 
     // Optimistic: 그룹에서 제거 → 미배정에 추가
     setGroupMembers((prev) => ({
       ...prev,
       [groupId]: (prev[groupId] || []).filter(
-        (e) => e.member.id !== memberId
+        (e) => !isMemberEntry(e) || e.member.id !== memberId
       ),
     }));
     setLocalUnassigned((prev) =>
@@ -154,6 +162,36 @@ export default function SeasonDetail({
         prev.filter((m) => m.id !== memberId)
       );
       alert(result.error);
+    }
+  };
+
+  const handleUnassignApplication = async (groupId: number, applicationId: number) => {
+    const entry = (groupMembers[groupId] || []).find(
+      (e) => e.kind === "application" && e.application.id === applicationId
+    );
+    if (!entry || entry.kind !== "application") return;
+
+    setGroupMembers((prev) => ({
+      ...prev,
+      [groupId]: (prev[groupId] || []).filter(
+        (e) => !(e.kind === "application" && e.application.id === applicationId)
+      ),
+    }));
+
+    const result = await cancelAssignment({
+      applicationId,
+      groupId,
+      memberId: entry.application.member_id,
+      seasonId: season.id,
+    });
+    if (!result.success) {
+      setGroupMembers((prev) => ({
+        ...prev,
+        [groupId]: [...(prev[groupId] || []), entry],
+      }));
+      alert(result.error);
+    } else {
+      router.refresh();
     }
   };
 
@@ -248,7 +286,7 @@ export default function SeasonDetail({
         <span>다락방 {upperRooms.length}개</span>
         <span>순 {groups.length}개</span>
         <span>배정 {totalMembers}명</span>
-        <span>미배정 {localUnassigned.length}명</span>
+        {enableMemberAssignment && <span>미배정 {localUnassigned.length}명</span>}
       </div>
 
       {/* 다락방 목록 */}
@@ -269,6 +307,8 @@ export default function SeasonDetail({
             onSetAssigningTo={setAssigningTo}
             onAssign={handleAssign}
             onUnassign={handleUnassign}
+            onUnassignApplication={handleUnassignApplication}
+            canAssignMembers={enableMemberAssignment}
             onDeleteGroup={handleDeleteGroup}
             onCreateGroup={handleCreateGroup}
             onUpdateUpperRoom={handleUpdateUpperRoom}
@@ -279,7 +319,7 @@ export default function SeasonDetail({
       </div>
 
       {/* 미배정 멤버 */}
-      {localUnassigned.length > 0 && (
+      {enableMemberAssignment && localUnassigned.length > 0 && (
         <div className="mt-8">
           <h3 className="text-[9px] font-medium uppercase tracking-[0.25em] text-[var(--color-warm-muted)]">
             미배정 멤버 ({localUnassigned.length}명)

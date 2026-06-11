@@ -122,17 +122,10 @@ describe("addApplication", () => {
 
 // ===== assignFromPool =====
 describe("assignFromPool", () => {
-  it("배정 성공: small_group_members insert + 신청 status assigned 업데이트", async () => {
+  it("배정 성공: 신청 status assigned 업데이트만 수행", async () => {
     const { supabase } = setupAuth("admin");
-
-    const insertMock = createQueryMock({ data: null, error: null });
     const updateMock = createQueryMock({ data: null, error: null });
-
-    let callCount = 0;
-    supabase.from.mockImplementation(() => {
-      callCount++;
-      return callCount === 1 ? insertMock : updateMock;
-    });
+    supabase.from.mockReturnValue(updateMock);
 
     const { assignFromPool } = await importActions();
     const result = await assignFromPool({
@@ -143,7 +136,8 @@ describe("assignFromPool", () => {
     });
 
     expect(result.success).toBe(true);
-    expect(supabase.from).toHaveBeenCalledWith("small_group_members");
+    expect(supabase.from).toHaveBeenCalledTimes(1);
+    expect(supabase.from).not.toHaveBeenCalledWith("small_group_members");
     expect(supabase.from).toHaveBeenCalledWith("small_group_applications");
     expect(updateMock.update).toHaveBeenCalledWith(
       expect.objectContaining({ status: "assigned", assigned_group_id: 10 })
