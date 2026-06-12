@@ -8,7 +8,6 @@ jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 jest.mock("@/lib/queries", () => ({
   insertStatusLog: jest.fn(),
   ensureNewFamilyEntry: jest.fn(),
-  expireAdjustingMembers: jest.fn().mockResolvedValue([]),
   getActiveSeason: jest.fn().mockResolvedValue(null),
 }));
 jest.mock("@/lib/csv", () => ({

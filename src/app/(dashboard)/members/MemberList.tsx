@@ -2,9 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition, useRef, useEffect } from "react";
-import type { MemberWithGroup, MinistryTeam, MemberStatus } from "@/types/member";
+import type { MemberWithGroup, MinistryTeam } from "@/types/member";
 import {
-  STATUS_COLORS,
   MINISTRY_TEAM_COLORS,
   MAIN_STATUS_OPTIONS,
   COMMON_SCHOOLS,
@@ -267,7 +266,7 @@ export default function MemberList({
             { value: "all", label: "전체" },
             { value: "active", label: "재적" },
             { value: "new_family", label: "새가족" },
-            { value: "adjusting", label: "적응중" },
+            { value: "adjusting", label: "연결 진행 중" },
             { value: "on_leave", label: "휴적" },
             { value: "removed", label: "제적" },
           ].map((option) => (

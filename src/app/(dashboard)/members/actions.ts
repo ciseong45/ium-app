@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { memberSchema, type ActionResult } from "@/lib/validations";
 import { STATUS_LABELS, type MemberStatus, type LeaveType, type MemberWithGroup, type MinistryTeam } from "@/types/member";
 import { z, ZodError } from "zod";
-import { expireAdjustingMembers, insertStatusLog, ensureNewFamilyEntry, getActiveSeason } from "@/lib/queries";
+import { insertStatusLog, ensureNewFamilyEntry, getActiveSeason } from "@/lib/queries";
 import { escapeCsvField, parseCsvLine } from "@/lib/csv";
 
 export async function getMembers(
@@ -48,17 +48,6 @@ export async function getMembers(
 
   const { data, error } = await query;
   if (error) return [];
-
-  // Lazy expiry: 적응중 상태가 3개월 지나면 자동으로 출석 전환 (batch 처리)
-  const adjustingMembers = (data ?? []).filter((m: { status: string }) => m.status === "adjusting");
-  if (adjustingMembers.length > 0) {
-    const ids = adjustingMembers.map((m: { id: number }) => m.id);
-    const expiredIds = await expireAdjustingMembers(supabase, ids);
-    for (const expId of expiredIds) {
-      const member = data?.find((m: { id: number }) => m.id === expId);
-      if (member) member.status = "attending";
-    }
-  }
 
   if (groupId && groupId !== "all") {
     const { data: groupMembers } = await supabase
@@ -268,14 +257,6 @@ export async function getMember(id: number) {
     .single();
 
   if (error || !data) return null;
-
-  // Lazy expiry: 적응중 3개월 만료 체크 (batch 헬퍼 재사용)
-  if (data.status === "adjusting") {
-    const expiredIds = await expireAdjustingMembers(supabase, [id]);
-    if (expiredIds.includes(id)) {
-      data.status = "attending";
-    }
-  }
 
   return data;
 }

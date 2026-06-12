@@ -59,7 +59,7 @@ export const STATUS_LABELS: Record<MemberStatus, string> = {
   removed: "제적",
   on_leave: "휴적",
   new_family: "새가족",
-  adjusting: "적응중",
+  adjusting: "연결 진행 중",
 };
 
 export const STATUS_COLORS: Record<MemberStatus, string> = {
@@ -99,7 +99,7 @@ export function getMainStatus(status: MemberStatus): { label: string; color: str
 // 보조상태 (있으면 반환, 없으면 null)
 export function getSubStatus(status: MemberStatus): { label: string; color: string } | null {
   if (status === "adjusting") {
-    return { label: "적응중", color: STATUS_COLORS.adjusting };
+    return { label: "연결 진행 중", color: STATUS_COLORS.adjusting };
   }
   return null;
 }

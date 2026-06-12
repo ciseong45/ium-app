@@ -1,7 +1,7 @@
-import { STATUS_COLORS, getMainStatus, getSubStatus, type MemberStatus } from "@/types/member";
+import { getMainStatus, getSubStatus, type MemberStatus } from "@/types/member";
 
 /**
- * 멤버 상태 뱃지 — 메인상태 + 보조상태(적응중 등) 표시
+ * 멤버 상태 뱃지 — 메인상태 + 보조상태(연결 진행 중 등) 표시
  */
 export default function StatusBadge({ status }: { status: MemberStatus }) {
   const main = getMainStatus(status);

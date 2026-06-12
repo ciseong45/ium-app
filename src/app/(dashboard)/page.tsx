@@ -236,7 +236,7 @@ export default async function DashboardPage() {
             title="멤버"
             value={`${memberCount}`}
             unit="명"
-            description="재적 + 출석 + 적응중"
+            description="재적 + 출석 + 연결 진행 중"
             href="/members"
           />
           <DashboardCard

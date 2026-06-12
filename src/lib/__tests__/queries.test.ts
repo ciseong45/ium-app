@@ -4,7 +4,6 @@ import {
   fetchActiveMembers,
   insertStatusLog,
   ensureNewFamilyEntry,
-  expireAdjustingMembers,
   markDroppedOutNewFamilies,
 } from "@/lib/queries";
 
@@ -173,97 +172,6 @@ describe("ensureNewFamilyEntry", () => {
         season_id: 5,
       })
     );
-  });
-});
-
-// ===== expireAdjustingMembers =====
-
-describe("expireAdjustingMembers", () => {
-  it("빈 배열 입력 시 즉시 빈 배열 반환", async () => {
-    const fromMock = jest.fn();
-    const client = buildMockClient(fromMock);
-
-    const result = await expireAdjustingMembers(client, []);
-    expect(result).toEqual([]);
-    expect(fromMock).not.toHaveBeenCalled();
-  });
-
-  it("3개월 이상 경과한 step 3 멤버를 만료 처리", async () => {
-    const fourMonthsAgo = new Date();
-    fourMonthsAgo.setMonth(fourMonthsAgo.getMonth() - 4);
-
-    const updateMock = jest.fn().mockReturnValue({
-      in: jest.fn().mockResolvedValue({ error: null }),
-    });
-    const insertMock = jest.fn().mockResolvedValue({ error: null });
-
-    const fromMock = jest.fn().mockImplementation((table: string) => {
-      if (table === "new_family") {
-        return {
-          select: jest.fn().mockReturnValue({
-            in: jest.fn().mockReturnValue({
-              eq: jest.fn().mockResolvedValue({
-                data: [
-                  {
-                    member_id: 1,
-                    step_updated_at: fourMonthsAgo.toISOString(),
-                  },
-                ],
-              }),
-            }),
-          }),
-        };
-      }
-      if (table === "members") {
-        return { update: updateMock };
-      }
-      if (table === "member_status_log") {
-        return { insert: insertMock };
-      }
-      return {};
-    });
-    const client = buildMockClient(fromMock);
-
-    const result = await expireAdjustingMembers(client, [1, 2]);
-    expect(result).toEqual([1]);
-    expect(updateMock).toHaveBeenCalledWith({ status: "attending" });
-    expect(insertMock).toHaveBeenCalledWith([
-      {
-        member_id: 1,
-        old_status: "adjusting",
-        new_status: "attending",
-        changed_by: null,
-      },
-    ]);
-  });
-
-  it("3개월 미경과 멤버는 만료하지 않음", async () => {
-    const oneMonthAgo = new Date();
-    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-
-    const fromMock = jest.fn().mockImplementation((table: string) => {
-      if (table === "new_family") {
-        return {
-          select: jest.fn().mockReturnValue({
-            in: jest.fn().mockReturnValue({
-              eq: jest.fn().mockResolvedValue({
-                data: [
-                  {
-                    member_id: 1,
-                    step_updated_at: oneMonthAgo.toISOString(),
-                  },
-                ],
-              }),
-            }),
-          }),
-        };
-      }
-      return {};
-    });
-    const client = buildMockClient(fromMock);
-
-    const result = await expireAdjustingMembers(client, [1]);
-    expect(result).toEqual([]);
   });
 });
 

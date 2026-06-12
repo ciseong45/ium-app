@@ -57,6 +57,7 @@ function setupAuth(role = "admin") {
 let createNewFamily: typeof import("../actions").createNewFamily;
 let updateStep: typeof import("../actions").updateStep;
 let updateAssignee: typeof import("../actions").updateAssignee;
+let completeConnection: typeof import("../actions").completeConnection;
 let deleteNewFamily: typeof import("../actions").deleteNewFamily;
 let restoreNewFamily: typeof import("../actions").restoreNewFamily;
 
@@ -65,6 +66,7 @@ beforeAll(async () => {
   createNewFamily = mod.createNewFamily;
   updateStep = mod.updateStep;
   updateAssignee = mod.updateAssignee;
+  completeConnection = mod.completeConnection;
   deleteNewFamily = mod.deleteNewFamily;
   restoreNewFamily = mod.restoreNewFamily;
 });
@@ -172,7 +174,7 @@ describe("updateStep", () => {
     expect(result4).toEqual({ success: false, error: "잘못된 단계입니다." });
   });
 
-  it("3주차 완료 시 상태가 adjusting으로 전환", async () => {
+  it("3주차 완료 시 연결 진행 중 상태로 전환", async () => {
     // new_family.update → eq 성공
     const updateMock = createQueryMock({ data: null, error: null });
     // new_family.select("member_id") → eq → single → { member_id: 10 }
@@ -236,6 +238,95 @@ describe("updateStep", () => {
 
     expect(revalidatePath).toHaveBeenCalledWith("/new-family");
     expect(revalidatePath).toHaveBeenCalledWith("/members");
+  });
+});
+
+// ─── completeConnection ─────────────────────────────────────────────
+
+describe("completeConnection", () => {
+  it("group_leader는 권한 없음", async () => {
+    setupAuth("group_leader");
+    const result = await completeConnection(1);
+    expect(result).toEqual({ success: false, error: "권한이 없습니다." });
+  });
+
+  it("연결 완료 시 멤버 상태를 attending으로 전환", async () => {
+    const familySelectMock = createQueryMock({
+      data: { member_id: 10 },
+      error: null,
+    });
+    const memberSelectMock = createQueryMock({
+      data: { status: "adjusting" },
+      error: null,
+    });
+    const memberUpdateMock = createQueryMock({ data: null, error: null });
+
+    let membersCallCount = 0;
+    const supabase = {
+      from: jest.fn((table: string) => {
+        if (table === "new_family") return familySelectMock;
+        if (table === "members") {
+          membersCallCount++;
+          return membersCallCount === 1 ? memberSelectMock : memberUpdateMock;
+        }
+        return createQueryMock();
+      }),
+    };
+
+    requireAuthMock.mockResolvedValue({
+      supabase: supabase as any,
+      user: { id: "user-1" } as any,
+      role: "admin" as any,
+      linkedMemberId: 1,
+    });
+
+    insertStatusLogMock.mockResolvedValue(undefined);
+
+    const result = await completeConnection(1);
+
+    expect(result).toEqual({ success: true });
+    expect(memberUpdateMock.update).toHaveBeenCalledWith({ status: "attending" });
+    expect(insertStatusLogMock).toHaveBeenCalledWith(
+      supabase,
+      10,
+      "adjusting",
+      "attending",
+      "user-1"
+    );
+    expect(revalidatePath).toHaveBeenCalledWith("/new-family");
+    expect(revalidatePath).toHaveBeenCalledWith("/members");
+    expect(revalidatePath).toHaveBeenCalledWith("/members/10");
+  });
+
+  it("이미 attending이면 상태 이력을 추가하지 않음", async () => {
+    const familySelectMock = createQueryMock({
+      data: { member_id: 10 },
+      error: null,
+    });
+    const memberSelectMock = createQueryMock({
+      data: { status: "attending" },
+      error: null,
+    });
+
+    const supabase = {
+      from: jest.fn((table: string) => {
+        if (table === "new_family") return familySelectMock;
+        if (table === "members") return memberSelectMock;
+        return createQueryMock();
+      }),
+    };
+
+    requireAuthMock.mockResolvedValue({
+      supabase: supabase as any,
+      user: { id: "user-1" } as any,
+      role: "admin" as any,
+      linkedMemberId: 1,
+    });
+
+    const result = await completeConnection(1);
+
+    expect(result).toEqual({ success: true });
+    expect(insertStatusLogMock).not.toHaveBeenCalled();
   });
 });
 

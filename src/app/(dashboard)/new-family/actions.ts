@@ -21,7 +21,7 @@ export async function getNewFamilies(seasonId?: number) {
   let query = supabase
     .from("new_family")
     .select(
-      "*, member:members!member_id(id, last_name, first_name, phone), assignee:members!assigned_to(id, last_name, first_name)"
+      "*, member:members!member_id(id, last_name, first_name, phone, status), assignee:members!assigned_to(id, last_name, first_name)"
     );
 
   if (seasonId) {
@@ -92,7 +92,7 @@ export async function updateStep(id: number, step: number): Promise<ActionResult
     .eq("id", id);
   if (error) return { success: false, error: "단계 변경에 실패했습니다." };
 
-  // 3주차 교육 완료 시 멤버 상태를 adjusting(적응중)으로 자동 전환
+  // 3주차 교육 완료 시 멤버 상태를 연결 진행 중(adjusting)으로 전환
   if (step === 3) {
     const { data: family } = await supabase
       .from("new_family")
@@ -132,6 +132,47 @@ export async function updateAssignee(id: number, assignedTo: number | null): Pro
     .eq("id", id);
   if (error) return { success: false, error: "담당자 변경에 실패했습니다." };
   revalidatePath("/new-family");
+  return { success: true };
+}
+
+export async function completeConnection(id: number): Promise<ActionResult> {
+  const { supabase, user, role } = await requireAuth();
+  if (role === "group_leader") return { success: false, error: "권한이 없습니다." };
+
+  const { data: family, error: familyError } = await supabase
+    .from("new_family")
+    .select("member_id")
+    .eq("id", id)
+    .single();
+
+  if (familyError || !family) {
+    return { success: false, error: "새가족 정보를 찾을 수 없습니다." };
+  }
+
+  const { data: member } = await supabase
+    .from("members")
+    .select("status")
+    .eq("id", family.member_id)
+    .single();
+
+  if (!member) return { success: false, error: "멤버 정보를 찾을 수 없습니다." };
+
+  if (member.status === "attending") {
+    return { success: true };
+  }
+
+  const { error } = await supabase
+    .from("members")
+    .update({ status: "attending" })
+    .eq("id", family.member_id);
+
+  if (error) return { success: false, error: "연결 완료 처리에 실패했습니다." };
+
+  await insertStatusLog(supabase, family.member_id, member.status, "attending", user.id);
+
+  revalidatePath("/new-family");
+  revalidatePath("/members");
+  revalidatePath(`/members/${family.member_id}`);
   return { success: true };
 }
 

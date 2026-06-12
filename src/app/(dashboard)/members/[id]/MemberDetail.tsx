@@ -6,10 +6,8 @@ import { deleteMember, startLeave, returnFromLeave } from "../actions";
 import type { Member, MemberLeave, LeaveType, MemberGroupInfo, MinistryTeam } from "@/types/member";
 import {
   STATUS_LABELS,
-  STATUS_COLORS,
   LEAVE_TYPE_LABELS,
   MINISTRY_TEAM_COLORS,
-  MINISTRY_CATEGORY_LABELS,
   getMainStatus,
   getSubStatus,
 } from "@/types/member";
@@ -115,24 +113,9 @@ export default function MemberDetail({
     }
   };
 
-  // 적응 기간 계산
-  const adjustingInfo =
+  const connectionPendingInfo =
     member.status === "adjusting" && newFamilyEntry?.step_updated_at
-      ? (() => {
-          const completedDate = new Date(newFamilyEntry.step_updated_at);
-          const expiryDate = new Date(completedDate);
-          expiryDate.setMonth(expiryDate.getMonth() + 3);
-          const today = new Date();
-          const totalDays = Math.ceil(
-            (expiryDate.getTime() - completedDate.getTime()) / (1000 * 60 * 60 * 24)
-          );
-          const elapsedDays = Math.ceil(
-            (today.getTime() - completedDate.getTime()) / (1000 * 60 * 60 * 24)
-          );
-          const remainingDays = Math.max(0, totalDays - elapsedDays);
-          const progress = Math.min(100, Math.round((elapsedDays / totalDays) * 100));
-          return { remainingDays, progress, expired: remainingDays <= 0 };
-        })()
+      ? { completedDate: new Date(newFamilyEntry.step_updated_at).toLocaleDateString("ko-KR") }
       : null;
 
   // 사역팀 카테고리별 분류
@@ -307,28 +290,17 @@ export default function MemberDetail({
         </div>
       )}
 
-      {/* ========== 적응중 배너 ========== */}
-      {adjustingInfo && (
+      {/* ========== 연결 진행 중 배너 ========== */}
+      {connectionPendingInfo && (
         <div className="rounded-xl border border-[#c8ddd5]/60 bg-[#edf5f3]/50 p-5 shadow-[var(--shadow-card)]">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-[#3d6b5d]">적응 기간</h4>
+            <h4 className="text-sm font-semibold text-[#3d6b5d]">연결 진행 중</h4>
             <span className="text-xs font-medium text-[#4a8272]">
-              {adjustingInfo.expired
-                ? "만료됨"
-                : `${adjustingInfo.remainingDays}일 남음`}
+              교육 완료: {connectionPendingInfo.completedDate}
             </span>
           </div>
-          {/* 프로그레스 바 */}
-          <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-[#d5e8e2]">
-            <div
-              className="h-full rounded-full bg-[#4a8272] transition-all"
-              style={{ width: `${adjustingInfo.progress}%` }}
-            />
-          </div>
           <p className="mt-2 text-xs text-[#6b9e8d]">
-            {adjustingInfo.expired
-              ? "적응 기간이 만료되었습니다. 다음 로드 시 출석 멤버로 전환됩니다."
-              : "3개월 적응 기간 후 자동으로 출석 멤버로 전환됩니다."}
+            순, 관계, 섬김, 목양담당 중 실제 연결을 확인한 뒤 새가족 화면에서 연결 완료로 정리해주세요.
           </p>
         </div>
       )}

@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import {
   createNewFamily,
   updateStep,
+  completeConnection,
   deleteNewFamily,
   restoreNewFamily,
 } from "./actions";
@@ -40,6 +41,7 @@ export default function NewFamilyView({
   const [stepFilter, setStepFilter] = useState<number | null>(null);
   const [showDroppedOut, setShowDroppedOut] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
+  const [showConnected, setShowConnected] = useState(false);
 
   const activeSeason = seasons.find((s) => s.is_active);
 
@@ -66,9 +68,19 @@ export default function NewFamilyView({
 
   const handleStepChange = async (id: number, step: number) => {
     if (step === 3) {
-      if (!confirm("3주차 교육을 완료하면 '적응중' 상태로 변경됩니다. 3개월 후 자동으로 출석 멤버가 됩니다. 진행하시겠습니까?")) return;
+      if (!confirm("3주차 교육을 완료하면 '연결 진행 중' 상태로 변경됩니다. 목양담당이 연결 완료를 확인하면 성도로 정리됩니다. 진행하시겠습니까?")) return;
     }
     const result = await updateStep(id, step);
+    if (result.success) {
+      router.refresh();
+    } else {
+      alert(result.error);
+    }
+  };
+
+  const handleCompleteConnection = async (id: number, fullName: string) => {
+    if (!confirm(`${fullName}님의 공동체 연결을 완료 처리하시겠습니까?`)) return;
+    const result = await completeConnection(id);
     if (result.success) {
       router.refresh();
     } else {
@@ -96,9 +108,16 @@ export default function NewFamilyView({
     }
   };
 
-  // 진행 중 / 등록 완료 / 이탈 분리
+  // 진행 중 / 연결 필요 / 연결 완료 / 이탈 분리
   const inProgressFamilies = useMemo(() => families.filter((f) => !f.dropped_out && f.step < 3), [families]);
-  const completedFamilies = useMemo(() => families.filter((f) => !f.dropped_out && f.step === 3), [families]);
+  const connectionNeededFamilies = useMemo(
+    () => families.filter((f) => !f.dropped_out && f.step === 3 && f.member.status === "adjusting"),
+    [families]
+  );
+  const connectedFamilies = useMemo(
+    () => families.filter((f) => !f.dropped_out && f.step === 3 && f.member.status !== "adjusting"),
+    [families]
+  );
   const droppedOutFamilies = useMemo(() => families.filter((f) => f.dropped_out), [families]);
 
   // 단계별 통계 (진행 중만)
@@ -167,11 +186,19 @@ export default function NewFamilyView({
             </span>
           </button>
         ))}
-        {completedFamilies.length > 0 && (
+        {connectionNeededFamilies.length > 0 && (
           <div className="flex min-w-[100px] flex-col items-center rounded-xl border border-[#c8e6c9] bg-[#e8f5e9] p-5">
-            <span className="text-xs text-[#3d6b3d]">등록 완료</span>
+            <span className="text-xs text-[#3d6b3d]">연결 필요</span>
             <span className="mt-1 text-2xl font-bold text-[#2e7d32]">
-              {completedFamilies.length}
+              {connectionNeededFamilies.length}
+            </span>
+          </div>
+        )}
+        {connectedFamilies.length > 0 && (
+          <div className="flex min-w-[100px] flex-col items-center rounded-xl border border-[var(--color-warm-border)] bg-white p-5">
+            <span className="text-xs text-[var(--color-warm-muted)]">연결 완료</span>
+            <span className="mt-1 text-2xl font-bold text-[var(--color-warm-text)]">
+              {connectedFamilies.length}
             </span>
           </div>
         )}
@@ -300,7 +327,7 @@ export default function NewFamilyView({
       )}
 
       {/* 진행 중 새가족 목록 */}
-      {inProgressFamilies.length === 0 && completedFamilies.length === 0 && droppedOutFamilies.length === 0 ? (
+      {inProgressFamilies.length === 0 && connectionNeededFamilies.length === 0 && connectedFamilies.length === 0 && droppedOutFamilies.length === 0 ? (
         <EmptyState message="등록된 새가족이 없습니다." />
       ) : (
         <div className="mt-6 space-y-3">
@@ -366,8 +393,8 @@ export default function NewFamilyView({
         </div>
       )}
 
-      {/* 등록 완료 새가족 섹션 */}
-      {completedFamilies.length > 0 && (
+      {/* 연결 필요 섹션 */}
+      {connectionNeededFamilies.length > 0 && (
         <div className="mt-8">
           <button
             onClick={() => setShowCompleted(!showCompleted)}
@@ -376,12 +403,12 @@ export default function NewFamilyView({
             <span className={`inline-block transition-transform ${showCompleted ? "rotate-90" : ""}`}>
               ▶
             </span>
-            등록 완료 ({completedFamilies.length}명)
+            연결 필요 ({connectionNeededFamilies.length}명)
           </button>
 
           {showCompleted && (
             <div className="mt-3 space-y-3">
-              {completedFamilies.map((family) => (
+              {connectionNeededFamilies.map((family) => (
                 <div
                   key={family.id}
                   className="rounded-xl border border-[#c8e6c9] bg-[#f1f8e9]/50 p-5"
@@ -393,12 +420,80 @@ export default function NewFamilyView({
                           {family.member.last_name}{family.member.first_name}
                         </h3>
                         <span className="rounded-full bg-[#edf5ed] px-2 py-0.5 text-xs font-medium text-[#3d6b3d]">
-                          등록 완료
+                          연결 진행 중
                         </span>
                       </div>
                       <div className="mt-1 flex gap-3 text-sm text-[var(--color-warm-muted)]">
                         <span>첫 방문: {family.first_visit}</span>
-                        <span>완료일: {new Date(family.step_updated_at).toLocaleDateString("ko-KR")}</span>
+                        <span>교육 완료: {new Date(family.step_updated_at).toLocaleDateString("ko-KR")}</span>
+                        {family.assignee && (
+                          <span>담당: {family.assignee.last_name}{family.assignee.first_name}</span>
+                        )}
+                      </div>
+                    </div>
+                    {role !== "group_leader" && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() =>
+                            handleCompleteConnection(family.id, `${family.member.last_name}${family.member.first_name}`)
+                          }
+                          className="rounded-lg bg-[#1a1a1a] px-3 py-1.5 text-xs font-medium text-white transition-all duration-300 hover:bg-[#333]"
+                        >
+                          연결 완료
+                        </button>
+                        {role === "admin" && (
+                          <button
+                            onClick={() =>
+                              handleDelete(family.id, `${family.member.last_name}${family.member.first_name}`)
+                            }
+                            className="text-xs text-red-400 hover:text-red-600"
+                          >
+                            삭제
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 연결 완료 섹션 */}
+      {connectedFamilies.length > 0 && (
+        <div className="mt-8">
+          <button
+            onClick={() => setShowConnected(!showConnected)}
+            className="flex items-center gap-2 text-sm font-semibold text-[var(--color-warm-muted)] hover:text-[var(--color-warm-text)] transition-colors"
+          >
+            <span className={`inline-block transition-transform ${showConnected ? "rotate-90" : ""}`}>
+              ▶
+            </span>
+            연결 완료 ({connectedFamilies.length}명)
+          </button>
+
+          {showConnected && (
+            <div className="mt-3 space-y-3">
+              {connectedFamilies.map((family) => (
+                <div
+                  key={family.id}
+                  className="rounded-xl border border-[var(--color-warm-border)] bg-white p-5"
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-[var(--color-warm-text)]">
+                          {family.member.last_name}{family.member.first_name}
+                        </h3>
+                        <span className="rounded-full bg-[var(--color-warm-bg)] px-2 py-0.5 text-xs font-medium text-[var(--color-warm-muted)]">
+                          연결 완료
+                        </span>
+                      </div>
+                      <div className="mt-1 flex gap-3 text-sm text-[var(--color-warm-muted)]">
+                        <span>첫 방문: {family.first_visit}</span>
+                        <span>교육 완료: {new Date(family.step_updated_at).toLocaleDateString("ko-KR")}</span>
                         {family.assignee && (
                           <span>담당: {family.assignee.last_name}{family.assignee.first_name}</span>
                         )}
