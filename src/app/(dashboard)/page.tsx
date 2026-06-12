@@ -171,6 +171,28 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-12 animate-fade-in">
+      {/* 이번주 말씀 */}
+      <section>
+        <p className="text-[9px] font-medium uppercase tracking-[0.25em] text-[var(--color-warm-muted)]">
+          This Week
+        </p>
+        <div className="editorial-divider mt-2 mb-5" />
+        <div className="rounded-xl border border-[var(--color-warm-border)] bg-white p-6">
+          <p className="text-[12px] text-[var(--color-warm-muted)]">
+            고린도전서 6:1-20
+          </p>
+          <Link
+            href="/nanum/2026-06-14-1corinthians6-member.html"
+            className="mt-2 block font-serif text-2xl font-light tracking-tight text-[var(--color-warm-text)] transition-colors hover:text-[var(--color-warm-muted)]"
+          >
+            교회 : 하나님의 몸
+          </Link>
+          <p className="mt-3 text-sm leading-relaxed text-[var(--color-warm-muted)]">
+            설교 제목을 누르면 이번주 순원 나눔지로 이동합니다.
+          </p>
+        </div>
+      </section>
+
       {/* 공지 */}
       <section>
         <p className="text-[9px] font-medium uppercase tracking-[0.25em] text-[var(--color-warm-muted)]">
