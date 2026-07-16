@@ -230,33 +230,9 @@ export default async function DashboardPage() {
               이번주 말씀
             </p>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--color-warm-muted)]">
-              예배의 말씀과 주중 큐티가 같은 방향으로 이어지도록 정리합니다.
+              말씀 앞에 멈추고, 하나님이 나의 주인이 되시는 삶을 함께 배웁니다.
             </p>
           </div>
-
-          <article className="rounded-xl border border-[var(--color-warm-border)] bg-white p-6 shadow-[var(--shadow-card)] sm:p-8">
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="text-[9px] font-medium uppercase tracking-[0.24em] text-[var(--color-warm-subtle)]">
-                  Sunday Message
-                </p>
-                <h2 className="mt-3 font-serif text-3xl font-light tracking-tight text-[var(--color-warm-text)]">
-                  교회 : 하나님의 몸 1
-                </h2>
-                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[var(--color-warm-muted)]">
-                  고린도전서 12장 1-11절
-                </p>
-              </div>
-              <div className="rounded-lg border border-[var(--color-warm-border-light)] px-4 py-3 text-left sm:text-right">
-                <p className="text-[11px] font-medium text-[var(--color-warm-muted)]">
-                  이번주 설교
-                </p>
-                <p className="mt-1 font-serif text-xl font-light text-[var(--color-warm-text)]">
-                  고전 12:1-11
-                </p>
-              </div>
-            </div>
-          </article>
 
           <article className="rounded-xl border border-[var(--color-warm-border)] bg-white p-6 shadow-[var(--shadow-card)] sm:p-8">
             <div className="flex flex-col gap-5 border-b border-[var(--color-warm-border-light)] pb-6 sm:flex-row sm:items-start sm:justify-between">
