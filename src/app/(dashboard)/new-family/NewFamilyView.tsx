@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
   createNewFamily,
@@ -341,9 +342,16 @@ export default function NewFamilyView({
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-[var(--color-warm-text)]">
+                    <Link
+                      href={`/members/${family.member.id}`}
+                      aria-label={`${family.member.last_name}${family.member.first_name} 상세 보기`}
+                      className="group inline-flex items-center gap-1 font-semibold text-[var(--color-warm-text)] hover:underline"
+                    >
                       {family.member.last_name}{family.member.first_name}
-                    </h3>
+                      <span aria-hidden="true" className="text-xs text-[var(--color-warm-subtle)] transition-transform group-hover:translate-x-0.5">
+                        →
+                      </span>
+                    </Link>
                     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STEPS[family.step - 1].color}`}>
                       {STEPS[family.step - 1].label}
                     </span>
@@ -416,9 +424,16 @@ export default function NewFamilyView({
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-[var(--color-warm-text)]">
+                        <Link
+                          href={`/members/${family.member.id}`}
+                          aria-label={`${family.member.last_name}${family.member.first_name} 상세 보기`}
+                          className="group inline-flex items-center gap-1 font-semibold text-[var(--color-warm-text)] hover:underline"
+                        >
                           {family.member.last_name}{family.member.first_name}
-                        </h3>
+                          <span aria-hidden="true" className="text-xs text-[var(--color-warm-subtle)] transition-transform group-hover:translate-x-0.5">
+                            →
+                          </span>
+                        </Link>
                         <span className="rounded-full bg-[#edf5ed] px-2 py-0.5 text-xs font-medium text-[#3d6b3d]">
                           연결 진행 중
                         </span>
@@ -484,9 +499,16 @@ export default function NewFamilyView({
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-[var(--color-warm-text)]">
+                        <Link
+                          href={`/members/${family.member.id}`}
+                          aria-label={`${family.member.last_name}${family.member.first_name} 상세 보기`}
+                          className="group inline-flex items-center gap-1 font-semibold text-[var(--color-warm-text)] hover:underline"
+                        >
                           {family.member.last_name}{family.member.first_name}
-                        </h3>
+                          <span aria-hidden="true" className="text-xs text-[var(--color-warm-subtle)] transition-transform group-hover:translate-x-0.5">
+                            →
+                          </span>
+                        </Link>
                         <span className="rounded-full bg-[var(--color-warm-bg)] px-2 py-0.5 text-xs font-medium text-[var(--color-warm-muted)]">
                           연결 완료
                         </span>
@@ -540,9 +562,16 @@ export default function NewFamilyView({
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-[var(--color-warm-text)]">
+                        <Link
+                          href={`/members/${family.member.id}`}
+                          aria-label={`${family.member.last_name}${family.member.first_name} 상세 보기`}
+                          className="group inline-flex items-center gap-1 font-semibold text-[var(--color-warm-text)] hover:underline"
+                        >
                           {family.member.last_name}{family.member.first_name}
-                        </h3>
+                          <span aria-hidden="true" className="text-xs text-[var(--color-warm-subtle)] transition-transform group-hover:translate-x-0.5">
+                            →
+                          </span>
+                        </Link>
                         <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-500">
                           이탈
                         </span>
