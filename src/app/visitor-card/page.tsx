@@ -164,7 +164,7 @@ export default function VisitorCardPage() {
                 required
               >
                 <option value="" disabled>Year</option>
-                {Array.from({ length: 30 }, (_, i) => 2006 - i).map((y) => (
+                {Array.from({ length: 33 }, (_, i) => 2009 - i).map((y) => (
                   <option key={y} value={String(y)}>{y}</option>
                 ))}
               </select>
