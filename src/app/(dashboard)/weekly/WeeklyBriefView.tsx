@@ -26,13 +26,21 @@ type Props = {
   selectedDate: string;
 };
 
-export default function WeeklyBriefView({
+export default function WeeklyBriefView(props: Props) {
+  return <WeeklyBriefSession key={`${props.selectedDate}:${props.brief?.id ?? "new"}`} {...props} />;
+}
+
+function WeeklyBriefSession(props: Props) {
+  const [activeTab, setActiveTab] = useState<BriefTabKey>("common");
+  return <WeeklyBriefEditor key={props.brief?.updated_at ?? ""} {...props} activeTab={activeTab} onTabChange={setActiveTab} />;
+}
+
+function WeeklyBriefEditor({
   brief,
   recentBriefs,
-  selectedDate,
-}: Props) {
+  selectedDate, activeTab, onTabChange,
+}: Props & { activeTab: BriefTabKey; onTabChange: (tab: BriefTabKey) => void }) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<BriefTabKey>("common");
   const [saving, setSaving] = useState(false);
 
   // 생성 폼 상태
@@ -42,7 +50,7 @@ export default function WeeklyBriefView({
   const [sermonScripture, setSermonScripture] = useState("");
 
   // 탭 콘텐츠 편집
-  const [tabText, setTabText] = useState("");
+  const [tabText, setTabText] = useState(() => (brief?.[`${activeTab}_content`]?.text as string) || "");
 
   const handleDateChange = (date: string) => {
     router.push(`/weekly?date=${date}`);
@@ -98,14 +106,11 @@ export default function WeeklyBriefView({
   };
 
   const handleTabChange = (key: BriefTabKey) => {
-    setActiveTab(key);
+    onTabChange(key);
     setTabText(getTabContent(key));
   };
 
-  // 탭 변경 시 콘텐츠 로드
-  if (brief && tabText === "" && getTabContent(activeTab)) {
-    setTabText(getTabContent(activeTab));
-  }
+
 
   return (
     <div>

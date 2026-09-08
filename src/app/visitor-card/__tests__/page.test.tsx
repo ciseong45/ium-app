@@ -17,7 +17,7 @@ describe("방문자 카드 생년월일", () => {
     const { container } = render(<VisitorCardPage />);
     const [yearSelect, monthSelect, daySelect] = screen.getAllByRole("combobox");
 
-    expect(screen.getByRole("option", { name: year, exact: true })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: year })).toBeInTheDocument();
     fireEvent.change(yearSelect, { target: { value: year } });
     fireEvent.change(monthSelect, { target: { value: "9" } });
     fireEvent.change(daySelect, { target: { value: "8" } });
@@ -31,8 +31,8 @@ describe("방문자 카드 생년월일", () => {
 
   it("1991년 이전과 2009년 이후 출생연도는 제공하지 않는다", () => {
     render(<VisitorCardPage />);
-    expect(screen.queryByRole("option", { name: "1990", exact: true })).not.toBeInTheDocument();
-    expect(screen.queryByRole("option", { name: "1977", exact: true })).not.toBeInTheDocument();
-    expect(screen.queryByRole("option", { name: "2010", exact: true })).not.toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "1990" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "1977" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "2010" })).not.toBeInTheDocument();
   });
 });

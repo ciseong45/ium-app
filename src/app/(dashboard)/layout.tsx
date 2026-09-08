@@ -7,7 +7,7 @@ export default async function Layout({ children }: { children: React.ReactNode }
   let role: UserRole = "group_leader";
 
   try {
-    const auth = await requireAuth();
+    const auth = await requireAuth({ allowPending: true });
     role = auth.role;
   } catch {
     redirect("/login");

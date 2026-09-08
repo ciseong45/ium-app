@@ -41,7 +41,7 @@ export default async function DashboardPage() {
     supabase
       .from("new_family")
       .select("id", { count: "exact", head: true })
-      .lt("step", 3),
+      .lt("step", 3).eq("dropped_out", false),
     // 진행 중 1:1 양육
     supabase
       .from("one_to_one")
@@ -249,7 +249,7 @@ export default async function DashboardPage() {
           />
           <DashboardCard
             label="Attendance"
-            title="출석률"
+            title="기록된 출석률"
             value={totalChecked > 0 ? `${attendanceRate}` : "—"}
             unit={totalChecked > 0 ? "%" : ""}
             description={totalChecked > 0 ? `이번 주 ${presentCount}/${totalChecked}명` : "이번 주 기록 없음"}

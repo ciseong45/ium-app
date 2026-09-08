@@ -26,7 +26,7 @@ export default async function AttendancePage({
 
   // 순 자동 선택: 순이 1개면 자동 선택
   const selectedGroupId = params.group
-    ? Number(params.group)
+    ? groups.find(g => g.id === Number(params.group))?.id ?? null
     : groups.length === 1
       ? groups[0].id
       : null;

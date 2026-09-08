@@ -44,14 +44,14 @@ describe("requireAuth", () => {
       user: null,
       authError: new Error("no user"),
     });
-    mockedCreateClient.mockResolvedValue(mockSupabase as ReturnType<typeof createClient> extends Promise<infer T> ? T : never);
+    mockedCreateClient.mockResolvedValue(mockSupabase as unknown as ReturnType<typeof createClient> extends Promise<infer T> ? T : never);
 
     await expect(requireAuth()).rejects.toThrow("인증이 필요합니다.");
   });
 
   it("user 없이 error만 있어도 에러 발생", async () => {
     const mockSupabase = createMockSupabase({ user: null, authError: null });
-    mockedCreateClient.mockResolvedValue(mockSupabase as ReturnType<typeof createClient> extends Promise<infer T> ? T : never);
+    mockedCreateClient.mockResolvedValue(mockSupabase as unknown as ReturnType<typeof createClient> extends Promise<infer T> ? T : never);
 
     await expect(requireAuth()).rejects.toThrow("인증이 필요합니다.");
   });
@@ -61,7 +61,7 @@ describe("requireAuth", () => {
       user: { id: "user-1" },
       profile: { role: "admin", linked_member_id: 10 },
     });
-    mockedCreateClient.mockResolvedValue(mockSupabase as ReturnType<typeof createClient> extends Promise<infer T> ? T : never);
+    mockedCreateClient.mockResolvedValue(mockSupabase as unknown as ReturnType<typeof createClient> extends Promise<infer T> ? T : never);
 
     const result = await requireAuth();
     expect(result.role).toBe("admin");
@@ -74,7 +74,7 @@ describe("requireAuth", () => {
       user: { id: "user-2" },
       profile: null,
     });
-    mockedCreateClient.mockResolvedValue(mockSupabase as ReturnType<typeof createClient> extends Promise<infer T> ? T : never);
+    mockedCreateClient.mockResolvedValue(mockSupabase as unknown as ReturnType<typeof createClient> extends Promise<infer T> ? T : never);
 
     await expect(requireAuth()).rejects.toThrow("프로필을 찾을 수 없습니다.");
   });
@@ -84,10 +84,15 @@ describe("requireAuth", () => {
       user: { id: "user-3" },
       profile: { role: "upper_room_leader", linked_member_id: null },
     });
-    mockedCreateClient.mockResolvedValue(mockSupabase as ReturnType<typeof createClient> extends Promise<infer T> ? T : never);
+    mockedCreateClient.mockResolvedValue(mockSupabase as unknown as ReturnType<typeof createClient> extends Promise<infer T> ? T : never);
 
     const result = await requireAuth();
     expect(result.role).toBe("upper_room_leader");
     expect(result.linkedMemberId).toBeNull();
   });
+});
+
+it.each(["pending", "viewer", "unexpected"])("승인되지 않은 역할 %s는 서버 작업을 실행할 수 없다", async role => {
+  mockedCreateClient.mockResolvedValue(createMockSupabase({ user: { id: "unapproved" }, profile: { role, linked_member_id: null } }) as unknown as Awaited<ReturnType<typeof createClient>>);
+  await expect(requireAuth()).rejects.toThrow("승인된 계정");
 });

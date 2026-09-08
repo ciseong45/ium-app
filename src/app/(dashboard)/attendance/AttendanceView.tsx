@@ -123,6 +123,7 @@ export default function AttendanceView({
 
           {tab === "check" ? (
             <AttendanceCheck
+              key={`${selectedGroupId}:${selectedDate}`}
               groupId={selectedGroupId}
               members={members}
               attendance={attendance}
@@ -209,6 +210,7 @@ function AttendanceCheck({
       return;
     }
 
+    try {
     const result = await saveGroupAttendance(groupId, selectedDate, records);
     if (result.success) {
       router.refresh();
@@ -216,7 +218,11 @@ function AttendanceCheck({
     } else {
       alert(result.error);
     }
-    setSaving(false);
+    } catch {
+      alert("연결을 확인한 뒤 다시 저장해 주세요.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   // 전체 선택 기능
@@ -377,7 +383,7 @@ function AttendanceHistory({
 
       let consecutiveAbsent = 0;
       for (const rec of weekData) {
-        if (!rec || rec.status === "absent") {
+        if (rec?.status === "absent") {
           consecutiveAbsent++;
         } else {
           break;
