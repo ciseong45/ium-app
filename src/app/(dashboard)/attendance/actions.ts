@@ -2,6 +2,8 @@
 "use server";
 
 import { requireAuth } from "@/lib/auth";
+import { z } from "zod";
+import { dateSchema } from "@/lib/care";
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/lib/validations";
 import { getActiveSeason } from "@/lib/queries";
@@ -69,7 +71,8 @@ export async function getMyGroups(): Promise<GroupOption[]> {
 // ===== 순의 멤버 목록 =====
 
 export async function getGroupMembersForAttendance(groupId: number) {
-  const { supabase } = await requireAuth();
+  const { supabase, role } = await requireAuth();
+  if (role !== "admin" && !(await getMyGroups()).some(g => g.id === groupId)) return [];
   const { data, error } = await supabase
     .from("small_group_members")
     .select("member:members!member_id(id, last_name, first_name)")
@@ -88,7 +91,8 @@ export async function getGroupAttendance(
   groupId: number,
   weekDate: string
 ): Promise<AttendanceRecord[]> {
-  const { supabase } = await requireAuth();
+  const { supabase, role } = await requireAuth();
+  if (role !== "admin" && !(await getMyGroups()).some(g => g.id === groupId)) return [];
 
   // 해당 순의 멤버 ID 목록
   const { data: sgMembers } = await supabase
@@ -110,75 +114,30 @@ export async function getGroupAttendance(
 
 // ===== 순별 출석 저장 =====
 
+const attendanceInput = z.array(z.object({
+  member_id: z.number().int().positive(), status: z.enum(["present", "absent"]).nullable(),
+  prayer_request: z.boolean(), prayer_note: z.string().max(2000).nullable(),
+})).min(1).max(500).refine(rows => new Set(rows.map(r => r.member_id)).size === rows.length);
 export async function saveGroupAttendance(
-  groupId: number,
-  weekDate: string,
-  records: {
-    member_id: number;
-    status: AttendanceStatus;
-    prayer_request: boolean;
-    prayer_note: string | null;
-  }[]
+  groupId: number, weekDate: string,
+  records: { member_id: number; status: AttendanceStatus | null; prayer_request: boolean; prayer_note: string | null }[]
 ): Promise<ActionResult> {
-  const { supabase, user, role, linkedMemberId } = await requireAuth();
-
-  // 권한 체크: 해당 순에 대한 접근 권한 확인
-  if (role !== "admin") {
-    const activeSeason = await getActiveSeason(supabase);
-    if (!activeSeason || !linkedMemberId) {
-      return { success: false, error: "멤버 연결이 필요합니다. 관리자에게 문의하세요." };
-    }
-
-    if (role === "group_leader") {
-      // 순장: 자기 순만 가능
-      const { data: group } = await supabase
-        .from("small_groups")
-        .select("leader_id")
-        .eq("id", groupId)
-        .single();
-      if (!group || group.leader_id !== linkedMemberId) {
-        return { success: false, error: "자신의 순만 출석을 기록할 수 있습니다." };
-      }
-    } else if (role === "upper_room_leader") {
-      // 다락방장: 자기 다락방의 순만 가능
-      const { data: group } = await supabase
-        .from("small_groups")
-        .select("upper_room_id, upper_rooms!upper_room_id(leader_id)")
-        .eq("id", groupId)
-        .single();
-      const urLeaderId = (group as any)?.upper_rooms?.leader_id;
-      if (urLeaderId !== linkedMemberId) {
-        return { success: false, error: "자신의 다락방 순만 출석을 기록할 수 있습니다." };
-      }
-    }
+  const { supabase } = await requireAuth();
+  const parsed = attendanceInput.safeParse(records);
+  if (!Number.isInteger(groupId) || groupId < 1 || !dateSchema.safeParse(weekDate).success || !parsed.success) {
+    return { success: false, error: "날짜와 출석 입력을 확인하세요." };
   }
-
-  if (!weekDate || records.length === 0) {
-    return { success: false, error: "저장할 출석 데이터가 없습니다." };
-  }
-
-  const rows = records.map((r) => ({
-    member_id: r.member_id,
-    week_date: weekDate,
-    status: r.status,
-    prayer_request: r.prayer_request,
-    prayer_note: r.prayer_note || null,
-    checked_by: user.id,
-  }));
-
-  const { error } = await supabase
-    .from("attendance")
-    .upsert(rows, { onConflict: "member_id,week_date" });
-
-  if (error) return { success: false, error: "출석 저장에 실패했습니다." };
-  revalidatePath("/attendance");
+  const { error } = await supabase.rpc("save_group_attendance", { p_group_id: groupId, p_week_date: weekDate, p_records: parsed.data });
+  if (error) return { success: false, error: "출석 저장에 실패했습니다. 순과 담당 권한을 확인하세요." };
+  revalidatePath("/attendance"); revalidatePath("/");
   return { success: true };
 }
 
 // ===== 순별 최근 출석 현황 =====
 
 export async function getGroupRecentAttendance(groupId: number, weeks: number = 8) {
-  const { supabase } = await requireAuth();
+  const { supabase, role } = await requireAuth();
+  if (role !== "admin" && !(await getMyGroups()).some(g => g.id === groupId)) return { records: [] as AttendanceRecord[], dates: [] as string[] };
 
   // 해당 순의 멤버 ID 목록
   const { data: sgMembers } = await supabase

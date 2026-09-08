@@ -114,6 +114,7 @@ const menuSections: MenuSection[] = [
   {
     title: "목양",
     items: [
+      { href: "/care", label: "이번 주 돌봄", icon: UserPlusIcon },
       { href: "/members", label: "멤버 관리", icon: UsersIcon },
       { href: "/small-groups", label: "순관리", icon: ClipboardIcon },
       { href: "/attendance", label: "출석 관리", icon: CheckCircleIcon },
