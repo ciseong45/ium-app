@@ -93,6 +93,7 @@ type MenuItem = {
   href: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
+  adminOnly?: boolean;
 };
 
 type MenuSection = {
@@ -105,6 +106,7 @@ const menuSections: MenuSection[] = [
     title: "총괄",
     items: [
       { href: "/", label: "대시보드", icon: HomeIcon },
+      { href: "/command-center", label: "개인 총괄", icon: ClipboardIcon, adminOnly: true },
       { href: "/weekly", label: "주간 자료", icon: DocumentTextIcon },
       { href: "/events", label: "행사", icon: CalendarIcon },
     ],
@@ -178,7 +180,7 @@ export default function Sidebar({
                 {section.title}
               </p>
               <div className="space-y-0.5">
-                {section.items.map((item) => {
+                {section.items.filter((item) => !item.adminOnly || role === "admin").map((item) => {
                   const active = isActive(item.href);
                   return (
                     <Link

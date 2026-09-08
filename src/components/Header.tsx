@@ -25,6 +25,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/attendance": "Attendance",
   "/new-family": "New Family",
   "/one-to-one": "Discipleship",
+  "/command-center": "Command Center",
   "/settings": "Settings",
 };
 
@@ -35,6 +36,7 @@ const PAGE_SUBTITLES: Record<string, string> = {
   "/attendance": "출석 관리",
   "/new-family": "새가족",
   "/one-to-one": "1:1 양육",
+  "/command-center": "개인 총괄",
   "/settings": "설정",
 };
 
