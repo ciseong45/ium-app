@@ -1,3 +1,6 @@
+import CareBoard from "../../care/CareBoard";
+import { getCareData } from "../../care/actions";
+import { todayInTimeZone } from "@/lib/command-center";
 import { getMember, getStatusLog, getMemberLeaves, getMemberGroupInfo, getNewFamilyEntry, getMemberMinistryTeams } from "../actions";
 import { redirect } from "next/navigation";
 import MemberDetail from "./MemberDetail";
@@ -21,7 +24,9 @@ export default async function MemberDetailPage({
   if (!memberOrNull) redirect("/members");
   const member = memberOrNull;
 
+  const care = await getCareData(memberId);
   return (
+    <div className="space-y-8">
     <MemberDetail
       member={member}
       statusLog={statusLog}
@@ -30,5 +35,7 @@ export default async function MemberDetailPage({
       newFamilyEntry={newFamilyEntry}
       ministryTeams={ministryTeams}
     />
+    <CareBoard {...care} memberId={memberId} today={todayInTimeZone()} />
+    </div>
   );
 }

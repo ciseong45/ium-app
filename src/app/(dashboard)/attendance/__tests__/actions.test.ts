@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { requireAuth } from "@/lib/auth";
 import { getActiveSeason } from "@/lib/queries";
-import { revalidatePath } from "next/cache";
 import {
   getMyGroups,
   getGroupMembersForAttendance,
@@ -215,118 +214,32 @@ describe("getGroupAttendance", () => {
   });
 });
 
-// ===== saveGroupAttendance =====
-
+// ===== saveGroupAttendance atomic RPC =====
 describe("saveGroupAttendance", () => {
-  const sampleRecords = [
-    { member_id: 1, status: "present" as const, prayer_request: false, prayer_note: null },
-    { member_id: 2, status: "absent" as const, prayer_request: true, prayer_note: "기도 부탁" },
-  ];
-
-  it("admin은 모든 순 출석 저장 가능", async () => {
-    const attQuery = createQueryMock({ data: null, error: null });
-    const supabase = mockSupabase({ attendance: attQuery });
-
-    requireAuthMock.mockResolvedValue({
-      supabase,
-      user: { id: "user-admin" } as any,
-      role: "admin",
-      linkedMemberId: null,
-    });
-
-    const result = await saveGroupAttendance(1, "2026-03-15", sampleRecords);
-
-    expect(result).toEqual({ success: true });
-    expect(attQuery.upsert).toHaveBeenCalledWith(
-      expect.arrayContaining([
-        expect.objectContaining({ member_id: 1, status: "present", checked_by: "user-admin" }),
-        expect.objectContaining({ member_id: 2, status: "absent", checked_by: "user-admin" }),
-      ]),
-      { onConflict: "member_id,week_date" }
-    );
-    expect(revalidatePath).toHaveBeenCalledWith("/attendance");
+  const record = { member_id: 1, status: "present" as const, prayer_request: false, prayer_note: null };
+  const setup = (error: unknown = null) => {
+    const rpc = jest.fn().mockResolvedValue({ error });
+    requireAuthMock.mockResolvedValue({ supabase: { rpc } as any, user: { id: "admin" } as any, role: "admin", linkedMemberId: null });
+    return rpc;
+  };
+  it("검증된 일괄 출석을 하나의 트랜잭션으로 저장한다", async () => {
+    const rpc = setup();
+    expect(await saveGroupAttendance(1, "2026-09-06", [record])).toEqual({ success: true });
+    expect(rpc).toHaveBeenCalledWith("save_group_attendance", { p_group_id: 1, p_week_date: "2026-09-06", p_records: [record] });
   });
-
-  it("group_leader는 자기 순만 저장 가능", async () => {
-    const groupQuery = createQueryMock({ data: { leader_id: 10 } });
-    const attQuery = createQueryMock({ data: null, error: null });
-
-    const supabase = {
-      from: jest.fn((table: string) => {
-        if (table === "small_groups") return groupQuery;
-        if (table === "attendance") return attQuery;
-        return createQueryMock();
-      }),
-    } as any;
-
-    requireAuthMock.mockResolvedValue({
-      supabase,
-      user: { id: "user-leader" } as any,
-      role: "group_leader",
-      linkedMemberId: 10,
-    });
-    getActiveSeasonMock.mockResolvedValue({ id: 1, name: "2026 봄", is_active: true });
-
-    const result = await saveGroupAttendance(5, "2026-03-15", sampleRecords);
-
-    expect(groupQuery.eq).toHaveBeenCalledWith("id", 5);
-    expect(result).toEqual({ success: true });
+  it("체크 해제를 명시적으로 서버에 전달한다", async () => {
+    const rpc = setup();
+    expect(await saveGroupAttendance(1, "2026-09-06", [{ ...record, status: null }])).toEqual({ success: true });
+    expect(rpc).toHaveBeenCalled();
   });
-
-  it("group_leader가 다른 순에 저장 시 에러", async () => {
-    const groupQuery = createQueryMock({ data: { leader_id: 99 } });
-    const supabase = mockSupabase({ small_groups: groupQuery });
-
-    requireAuthMock.mockResolvedValue({
-      supabase,
-      user: { id: "user-leader" } as any,
-      role: "group_leader",
-      linkedMemberId: 10,
-    });
-    getActiveSeasonMock.mockResolvedValue({ id: 1, name: "2026 봄", is_active: true });
-
-    const result = await saveGroupAttendance(5, "2026-03-15", sampleRecords);
-
-    expect(result).toEqual({
-      success: false,
-      error: "자신의 순만 출석을 기록할 수 있습니다.",
-    });
+  it("잘못된 날짜와 중복 대상자는 저장하지 않는다", async () => {
+    const rpc = setup();
+    expect((await saveGroupAttendance(1, "2026-02-30", [record])).success).toBe(false);
+    expect((await saveGroupAttendance(1, "2026-09-06", [record, record])).success).toBe(false);
+    expect(rpc).not.toHaveBeenCalled();
   });
-
-  it("빈 records면 에러", async () => {
-    const supabase = mockSupabase({});
-
-    requireAuthMock.mockResolvedValue({
-      supabase,
-      user: { id: "user-admin" } as any,
-      role: "admin",
-      linkedMemberId: null,
-    });
-
-    const result = await saveGroupAttendance(1, "2026-03-15", []);
-
-    expect(result).toEqual({
-      success: false,
-      error: "저장할 출석 데이터가 없습니다.",
-    });
-  });
-
-  it("DB 에러 시 일반 메시지", async () => {
-    const attQuery = createQueryMock({ data: null, error: { message: "constraint violation" } });
-    const supabase = mockSupabase({ attendance: attQuery });
-
-    requireAuthMock.mockResolvedValue({
-      supabase,
-      user: { id: "user-admin" } as any,
-      role: "admin",
-      linkedMemberId: null,
-    });
-
-    const result = await saveGroupAttendance(1, "2026-03-15", sampleRecords);
-
-    expect(result).toEqual({
-      success: false,
-      error: "출석 저장에 실패했습니다.",
-    });
+  it("저장 실패를 성공으로 보고하지 않는다", async () => {
+    setup({ message: "ATTENDANCE_DENIED" });
+    expect((await saveGroupAttendance(1, "2026-09-06", [record])).success).toBe(false);
   });
 });

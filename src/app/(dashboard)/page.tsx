@@ -1,3 +1,6 @@
+import { getCareData } from "./care/actions";
+import { careCounts } from "@/lib/care";
+import { todayInTimeZone } from "@/lib/command-center";
 import { requireAuth } from "@/lib/auth";
 import Link from "next/link";
 
@@ -169,8 +172,15 @@ export default async function DashboardPage() {
     }
   }
 
+  const care = await getCareData();
+  const careSummary = careCounts(care.actions, todayInTimeZone(), care.userId);
   return (
     <div className="space-y-12 animate-fade-in">
+      <section className="rounded-xl border border-[var(--color-warm-border)] bg-white p-6">
+        <h2 className="font-serif text-2xl">이번 주 돌봄</h2>
+        <p className="mt-3 text-sm">내 담당 {careSummary.mine}건 · 인계 요청 {careSummary.handoffs}건 · 기한 지남 {careSummary.overdue}건 · 미배정 {careSummary.unassigned}건</p>
+        <Link href="/care" className="mt-4 inline-block text-sm underline">다음 할 일 확인 →</Link>
+      </section>
       {/* 공지 */}
       <section>
         <p className="text-[9px] font-medium uppercase tracking-[0.25em] text-[var(--color-warm-muted)]">

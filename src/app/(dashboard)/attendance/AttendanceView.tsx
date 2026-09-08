@@ -196,10 +196,10 @@ function AttendanceCheck({
   const handleSave = async () => {
     setSaving(true);
     const records = members
-      .filter((m) => statuses[m.id] !== "")
+      .filter((m) => statuses[m.id] !== "" || attendance.some(a => a.member_id === m.id))
       .map((m) => ({
         member_id: m.id,
-        status: statuses[m.id] as AttendanceStatus,
+        status: statuses[m.id] === "" ? null : statuses[m.id] as AttendanceStatus,
         prayer_request: prayerFlags[m.id] ?? false,
         prayer_note: prayerFlags[m.id] ? prayerNotes[m.id] || null : null,
       }));
