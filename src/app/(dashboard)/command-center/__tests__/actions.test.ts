@@ -10,9 +10,12 @@ import {
   cancelOccurrence,
   createInboxItem,
   createTask,
+  linkMemberToTask,
   recordFollowupResponse,
+  refreshPersonReference,
   rescheduleOccurrence,
   setOccurrenceTemplateSkip,
+  setPersonTaskLinkArchived,
   setTodayFocus,
   startWaiting,
 } from "../actions";
@@ -73,6 +76,31 @@ describe("command center actions", () => {
     expect(inbox.insert).toHaveBeenCalledWith(
       expect.objectContaining({ owner_id: "owner-1", original_text: "야외예배 장소 확인", status: "unprocessed" })
     );
+  });
+
+  it("기존 이음앱 멤버 ID를 업무에 연결한다", async () => {
+    const { rpc } = setup();
+    expect(await linkMemberToTask("task-1", form({ member_id: "17", relationship_label: "새가족 후속" }))).toEqual({ success: true });
+    expect(rpc).toHaveBeenCalledWith("cc_link_member_to_task", {
+      p_task_id: "task-1",
+      p_member_id: 17,
+      p_relationship_label: "새가족 후속",
+    });
+  });
+
+  it("사람 연결의 원본 이름을 새로고침한다", async () => {
+    const { rpc } = setup();
+    expect(await refreshPersonReference("person-ref-1")).toEqual({ success: true });
+    expect(rpc).toHaveBeenCalledWith("cc_refresh_person_ref", { p_person_ref_id: "person-ref-1" });
+  });
+
+  it("사람과 업무의 연결을 지우지 않고 보관 처리한다", async () => {
+    const links = query({ data: null, error: null });
+    setup("admin", { cc_person_task_links: links });
+    expect(await setPersonTaskLinkArchived("link-1", true)).toEqual({ success: true });
+    expect(links.update).toHaveBeenCalledWith(expect.objectContaining({ archived_at: expect.any(String) }));
+    expect(links.eq).toHaveBeenCalledWith("id", "link-1");
+    expect(links.eq).toHaveBeenCalledWith("owner_id", "owner-1");
   });
 
   it("진행 상태 업무에는 다음 행동을 요구한다", async () => {

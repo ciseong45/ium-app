@@ -30,12 +30,15 @@ import {
   createResource,
   createTask,
   decide,
+  linkMemberToTask,
   processInboxToTask,
   recordFollowupResponse,
+  refreshPersonReference,
   rescheduleOccurrence,
   saveWeeklyReview,
   setArchived,
   setOccurrenceTemplateSkip,
+  setPersonTaskLinkArchived,
   setTodayFocus,
   startWaiting,
   transitionTask,
@@ -401,7 +404,94 @@ function TaskCard({ task, data, today }: { task: CommandTask; data: CommandCente
           </details>
         </div>
       )}
+      <TaskPersonConnections task={task} data={data} />
     </article>
+  );
+}
+
+const MEMBER_STATUS_LABELS: Record<string, string> = {
+  active: "등록",
+  attending: "출석 중",
+  inactive: "비활성",
+};
+
+const ATTENDANCE_STATUS_LABELS: Record<string, string> = {
+  present: "출석",
+  absent: "결석",
+  online: "온라인",
+};
+
+function TaskPersonConnections({ task, data }: { task: CommandTask; data: CommandCenterData }) {
+  const router = useRouter();
+  const [message, setMessage] = useState<string | null>(null);
+  const links = data.personTaskLinks.filter((link) => link.task_id === task.id && !link.archived_at);
+  const run = async (action: Promise<ActionResult>) => {
+    setMessage(null);
+    const result = await action;
+    if (result.success) router.refresh(); else setMessage(result.error);
+  };
+
+  return (
+    <details className="mt-3 border-t border-[var(--color-warm-border-light)] pt-3">
+      <summary className="cursor-pointer text-[11px] font-medium">사람 연결 {links.length > 0 && `${links.length}명`}</summary>
+      <div className="mt-3 space-y-3">
+        {!data.existingConnection.ready && (
+          <p className="rounded-md bg-amber-50 p-3 text-[11px] text-amber-800">
+            {data.existingConnection.error || "이음앱 사람 정보와 현재 연결할 수 없습니다."}
+          </p>
+        )}
+
+        {links.map((link) => {
+          const person = data.personRefs.find((ref) => ref.id === link.person_ref_id);
+          if (!person) return null;
+          const memberId = Number(person.external_person_id);
+          const attendance = Number.isInteger(memberId)
+            ? data.attendanceSignals.find((signal) => signal.member_id === memberId)
+            : undefined;
+          return (
+            <div key={link.id} className="rounded-lg bg-[var(--color-warm-bg)] p-3">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-xs font-medium">{person.display_name || `멤버 #${person.external_person_id}`} <span className="font-normal text-[var(--color-warm-muted)]">· {link.relationship_label}</span></p>
+                  <p className="mt-1 text-[10px] text-[var(--color-warm-muted)]">
+                    이음앱 원본 #{person.external_person_id}
+                    {person.last_verified_at && ` · ${displayDate(person.last_verified_at)} 확인`}
+                    {attendance && ` · 최근 ${displayDate(attendance.week_date)} ${ATTENDANCE_STATUS_LABELS[attendance.status] || attendance.status}`}
+                  </p>
+                </div>
+                <div className="flex shrink-0 flex-wrap gap-2">
+                  {Number.isInteger(memberId) && <a className={TINY} href={`/members/${memberId}`}>원본 보기</a>}
+                  <button className={TINY} onClick={() => run(refreshPersonReference(person.id))}>새로고침</button>
+                  <button className={TINY} onClick={() => run(setPersonTaskLinkArchived(link.id, true))}>연결 해제</button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        {data.existingConnection.ready && data.memberOptions.length > 0 && (
+          <ActionForm action={(formData) => linkMemberToTask(task.id, formData)} submitLabel="이 업무에 연결" compact>
+            <div className="grid gap-2 sm:grid-cols-[1fr_160px]">
+              <select name="member_id" required className={INPUT} defaultValue="">
+                <option value="" disabled>이음앱 사람 선택</option>
+                {data.memberOptions.map((member) => (
+                  <option key={member.id} value={member.id}>
+                    {member.last_name}{member.first_name} · {MEMBER_STATUS_LABELS[member.status] || member.status}
+                  </option>
+                ))}
+              </select>
+              <input name="relationship_label" maxLength={40} defaultValue="후속" className={INPUT} aria-label="연결 이유" />
+            </div>
+            <p className="text-[10px] leading-relaxed text-[var(--color-warm-muted)]">연락처·주소·메모는 복제하지 않고, 원본 ID와 최근 출석 신호만 연결합니다.</p>
+          </ActionForm>
+        )}
+
+        {data.existingConnection.ready && data.memberOptions.length === 0 && (
+          <p className="text-[11px] text-[var(--color-warm-muted)]">연결할 수 있는 이음앱 멤버가 없습니다.</p>
+        )}
+        {message && <p className="text-[11px] text-red-600">{message}</p>}
+      </div>
+    </details>
   );
 }
 

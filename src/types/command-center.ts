@@ -143,6 +143,43 @@ export type CommandOccurrenceException = {
   updated_at: string;
 };
 
+export type CommandPersonRef = {
+  id: string;
+  owner_id: string;
+  external_system: string;
+  external_person_id: string;
+  display_name: string | null;
+  last_verified_at: string | null;
+  archived_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CommandPersonTaskLink = {
+  id: string;
+  owner_id: string;
+  person_ref_id: string;
+  task_id: string;
+  relationship_label: string;
+  archived_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CommandMemberOption = {
+  id: number;
+  last_name: string;
+  first_name: string;
+  status: string;
+  updated_at: string;
+};
+
+export type CommandAttendanceSignal = {
+  member_id: number;
+  week_date: string;
+  status: string;
+};
+
 export type CommandFollowup = {
   id: string;
   owner_id: string;
@@ -235,6 +272,15 @@ export type CommandCenterData = {
   templates: CommandTemplate[];
   templateRuns: CommandTemplateRun[];
   occurrenceExceptions: CommandOccurrenceException[];
+  personRefs: CommandPersonRef[];
+  personTaskLinks: CommandPersonTaskLink[];
+  memberOptions: CommandMemberOption[];
+  attendanceSignals: CommandAttendanceSignal[];
+  existingConnection: {
+    ready: boolean;
+    checkedAt: string;
+    error?: string;
+  };
   weeklyReviews: CommandWeeklyReview[];
 };
 

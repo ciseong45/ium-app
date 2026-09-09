@@ -11,6 +11,7 @@ const EXPORT_TABLES = [
   "cc_resources",
   "cc_publications",
   "cc_person_refs",
+  "cc_person_task_links",
   "cc_costs",
   "cc_inbox",
   "cc_templates",
@@ -47,7 +48,7 @@ export async function GET() {
   const exportedAt = new Date().toISOString();
   const payload = Object.fromEntries(results.map((result) => [result.table, result.data]));
   const body = JSON.stringify({
-    format: "ium-command-center-backup-v2",
+    format: "ium-command-center-backup-v3",
     exported_at: exportedAt,
     timezone: "America/New_York",
     owner_id: user.id,

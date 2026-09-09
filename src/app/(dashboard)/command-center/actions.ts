@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/lib/auth";
-import { buildInboxDedupeKey, todayInTimeZone } from "@/lib/command-center";
+import { addDays, buildInboxDedupeKey, todayInTimeZone } from "@/lib/command-center";
 import type { ActionResult } from "@/lib/validations";
 import type {
   CommandCenterData,
@@ -59,6 +59,11 @@ export async function getCommandCenterData(): Promise<CommandCenterData> {
     templates: [],
     templateRuns: [],
     occurrenceExceptions: [],
+    personRefs: [],
+    personTaskLinks: [],
+    memberOptions: [],
+    attendanceSignals: [],
+    existingConnection: { ready: false, checkedAt: new Date().toISOString() },
     weeklyReviews: [],
   };
   if (!auth.ok) return { ...empty, error: PRIVATE_ERROR };
@@ -76,7 +81,11 @@ export async function getCommandCenterData(): Promise<CommandCenterData> {
     templates,
     templateRuns,
     occurrenceExceptions,
+    personRefs,
+    personTaskLinks,
     weeklyReviews,
+    memberOptions,
+    attendanceSignals,
   ] = await Promise.all([
     supabase.from("cc_seasons").select("*").eq("owner_id", ownerId).is("archived_at", null).order("start_date", { ascending: false }),
     supabase.from("cc_ministries").select("*").eq("owner_id", ownerId).order("created_at", { ascending: false }),
@@ -89,10 +98,14 @@ export async function getCommandCenterData(): Promise<CommandCenterData> {
     supabase.from("cc_templates").select("*").eq("owner_id", ownerId).eq("is_active", true).is("archived_at", null).order("name", { ascending: true }),
     supabase.from("cc_template_runs").select("*").eq("owner_id", ownerId).order("created_at", { ascending: false }),
     supabase.from("cc_occurrence_exceptions").select("*").eq("owner_id", ownerId).is("archived_at", null).order("created_at", { ascending: false }),
+    supabase.from("cc_person_refs").select("*").eq("owner_id", ownerId).is("archived_at", null).order("display_name", { ascending: true }),
+    supabase.from("cc_person_task_links").select("*").eq("owner_id", ownerId).is("archived_at", null).order("created_at", { ascending: false }),
     supabase.from("cc_weekly_reviews").select("*").eq("owner_id", ownerId).order("week_start", { ascending: false }).limit(8),
+    supabase.from("members").select("id, last_name, first_name, status, updated_at").neq("status", "removed").order("last_name", { ascending: true }).order("first_name", { ascending: true }),
+    supabase.from("attendance").select("member_id, week_date, status").gte("week_date", addDays(todayInTimeZone(), -56)).order("week_date", { ascending: false }),
   ]);
 
-  const results = [seasons, ministries, occurrences, tasks, followups, decisions, resources, inbox, templates, templateRuns, occurrenceExceptions, weeklyReviews];
+  const results = [seasons, ministries, occurrences, tasks, followups, decisions, resources, inbox, templates, templateRuns, occurrenceExceptions, personRefs, personTaskLinks, weeklyReviews];
   const firstError = results.find((result) => result.error)?.error;
   if (firstError) {
     return {
@@ -116,6 +129,15 @@ export async function getCommandCenterData(): Promise<CommandCenterData> {
     templates: (templates.data ?? []) as CommandCenterData["templates"],
     templateRuns: (templateRuns.data ?? []) as CommandCenterData["templateRuns"],
     occurrenceExceptions: (occurrenceExceptions.data ?? []) as CommandCenterData["occurrenceExceptions"],
+    personRefs: (personRefs.data ?? []) as CommandCenterData["personRefs"],
+    personTaskLinks: (personTaskLinks.data ?? []) as CommandCenterData["personTaskLinks"],
+    memberOptions: (memberOptions.data ?? []) as CommandCenterData["memberOptions"],
+    attendanceSignals: (attendanceSignals.data ?? []) as CommandCenterData["attendanceSignals"],
+    existingConnection: {
+      ready: !memberOptions.error && !attendanceSignals.error,
+      checkedAt: new Date().toISOString(),
+      error: memberOptions.error || attendanceSignals.error ? "이음앱 사람·출석 정보를 현재 확인하지 못했습니다." : undefined,
+    },
     weeklyReviews: (weeklyReviews.data ?? []) as CommandCenterData["weeklyReviews"],
   };
 }
@@ -181,6 +203,52 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
     source_inbox_id: nullable(formData, "source_inbox_id"),
   });
   if (error) return { success: false, error: "업무 저장에 실패했습니다." };
+  refresh();
+  return { success: true };
+}
+
+export async function linkMemberToTask(taskId: string, formData: FormData): Promise<ActionResult> {
+  const auth = await commandCenterAuth();
+  if (!auth.ok) return auth.result;
+  const memberId = Number(value(formData, "member_id"));
+  const relationshipLabel = value(formData, "relationship_label") || "후속";
+  if (!Number.isInteger(memberId) || memberId <= 0) {
+    return { success: false, error: "연결할 사람을 선택해주세요." };
+  }
+  if (relationshipLabel.length > 40) {
+    return { success: false, error: "연결 이유는 40자 이내로 입력해주세요." };
+  }
+
+  const { error } = await auth.supabase.rpc("cc_link_member_to_task", {
+    p_task_id: taskId,
+    p_member_id: memberId,
+    p_relationship_label: relationshipLabel,
+  });
+  if (error) return { success: false, error: "이음앱 멤버를 업무에 연결하지 못했습니다." };
+  refresh();
+  return { success: true };
+}
+
+export async function refreshPersonReference(personRefId: string): Promise<ActionResult> {
+  const auth = await commandCenterAuth();
+  if (!auth.ok) return auth.result;
+  const { error } = await auth.supabase.rpc("cc_refresh_person_ref", {
+    p_person_ref_id: personRefId,
+  });
+  if (error) return { success: false, error: "원본 멤버 정보를 새로고침하지 못했습니다." };
+  refresh();
+  return { success: true };
+}
+
+export async function setPersonTaskLinkArchived(linkId: string, archived: boolean): Promise<ActionResult> {
+  const auth = await commandCenterAuth();
+  if (!auth.ok) return auth.result;
+  const { error } = await auth.supabase
+    .from("cc_person_task_links")
+    .update({ archived_at: archived ? new Date().toISOString() : null })
+    .eq("id", linkId)
+    .eq("owner_id", auth.ownerId);
+  if (error) return { success: false, error: "사람 연결 상태를 변경하지 못했습니다." };
   refresh();
   return { success: true };
 }
