@@ -1,8 +1,18 @@
 import { requireAuth } from "@/lib/auth";
 import Link from "next/link";
+import SharedDashboard from "./SharedDashboard";
+import { getSharedDashboard } from "./shared-dashboard-actions";
+import { addDays, todayInTimeZone } from "@/lib/command-center";
+import { validDate } from "@/lib/shared-calendar";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ date?: string; view?: string }> }) {
   const { supabase, role, linkedMemberId } = await requireAuth();
+  const params = await searchParams;
+  const today = todayInTimeZone();
+  const anchor = params.date && validDate(params.date) ? params.date : today;
+  const view = params.view === "month" ? "month" : "week";
+  const sharedPromise = getSharedDashboard(today, anchor);
+  const weekDate = addDays(today, -new Date(today + "T12:00:00Z").getUTCDay());
 
   // 병렬로 모든 통계 데이터 가져오기
   const [
@@ -12,7 +22,6 @@ export default async function DashboardPage() {
     newFamilyRes,
     oneToOneRes,
     worshipMembersRes,
-    upcomingEventsRes,
   ] = await Promise.all([
     // 재적/출석 멤버 수
     supabase
@@ -27,11 +36,6 @@ export default async function DashboardPage() {
       .single(),
     // 이번 주 출석 데이터
     (() => {
-      const today = new Date();
-      const dayOfWeek = today.getDay();
-      const lastSunday = new Date(today);
-      lastSunday.setDate(today.getDate() - dayOfWeek);
-      const weekDate = lastSunday.toISOString().split("T")[0];
       return supabase
         .from("attendance")
         .select("status")
@@ -52,13 +56,6 @@ export default async function DashboardPage() {
       .from("member_ministry_teams")
       .select("id", { count: "exact", head: true })
       .eq("ministry_team_id", 1),
-    // 다가올 행사
-    supabase
-      .from("events")
-      .select("id, name, start_date")
-      .gte("start_date", new Date().toISOString().split("T")[0])
-      .order("start_date")
-      .limit(3),
   ]);
 
   // 멤버 수
@@ -96,8 +93,7 @@ export default async function DashboardPage() {
   // 찬양팀 수
   const worshipMemberCount = worshipMembersRes.count ?? 0;
 
-  // 다가올 행사
-  const upcomingEvents = upcomingEventsRes.data ?? [];
+  const shared = await sharedPromise;
 
   // 내 순/다락방 정보 (순장, 다락방장용)
   type MyGroupInfo = {
@@ -171,29 +167,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-12 animate-fade-in">
-      {/* 공지 */}
-      <section>
-        <p className="text-[9px] font-medium uppercase tracking-[0.25em] text-[var(--color-warm-muted)]">
-          Notice
-        </p>
-        <div className="editorial-divider mt-2 mb-5" />
-        <Link
-          href="/summer-apply"
-          className="group flex flex-col gap-4 rounded-xl border border-[var(--color-warm-border)] bg-white p-6 hover-lift sm:flex-row sm:items-center sm:justify-between"
-        >
-          <div>
-            <p className="font-serif text-xl font-light tracking-tight text-[var(--color-warm-text)]">
-              2026 여름순 신청
-            </p>
-            <p className="mt-2 text-sm leading-relaxed text-[var(--color-warm-muted)]">
-              새가족과 방문자가 직접 신청할 수 있는 공개 신청폼입니다.
-            </p>
-          </div>
-          <span className="text-sm font-medium text-[var(--color-warm-muted)] transition-all duration-300 group-hover:text-[var(--color-warm-text)] group-hover:translate-x-0.5">
-            신청폼 열기 →
-          </span>
-        </Link>
-      </section>
+      <SharedDashboard key={anchor + view} data={shared} today={today} anchor={anchor} view={view} canManage={role === "admin"} />
 
       {/* 내 순 바로가기 (순장/다락방장) */}
       {myGroups.length > 0 && (
@@ -252,7 +226,7 @@ export default async function DashboardPage() {
             title="기록된 출석률"
             value={totalChecked > 0 ? `${attendanceRate}` : "—"}
             unit={totalChecked > 0 ? "%" : ""}
-            description={totalChecked > 0 ? `이번 주 ${presentCount}/${totalChecked}명` : "이번 주 기록 없음"}
+            description={totalChecked > 0 ? `${weekDate} · 입력 ${totalChecked}건 중 출석 ${presentCount}건` : `${weekDate} 기록 없음`}
             progress={totalChecked > 0 ? attendanceRate : undefined}
             href="/attendance"
           />
@@ -279,14 +253,6 @@ export default async function DashboardPage() {
             unit="명"
             description="사역자"
             href="/worship"
-          />
-          <DashboardCard
-            label="Events"
-            title="행사"
-            value={`${upcomingEvents.length}`}
-            unit="건"
-            description={upcomingEvents.length > 0 ? (upcomingEvents[0] as { name: string }).name : "예정 없음"}
-            href="/events"
           />
         </div>
       </section>
@@ -316,6 +282,7 @@ function DashboardCard({
       <p className="text-[9px] font-medium uppercase tracking-[0.2em] text-[var(--color-warm-subtle)]">
         {label}
       </p>
+      <h3 className="mt-2 text-sm font-medium">{title}</h3>
       <p className="mt-4 font-serif text-[36px] font-light tracking-tight text-[var(--color-warm-text)] leading-none">
         {value}
         <span className="ml-1 text-[16px] font-sans font-normal text-[var(--color-warm-muted)]">{unit}</span>
