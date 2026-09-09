@@ -25,6 +25,7 @@ import {
   applyPreparationTemplate,
   bootstrapFallPlan,
   cancelOccurrence,
+  createCost,
   createDecision,
   createInboxItem,
   createMinistry,
@@ -35,6 +36,7 @@ import {
   linkMemberToTask,
   processInboxToTask,
   recordFollowupResponse,
+  recordMinistryTransition,
   refreshPersonReference,
   rescheduleOccurrence,
   saveWeeklyReview,
@@ -44,6 +46,7 @@ import {
   setTodayFocus,
   startWaiting,
   transitionTask,
+  transitionCost,
 } from "./actions";
 
 type Tab = "week" | "inbox" | "ministries" | "calendar" | "waiting" | "resources";
@@ -572,8 +575,90 @@ function MinistryCard({ ministry, data, today }: { ministry: CommandMinistry; da
       <div className="flex items-start justify-between"><div><p className="text-[10px] text-[var(--color-warm-muted)]">{AREA_LABELS[ministry.area]} · {ministry.kind === "recurring" ? "반복" : ministry.kind === "course" ? "교육" : "프로젝트"}</p><h3 className="mt-1 font-serif text-xl">{ministry.title}</h3></div><Badge status={prep} label={PREPARATION_STATUS_LABELS[prep]} /></div>
       <p className="mt-3 text-xs leading-relaxed text-[var(--color-warm-secondary)]">{ministry.purpose || "목적 확인 필요"}</p>
       <dl className="mt-4 grid grid-cols-2 gap-3 text-[11px]"><div><dt className="text-[var(--color-warm-muted)]">다음 마감</dt><dd className="mt-1">{nextTask ? `${displayDate(nextTask.due_date)} · ${nextTask.title}` : "없음"}</dd></div><div><dt className="text-[var(--color-warm-muted)]">가장 중요한 막힌 일</dt><dd className="mt-1 text-amber-800">{ministry.current_blocker || tasks.find((task) => task.blocked_reason)?.blocked_reason || "없음"}</dd></div></dl>
+      <MinistryOperatingDetails ministry={ministry} data={data} />
       <div className="mt-4 flex justify-between border-t border-[var(--color-warm-border-light)] pt-3"><span className="text-[10px] text-[var(--color-warm-muted)]">업무 {tasks.length}건</span><ArchiveButton kind="ministry" id={ministry.id} /></div>
     </article>
+  );
+}
+
+const COST_STATUS_LABELS = {
+  planned: "예산",
+  approval_pending: "승인 대기",
+  approved: "승인",
+  paid: "지급",
+  cancelled: "취소",
+} as const;
+
+const TRANSITION_OUTCOME_LABELS = {
+  completed: "종료",
+  continue: "다음 학기 계속",
+  paused: "보류",
+  cancelled: "취소",
+} as const;
+
+function displayMoney(amount: number | string, currency: string) {
+  const numeric = Number(amount);
+  try {
+    return new Intl.NumberFormat("ko-KR", { style: "currency", currency, maximumFractionDigits: 2 }).format(numeric);
+  } catch {
+    return `${numeric.toLocaleString("ko-KR")} ${currency}`;
+  }
+}
+
+function MinistryOperatingDetails({ ministry, data }: { ministry: CommandMinistry; data: CommandCenterData }) {
+  const router = useRouter();
+  const [message, setMessage] = useState<string | null>(null);
+  const costs = data.costs.filter((cost) => cost.ministry_id === ministry.id && !cost.archived_at && cost.status !== "cancelled");
+  const transitions = data.ministryTransitions.filter((transition) => transition.ministry_id === ministry.id && !transition.archived_at);
+  const currencies = Array.from(new Set(costs.map((cost) => cost.currency)));
+  const run = async (action: Promise<ActionResult>) => {
+    setMessage(null);
+    const result = await action;
+    if (result.success) router.refresh(); else setMessage(result.error);
+  };
+
+  return (
+    <div className="mt-4 grid gap-3 border-t border-[var(--color-warm-border-light)] pt-3 sm:grid-cols-2">
+      <details>
+        <summary className="cursor-pointer text-[11px] font-medium">예산·정산 {costs.length > 0 && `${costs.length}건`}</summary>
+        <div className="mt-3 space-y-3 sm:col-span-2">
+          {currencies.map((currency) => {
+            const sameCurrency = costs.filter((cost) => cost.currency === currency);
+            const committed = sameCurrency.filter((cost) => cost.status !== "paid").reduce((sum, cost) => sum + Number(cost.amount), 0);
+            const paid = sameCurrency.filter((cost) => cost.status === "paid").reduce((sum, cost) => sum + Number(cost.amount), 0);
+            return <p key={currency} className="rounded-md bg-[var(--color-warm-bg)] p-2 text-[10px] text-[var(--color-warm-secondary)]">{currency} · 예정·승인 {displayMoney(committed, currency)} · 실제 지급 {displayMoney(paid, currency)}</p>;
+          })}
+
+          {costs.map((cost) => (
+            <div key={cost.id} className="rounded-md border border-[var(--color-warm-border-light)] p-2.5">
+              <div className="flex items-start justify-between gap-2"><div><p className="text-[11px] font-medium">{cost.item}</p><p className="mt-0.5 text-[10px] text-[var(--color-warm-muted)]">{displayMoney(cost.amount, cost.currency)} · {COST_STATUS_LABELS[cost.status]}</p></div><div className="flex flex-wrap justify-end gap-1.5">{cost.status === "planned" && <button className={TINY} onClick={() => run(transitionCost(cost.id, "approval_pending"))}>승인 요청</button>}{["planned", "approval_pending"].includes(cost.status) && <button className={TINY} onClick={() => run(transitionCost(cost.id, "approved"))}>승인 확인</button>}{cost.status === "approved" && <button className={TINY} onClick={() => run(transitionCost(cost.id, "paid"))}>지급 확인</button>}</div></div>
+            </div>
+          ))}
+
+          <ActionForm action={createCost} submitLabel="비용 기록" compact>
+            <input type="hidden" name="ministry_id" value={ministry.id} />
+            <input name="item" required className={INPUT} placeholder="항목" />
+            <div className="grid grid-cols-[1fr_90px] gap-2"><input name="amount" required min="0.01" step="0.01" type="number" className={INPUT} placeholder="금액" /><select name="currency" defaultValue="USD" className={INPUT}><option value="USD">USD</option><option value="KRW">KRW</option></select></div>
+            <select name="status" defaultValue="planned" className={INPUT}><option value="planned">예산</option><option value="approval_pending">승인 대기</option></select>
+            <p className="text-[10px] text-[var(--color-warm-muted)]">운영 준비용 기록이며 공식 회계 장부를 대체하지 않습니다.</p>
+          </ActionForm>
+        </div>
+      </details>
+
+      <details>
+        <summary className="cursor-pointer text-[11px] font-medium">학기 전환 판단</summary>
+        <div className="mt-3 space-y-3">
+          {transitions[0] && <p className="rounded-md bg-[var(--color-warm-bg)] p-2 text-[10px] leading-relaxed text-[var(--color-warm-secondary)]">최근: {TRANSITION_OUTCOME_LABELS[transitions[0].outcome]} · {transitions[0].judgment}{transitions[0].next_review_date && ` · 다음 검토 ${displayDate(transitions[0].next_review_date)}`}</p>}
+          <ActionForm action={(formData) => recordMinistryTransition(ministry.id, formData)} submitLabel="전환 판단 저장" compact>
+            <select name="outcome" required defaultValue="" className={INPUT}><option value="" disabled>판단 선택</option><option value="completed">종료</option><option value="continue">다음 학기 계속</option><option value="paused">보류</option><option value="cancelled">취소</option></select>
+            <textarea name="judgment" required rows={2} className={INPUT} placeholder="판단 근거와 인계할 내용" />
+            <input name="next_review_date" type="date" className={INPUT} aria-label="다음 검토일" />
+            <p className="text-[10px] text-[var(--color-warm-muted)]">계속·보류는 다음 검토일을 함께 입력합니다. 미완료 업무는 자동 복제하지 않습니다.</p>
+          </ActionForm>
+        </div>
+      </details>
+      {message && <p className="text-[11px] text-red-600 sm:col-span-2">{message}</p>}
+    </div>
   );
 }
 

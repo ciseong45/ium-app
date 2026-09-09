@@ -63,6 +63,8 @@ export async function getCommandCenterData(): Promise<CommandCenterData> {
     personTaskLinks: [],
     memberOptions: [],
     attendanceSignals: [],
+    costs: [],
+    ministryTransitions: [],
     existingConnection: { ready: false, checkedAt: new Date().toISOString() },
     weeklyReviews: [],
   };
@@ -86,6 +88,8 @@ export async function getCommandCenterData(): Promise<CommandCenterData> {
     weeklyReviews,
     memberOptions,
     attendanceSignals,
+    costs,
+    ministryTransitions,
   ] = await Promise.all([
     supabase.from("cc_seasons").select("*").eq("owner_id", ownerId).is("archived_at", null).order("start_date", { ascending: false }),
     supabase.from("cc_ministries").select("*").eq("owner_id", ownerId).order("created_at", { ascending: false }),
@@ -103,9 +107,11 @@ export async function getCommandCenterData(): Promise<CommandCenterData> {
     supabase.from("cc_weekly_reviews").select("*").eq("owner_id", ownerId).order("week_start", { ascending: false }).limit(8),
     supabase.from("members").select("id, last_name, first_name, status, updated_at").neq("status", "removed").order("last_name", { ascending: true }).order("first_name", { ascending: true }),
     supabase.from("attendance").select("member_id, week_date, status").gte("week_date", addDays(todayInTimeZone(), -56)).order("week_date", { ascending: false }),
+    supabase.from("cc_costs").select("*").eq("owner_id", ownerId).is("archived_at", null).order("created_at", { ascending: false }),
+    supabase.from("cc_ministry_transitions").select("*").eq("owner_id", ownerId).is("archived_at", null).order("created_at", { ascending: false }),
   ]);
 
-  const results = [seasons, ministries, occurrences, tasks, followups, decisions, resources, inbox, templates, templateRuns, occurrenceExceptions, personRefs, personTaskLinks, weeklyReviews];
+  const results = [seasons, ministries, occurrences, tasks, followups, decisions, resources, inbox, templates, templateRuns, occurrenceExceptions, personRefs, personTaskLinks, weeklyReviews, costs, ministryTransitions];
   const firstError = results.find((result) => result.error)?.error;
   if (firstError) {
     return {
@@ -133,6 +139,8 @@ export async function getCommandCenterData(): Promise<CommandCenterData> {
     personTaskLinks: (personTaskLinks.data ?? []) as CommandCenterData["personTaskLinks"],
     memberOptions: (memberOptions.data ?? []) as CommandCenterData["memberOptions"],
     attendanceSignals: (attendanceSignals.data ?? []) as CommandCenterData["attendanceSignals"],
+    costs: (costs.data ?? []) as CommandCenterData["costs"],
+    ministryTransitions: (ministryTransitions.data ?? []) as CommandCenterData["ministryTransitions"],
     existingConnection: {
       ready: !memberOptions.error && !attendanceSignals.error,
       checkedAt: new Date().toISOString(),
@@ -249,6 +257,74 @@ export async function setPersonTaskLinkArchived(linkId: string, archived: boolea
     .eq("id", linkId)
     .eq("owner_id", auth.ownerId);
   if (error) return { success: false, error: "사람 연결 상태를 변경하지 못했습니다." };
+  refresh();
+  return { success: true };
+}
+
+export async function createCost(formData: FormData): Promise<ActionResult> {
+  const auth = await commandCenterAuth();
+  if (!auth.ok) return auth.result;
+  const ministryId = value(formData, "ministry_id");
+  const item = value(formData, "item");
+  const amount = Number(value(formData, "amount"));
+  const currency = (value(formData, "currency") || "USD").toUpperCase();
+  const status = value(formData, "status") || "planned";
+  if (!ministryId || !item) return { success: false, error: "사역과 비용 항목을 입력해주세요." };
+  if (!Number.isFinite(amount) || amount <= 0) return { success: false, error: "0보다 큰 금액을 입력해주세요." };
+  if (!/^[A-Z]{3}$/.test(currency)) return { success: false, error: "통화는 USD, KRW처럼 3자로 입력해주세요." };
+  if (!["planned", "approval_pending"].includes(status)) return { success: false, error: "첫 기록 상태를 확인해주세요." };
+
+  const { error } = await auth.supabase.from("cc_costs").insert({
+    owner_id: auth.ownerId,
+    ministry_id: ministryId,
+    item,
+    amount,
+    currency,
+    status,
+  });
+  if (error) return { success: false, error: "비용 기록을 저장하지 못했습니다." };
+  refresh();
+  return { success: true };
+}
+
+export async function transitionCost(
+  costId: string,
+  status: "approval_pending" | "approved" | "paid" | "cancelled",
+  formData?: FormData
+): Promise<ActionResult> {
+  const auth = await commandCenterAuth();
+  if (!auth.ok) return auth.result;
+  const { error } = await auth.supabase.rpc("cc_transition_cost", {
+    p_cost_id: costId,
+    p_status: status,
+    p_receipt_url: formData ? nullable(formData, "receipt_url") : null,
+  });
+  if (error) return { success: false, error: "비용 상태를 변경하지 못했습니다." };
+  refresh();
+  return { success: true };
+}
+
+export async function recordMinistryTransition(ministryId: string, formData: FormData): Promise<ActionResult> {
+  const auth = await commandCenterAuth();
+  if (!auth.ok) return auth.result;
+  const outcome = value(formData, "outcome");
+  const judgment = value(formData, "judgment");
+  const nextReviewDate = nullable(formData, "next_review_date");
+  if (!["completed", "continue", "paused", "cancelled"].includes(outcome)) {
+    return { success: false, error: "학기 전환 판단을 선택해주세요." };
+  }
+  if (!judgment) return { success: false, error: "전환 판단의 근거를 입력해주세요." };
+  if (["continue", "paused"].includes(outcome) && !nextReviewDate) {
+    return { success: false, error: "계속·보류 판단에는 다음 검토일을 입력해주세요." };
+  }
+
+  const { error } = await auth.supabase.rpc("cc_record_ministry_transition", {
+    p_ministry_id: ministryId,
+    p_outcome: outcome,
+    p_judgment: judgment,
+    p_next_review_date: nextReviewDate,
+  });
+  if (error) return { success: false, error: "사역 전환 판단을 저장하지 못했습니다." };
   refresh();
   return { success: true };
 }

@@ -8,16 +8,19 @@ import {
   applyPreparationTemplate,
   bootstrapFallPlan,
   cancelOccurrence,
+  createCost,
   createInboxItem,
   createTask,
   linkMemberToTask,
   recordFollowupResponse,
+  recordMinistryTransition,
   refreshPersonReference,
   rescheduleOccurrence,
   setOccurrenceTemplateSkip,
   setPersonTaskLinkArchived,
   setTodayFocus,
   startWaiting,
+  transitionCost,
 } from "../actions";
 
 const requireAuthMock = requireAuth as jest.MockedFunction<typeof requireAuth>;
@@ -101,6 +104,27 @@ describe("command center actions", () => {
     expect(links.update).toHaveBeenCalledWith(expect.objectContaining({ archived_at: expect.any(String) }));
     expect(links.eq).toHaveBeenCalledWith("id", "link-1");
     expect(links.eq).toHaveBeenCalledWith("owner_id", "owner-1");
+  });
+
+  it("비용은 통화와 승인 상태를 분리해 저장한다", async () => {
+    const costs = query({ data: null, error: null });
+    setup("admin", { cc_costs: costs });
+    expect(await createCost(form({ ministry_id: "ministry-1", item: "장소 예약금", amount: "120.50", currency: "usd", status: "approval_pending" }))).toEqual({ success: true });
+    expect(costs.insert).toHaveBeenCalledWith(expect.objectContaining({ amount: 120.5, currency: "USD", status: "approval_pending" }));
+  });
+
+  it("승인된 비용만 지급 확인으로 전환한다", async () => {
+    const { rpc } = setup();
+    expect(await transitionCost("cost-1", "paid")).toEqual({ success: true });
+    expect(rpc).toHaveBeenCalledWith("cc_transition_cost", { p_cost_id: "cost-1", p_status: "paid", p_receipt_url: null });
+  });
+
+  it("학기 계속 판단에는 다음 검토일을 요구한다", async () => {
+    setup();
+    expect(await recordMinistryTransition("ministry-1", form({ outcome: "continue", judgment: "다음 학기에도 유지", next_review_date: "" }))).toEqual({
+      success: false,
+      error: "계속·보류 판단에는 다음 검토일을 입력해주세요.",
+    });
   });
 
   it("진행 상태 업무에는 다음 행동을 요구한다", async () => {

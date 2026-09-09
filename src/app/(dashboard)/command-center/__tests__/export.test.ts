@@ -35,10 +35,11 @@ describe("command center export", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("content-disposition")).toContain("ium-command-center-");
     expect(payload).toEqual(expect.objectContaining({
-      format: "ium-command-center-backup-v3",
+      format: "ium-command-center-backup-v4",
       timezone: "America/New_York",
       cc_tasks: [{ id: "record-1" }],
       cc_person_task_links: [{ id: "record-1" }],
+      cc_ministry_transitions: [{ id: "record-1" }],
       cc_change_log: [{ id: "record-1" }],
     }));
   });

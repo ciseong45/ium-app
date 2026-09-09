@@ -180,6 +180,34 @@ export type CommandAttendanceSignal = {
   status: string;
 };
 
+export type CommandCost = {
+  id: string;
+  owner_id: string;
+  ministry_id: string | null;
+  item: string;
+  amount: number | string;
+  currency: string;
+  status: "planned" | "approval_pending" | "approved" | "paid" | "cancelled";
+  approved_at: string | null;
+  receipt_url: string | null;
+  paid_at: string | null;
+  archived_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CommandMinistryTransition = {
+  id: string;
+  owner_id: string;
+  ministry_id: string;
+  outcome: "completed" | "continue" | "paused" | "cancelled";
+  judgment: string;
+  next_review_date: string | null;
+  archived_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type CommandFollowup = {
   id: string;
   owner_id: string;
@@ -276,6 +304,8 @@ export type CommandCenterData = {
   personTaskLinks: CommandPersonTaskLink[];
   memberOptions: CommandMemberOption[];
   attendanceSignals: CommandAttendanceSignal[];
+  costs: CommandCost[];
+  ministryTransitions: CommandMinistryTransition[];
   existingConnection: {
     ready: boolean;
     checkedAt: string;
