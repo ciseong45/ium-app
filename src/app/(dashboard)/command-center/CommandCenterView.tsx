@@ -117,19 +117,26 @@ function ActionForm({
       className={compact ? "space-y-2" : "space-y-4"}
       onSubmit={async (event) => {
         event.preventDefault();
+        const form = event.currentTarget;
         setPending(true);
         setMessage(null);
         setMessageIsError(false);
-        const result = await action(new FormData(event.currentTarget));
-        if (result.success) {
-          event.currentTarget.reset();
-          setMessage(result.warning ?? null);
-          router.refresh();
-        } else {
-          setMessage(result.error);
+        try {
+          const result = await action(new FormData(form));
+          if (result.success) {
+            form.reset();
+            setMessage(result.warning ?? null);
+            router.refresh();
+          } else {
+            setMessage(result.error);
+            setMessageIsError(true);
+          }
+        } catch {
+          setMessage("처리 중 문제가 발생했습니다. 다시 시도해주세요.");
           setMessageIsError(true);
+        } finally {
+          setPending(false);
         }
-        setPending(false);
       }}
     >
       {children}
@@ -151,14 +158,20 @@ function QuickCapture() {
       className={`${CARD} flex flex-col gap-3 p-3 sm:flex-row sm:items-center`}
       onSubmit={async (event) => {
         event.preventDefault();
+        const form = event.currentTarget;
         setPending(true);
         setMessage(null);
-        const result = await createInboxItem(new FormData(event.currentTarget));
-        if (result.success) {
-          event.currentTarget.reset();
-          router.refresh();
-        } else setMessage(result.error);
-        setPending(false);
+        try {
+          const result = await createInboxItem(new FormData(form));
+          if (result.success) {
+            form.reset();
+            router.refresh();
+          } else setMessage(result.error);
+        } catch {
+          setMessage("기록 중 문제가 발생했습니다. 다시 시도해주세요.");
+        } finally {
+          setPending(false);
+        }
       }}
     >
       <input name="content" required className="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm outline-none placeholder:text-[var(--color-warm-muted)]" placeholder="카톡·구두 요청·회의 메모를 한 줄로 빠르게 기록" />
