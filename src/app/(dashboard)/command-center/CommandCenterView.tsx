@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { addDays, getPreparationStatus, getRescheduleImpact, getWeekStart, sortOperationalTasks } from "@/lib/command-center";
 import type { ActionResult } from "@/lib/validations";
+import { STATUS_LABELS } from "@/types/member";
+import type { MemberStatus } from "@/types/member";
 import type {
   CommandCenterData,
   CommandDecision,
@@ -409,12 +411,6 @@ function TaskCard({ task, data, today }: { task: CommandTask; data: CommandCente
   );
 }
 
-const MEMBER_STATUS_LABELS: Record<string, string> = {
-  active: "등록",
-  attending: "출석 중",
-  inactive: "비활성",
-};
-
 const ATTENDANCE_STATUS_LABELS: Record<string, string> = {
   present: "출석",
   absent: "결석",
@@ -476,7 +472,7 @@ function TaskPersonConnections({ task, data }: { task: CommandTask; data: Comman
                 <option value="" disabled>이음앱 사람 선택</option>
                 {data.memberOptions.map((member) => (
                   <option key={member.id} value={member.id}>
-                    {member.last_name}{member.first_name} · {MEMBER_STATUS_LABELS[member.status] || member.status}
+                    {member.last_name}{member.first_name} · {STATUS_LABELS[member.status as MemberStatus] || member.status}
                   </option>
                 ))}
               </select>
