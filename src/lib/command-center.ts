@@ -111,3 +111,33 @@ export function addDays(date: string, amount: number) {
   value.setUTCDate(value.getUTCDate() + amount);
   return value.toISOString().slice(0, 10);
 }
+
+export type RescheduleImpact = {
+  shifted: number;
+  preservedCompleted: number;
+  preservedManual: number;
+  needsReschedule: number;
+};
+
+export function getRescheduleImpact(
+  tasks: CommandTask[],
+  newOccurrenceDate: string,
+  today = todayInTimeZone()
+): RescheduleImpact {
+  return tasks.reduce<RescheduleImpact>((impact, task) => {
+    if (!task.template_id || task.relative_due_day === null) return impact;
+    if (task.status === "completed") {
+      impact.preservedCompleted += 1;
+      return impact;
+    }
+    if (task.due_date_is_manual) {
+      impact.preservedManual += 1;
+      return impact;
+    }
+    impact.shifted += 1;
+    if (addDays(newOccurrenceDate, task.relative_due_day) < today) {
+      impact.needsReschedule += 1;
+    }
+    return impact;
+  }, { shifted: 0, preservedCompleted: 0, preservedManual: 0, needsReschedule: 0 });
+}

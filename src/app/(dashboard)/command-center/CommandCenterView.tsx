@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { addDays, getPreparationStatus, getWeekStart, sortOperationalTasks } from "@/lib/command-center";
+import { addDays, getPreparationStatus, getRescheduleImpact, getWeekStart, sortOperationalTasks } from "@/lib/command-center";
 import type { ActionResult } from "@/lib/validations";
 import type {
   CommandCenterData,
@@ -20,7 +20,9 @@ import {
   TASK_STATUS_LABELS,
 } from "@/types/command-center";
 import {
+  applyPreparationTemplate,
   bootstrapFallPlan,
+  cancelOccurrence,
   createDecision,
   createInboxItem,
   createMinistry,
@@ -30,8 +32,10 @@ import {
   decide,
   processInboxToTask,
   recordFollowupResponse,
+  rescheduleOccurrence,
   saveWeeklyReview,
   setArchived,
+  setOccurrenceTemplateSkip,
   setTodayFocus,
   startWaiting,
   transitionTask,
@@ -56,6 +60,12 @@ const SECONDARY = "rounded-lg border border-[var(--color-warm-border)] bg-white 
 const TINY = "rounded-md border border-[var(--color-warm-border)] px-2.5 py-1.5 text-[11px] text-[var(--color-warm-secondary)] transition hover:border-[var(--color-warm-text)] hover:text-[var(--color-warm-text)]";
 
 const AREA_OPTIONS = Object.entries(AREA_LABELS) as Array<[MinistryArea, string]>;
+const TEMPLATE_KIND_LABELS = {
+  worship: "예배",
+  course: "교육·양육",
+  event: "행사",
+  newcomer: "새가족 후속",
+} as const;
 
 function displayDate(value: string | null) {
   if (!value) return "날짜 확인 필요";
@@ -100,6 +110,7 @@ function ActionForm({
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [messageIsError, setMessageIsError] = useState(false);
 
   return (
     <form
@@ -108,18 +119,21 @@ function ActionForm({
         event.preventDefault();
         setPending(true);
         setMessage(null);
+        setMessageIsError(false);
         const result = await action(new FormData(event.currentTarget));
         if (result.success) {
           event.currentTarget.reset();
+          setMessage(result.warning ?? null);
           router.refresh();
         } else {
           setMessage(result.error);
+          setMessageIsError(true);
         }
         setPending(false);
       }}
     >
       {children}
-      {message && <p className="text-xs text-red-600">{message}</p>}
+      {message && <p className={`text-xs ${messageIsError ? "text-red-600" : "text-amber-700"}`}>{message}</p>}
       <button type="submit" disabled={pending} className={compact ? SECONDARY : PRIMARY}>
         {pending ? "저장 중…" : submitLabel}
       </button>
@@ -481,7 +495,104 @@ function OccurrenceRow({ item, data, today, detailed = false }: { item: CommandO
   const tasks = data.tasks.filter((task) => task.occurrence_id === item.id && !task.archived_at);
   const prep = getPreparationStatus(tasks, today);
   const ministry = data.ministries.find((value) => value.id === item.ministry_id);
-  return <div className={detailed ? "p-5" : "py-3 first:pt-0 last:pb-0"}><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-medium">{displayDate(item.date_only)} {item.sequence_label && `· ${item.sequence_label}`}</p><p className="mt-1 text-sm">{item.title}</p><p className="mt-1 text-[10px] text-[var(--color-warm-muted)]">{ministry?.title} · {item.location || "장소 확인 필요"} · {item.status === "confirmed" ? "확정" : item.status === "tentative" ? "잠정" : "취소"}</p></div><Badge status={prep} label={PREPARATION_STATUS_LABELS[prep]} /></div>{detailed && <div className="mt-3 flex justify-between"><span className="text-[10px] text-[var(--color-warm-muted)]">연결 준비 {tasks.length}건</span><ArchiveButton kind="occurrence" id={item.id} /></div>}</div>;
+  const skip = data.occurrenceExceptions.find((exception) => exception.occurrence_id === item.id && exception.exception_type === "skip_generation");
+  const runCount = data.templateRuns.filter((run) => run.occurrence_id === item.id).length;
+  return (
+    <div className={detailed ? "p-5" : "py-3 first:pt-0 last:pb-0"}>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-medium">{displayDate(item.date_only)} {item.sequence_label && `· ${item.sequence_label}`}</p>
+          <p className="mt-1 text-sm">{item.title}</p>
+          <p className="mt-1 text-[10px] text-[var(--color-warm-muted)]">{ministry?.title} · {item.location || "장소 확인 필요"} · {item.status === "confirmed" ? "확정" : item.status === "tentative" ? "잠정" : "취소"}</p>
+        </div>
+        <div className="flex flex-wrap justify-end gap-2">
+          {skip && <Badge status="on_hold" label="준비 생성 제외" />}
+          <Badge status={item.status === "cancelled" ? "cancelled" : prep} label={item.status === "cancelled" ? "일정 취소" : PREPARATION_STATUS_LABELS[prep]} />
+        </div>
+      </div>
+      {detailed && (
+        <>
+          <div className="mt-3 flex justify-between">
+            <span className="text-[10px] text-[var(--color-warm-muted)]">연결 준비 {tasks.length}건 · 양식 적용 {runCount}회</span>
+            <ArchiveButton kind="occurrence" id={item.id} />
+          </div>
+          <OccurrenceControls item={item} data={data} tasks={tasks} today={today} skipReason={skip?.reason ?? null} />
+        </>
+      )}
+    </div>
+  );
+}
+
+function OccurrenceControls({
+  item,
+  data,
+  tasks,
+  today,
+  skipReason,
+}: {
+  item: CommandOccurrence;
+  data: CommandCenterData;
+  tasks: CommandTask[];
+  today: string;
+  skipReason: string | null;
+}) {
+  const router = useRouter();
+  const [newDate, setNewDate] = useState(item.date_only ?? "");
+  const [message, setMessage] = useState<string | null>(null);
+  const impact = newDate ? getRescheduleImpact(tasks, newDate, today) : null;
+  const run = async (result: Promise<ActionResult>) => {
+    const value = await result;
+    if (value.success) router.refresh(); else setMessage(value.error);
+  };
+
+  if (item.status === "cancelled") {
+    const cancellation = data.occurrenceExceptions.find((exception) => exception.occurrence_id === item.id && exception.exception_type === "cancelled");
+    return <p className="mt-3 rounded-lg bg-red-50 p-3 text-[11px] text-red-700">취소 이유: {cancellation?.reason || "이유 기록 확인 필요"} · 연결 업무는 자동 완료하지 않고 검토 대상으로 유지합니다.</p>;
+  }
+
+  return (
+    <div className="mt-4 grid gap-3 border-t border-[var(--color-warm-border-light)] pt-3 lg:grid-cols-3">
+      <details>
+        <summary className="cursor-pointer text-[11px] font-medium">반복 준비 생성</summary>
+        {skipReason ? (
+          <div className="pt-2 text-[11px] text-amber-800">
+            <p>제외 이유: {skipReason}</p>
+            <button className={`${TINY} mt-2`} onClick={() => run(setOccurrenceTemplateSkip(item.id, false))}>제외 해제</button>
+          </div>
+        ) : (
+          <ActionForm action={(formData) => applyPreparationTemplate(item.id, formData)} submitLabel="준비 업무 생성" compact>
+            <select name="template_id" required className={INPUT} defaultValue="">
+              <option value="" disabled>양식 선택</option>
+              {data.templates.map((template) => <option key={template.id} value={template.id}>{template.name} v{template.version} · {TEMPLATE_KIND_LABELS[template.applies_to]}</option>)}
+            </select>
+            <p className="text-[10px] leading-relaxed text-[var(--color-warm-muted)]">같은 양식·같은 회차는 다시 실행해도 중복 생성되지 않습니다.</p>
+          </ActionForm>
+        )}
+      </details>
+
+      <details>
+        <summary className="cursor-pointer text-[11px] font-medium">날짜 변경</summary>
+        <ActionForm action={(formData) => rescheduleOccurrence(item.id, formData)} submitLabel="영향 확인 후 변경" compact>
+          <input name="new_date" type="date" required value={newDate} onChange={(event) => setNewDate(event.target.value)} className={INPUT} />
+          {impact && <p className="rounded-md bg-[var(--color-warm-bg)] p-2 text-[10px] leading-relaxed text-[var(--color-warm-secondary)]">자동 기한 {impact.shifted}건 이동 · 완료 {impact.preservedCompleted}건 유지 · 수동 기한 {impact.preservedManual}건 유지{impact.needsReschedule > 0 && ` · 변경 후 이미 지난 기한 ${impact.needsReschedule}건은 재조정 표시`}</p>}
+          <input name="reason" required className={INPUT} placeholder="변경 이유" />
+        </ActionForm>
+      </details>
+
+      <details>
+        <summary className="cursor-pointer text-[11px] font-medium">예외·취소</summary>
+        <div className="space-y-3 pt-2">
+          <ActionForm action={(formData) => setOccurrenceTemplateSkip(item.id, true, formData)} submitLabel="이번 회차 준비 생성 제외" compact>
+            <input name="reason" required className={INPUT} placeholder="예: 방학, 외부 진행" />
+          </ActionForm>
+          <ActionForm action={(formData) => cancelOccurrence(item.id, formData)} submitLabel="일정 취소 기록" compact>
+            <input name="reason" required className={INPUT} placeholder="취소 이유" />
+          </ActionForm>
+        </div>
+      </details>
+      {message && <p className="text-[11px] text-red-600 lg:col-span-3">{message}</p>}
+    </div>
+  );
 }
 
 function WaitingView({ data, today }: { data: CommandCenterData; today: string }) {

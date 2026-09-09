@@ -85,10 +85,59 @@ export type CommandTask = {
   ministry_id: string | null;
   occurrence_id: string | null;
   source_inbox_id: string | null;
+  template_id: string | null;
+  template_item_key: string | null;
+  relative_due_day: number | null;
   today_focus_order: number | null;
   completion_evidence: string | null;
   started_at: string | null;
   completed_at: string | null;
+  archived_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CommandTemplateItem = {
+  key?: string;
+  day: number;
+  title: string;
+  required?: boolean;
+  next_action?: string;
+  completion_criteria?: string;
+};
+
+export type CommandTemplate = {
+  id: string;
+  owner_id: string;
+  name: string;
+  version: number;
+  applies_to: "worship" | "course" | "event" | "newcomer";
+  items: CommandTemplateItem[];
+  is_active: boolean;
+  source_key: string | null;
+  archived_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CommandTemplateRun = {
+  id: string;
+  owner_id: string;
+  template_id: string;
+  occurrence_id: string;
+  run_key: string;
+  created_task_ids: string[];
+  created_at: string;
+};
+
+export type CommandOccurrenceException = {
+  id: string;
+  owner_id: string;
+  occurrence_id: string;
+  exception_type: "skip_generation" | "cancelled" | "date_changed";
+  reason: string;
+  prior_date: string | null;
+  new_date: string | null;
   archived_at: string | null;
   created_at: string;
   updated_at: string;
@@ -183,6 +232,9 @@ export type CommandCenterData = {
   decisions: CommandDecision[];
   resources: CommandResource[];
   inbox: CommandInboxItem[];
+  templates: CommandTemplate[];
+  templateRuns: CommandTemplateRun[];
+  occurrenceExceptions: CommandOccurrenceException[];
   weeklyReviews: CommandWeeklyReview[];
 };
 

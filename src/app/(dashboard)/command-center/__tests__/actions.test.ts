@@ -5,10 +5,14 @@ jest.mock("@/lib/auth");
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 
 import {
+  applyPreparationTemplate,
   bootstrapFallPlan,
+  cancelOccurrence,
   createInboxItem,
   createTask,
   recordFollowupResponse,
+  rescheduleOccurrence,
+  setOccurrenceTemplateSkip,
   setTodayFocus,
   startWaiting,
 } from "../actions";
@@ -115,5 +119,46 @@ describe("command center actions", () => {
     const { rpc } = setup();
     expect(await bootstrapFallPlan()).toEqual({ success: true });
     expect(rpc).toHaveBeenCalledWith("cc_bootstrap_2026_fall");
+  });
+
+  it("선택한 일정에 반복 준비 양식을 적용한다", async () => {
+    const { rpc } = setup();
+    expect(await applyPreparationTemplate("occurrence-1", form({ template_id: "template-1" }))).toEqual({
+      success: true,
+      warning: "이미 적용된 양식입니다.",
+    });
+    expect(rpc).toHaveBeenCalledWith("cc_apply_preparation_template", {
+      p_occurrence_id: "occurrence-1",
+      p_template_id: "template-1",
+    });
+  });
+
+  it("일정 변경은 새 날짜와 이유를 함께 전달한다", async () => {
+    const { rpc } = setup();
+    expect(await rescheduleOccurrence("occurrence-1", form({
+      new_date: "2026-09-20",
+      reason: "장소 일정 변경",
+    }))).toEqual({ success: true });
+    expect(rpc).toHaveBeenCalledWith("cc_reschedule_occurrence", expect.objectContaining({
+      p_new_date: "2026-09-20",
+      p_reason: "장소 일정 변경",
+    }));
+  });
+
+  it("일정 취소에는 검토 가능한 이유를 요구한다", async () => {
+    setup();
+    expect(await cancelOccurrence("occurrence-1", form({ reason: "" }))).toEqual({
+      success: false,
+      error: "취소 이유를 입력해주세요.",
+    });
+  });
+
+  it("방학 회차는 준비 생성 제외로 기록한다", async () => {
+    const { rpc } = setup();
+    expect(await setOccurrenceTemplateSkip("occurrence-1", true, form({ reason: "방학" }))).toEqual({ success: true });
+    expect(rpc).toHaveBeenCalledWith("cc_skip_occurrence_preparation", {
+      p_occurrence_id: "occurrence-1",
+      p_reason: "방학",
+    });
   });
 });

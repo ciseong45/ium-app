@@ -56,6 +56,9 @@ export async function getCommandCenterData(): Promise<CommandCenterData> {
     decisions: [],
     resources: [],
     inbox: [],
+    templates: [],
+    templateRuns: [],
+    occurrenceExceptions: [],
     weeklyReviews: [],
   };
   if (!auth.ok) return { ...empty, error: PRIVATE_ERROR };
@@ -70,6 +73,9 @@ export async function getCommandCenterData(): Promise<CommandCenterData> {
     decisions,
     resources,
     inbox,
+    templates,
+    templateRuns,
+    occurrenceExceptions,
     weeklyReviews,
   ] = await Promise.all([
     supabase.from("cc_seasons").select("*").eq("owner_id", ownerId).is("archived_at", null).order("start_date", { ascending: false }),
@@ -80,10 +86,13 @@ export async function getCommandCenterData(): Promise<CommandCenterData> {
     supabase.from("cc_decisions").select("*").eq("owner_id", ownerId).order("due_date", { ascending: true }),
     supabase.from("cc_resources").select("*").eq("owner_id", ownerId).order("updated_at", { ascending: false }),
     supabase.from("cc_inbox").select("*").eq("owner_id", ownerId).order("received_at", { ascending: false }),
+    supabase.from("cc_templates").select("*").eq("owner_id", ownerId).eq("is_active", true).is("archived_at", null).order("name", { ascending: true }),
+    supabase.from("cc_template_runs").select("*").eq("owner_id", ownerId).order("created_at", { ascending: false }),
+    supabase.from("cc_occurrence_exceptions").select("*").eq("owner_id", ownerId).is("archived_at", null).order("created_at", { ascending: false }),
     supabase.from("cc_weekly_reviews").select("*").eq("owner_id", ownerId).order("week_start", { ascending: false }).limit(8),
   ]);
 
-  const results = [seasons, ministries, occurrences, tasks, followups, decisions, resources, inbox, weeklyReviews];
+  const results = [seasons, ministries, occurrences, tasks, followups, decisions, resources, inbox, templates, templateRuns, occurrenceExceptions, weeklyReviews];
   const firstError = results.find((result) => result.error)?.error;
   if (firstError) {
     return {
@@ -104,6 +113,9 @@ export async function getCommandCenterData(): Promise<CommandCenterData> {
     decisions: (decisions.data ?? []) as CommandCenterData["decisions"],
     resources: (resources.data ?? []) as CommandCenterData["resources"],
     inbox: (inbox.data ?? []) as CommandCenterData["inbox"],
+    templates: (templates.data ?? []) as CommandCenterData["templates"],
+    templateRuns: (templateRuns.data ?? []) as CommandCenterData["templateRuns"],
+    occurrenceExceptions: (occurrenceExceptions.data ?? []) as CommandCenterData["occurrenceExceptions"],
     weeklyReviews: (weeklyReviews.data ?? []) as CommandCenterData["weeklyReviews"],
   };
 }
@@ -239,6 +251,83 @@ export async function createOccurrence(formData: FormData): Promise<ActionResult
     sequence_label: nullable(formData, "sequence_label"),
   });
   if (error) return { success: false, error: "일정 저장에 실패했습니다." };
+  refresh();
+  return { success: true };
+}
+
+export async function applyPreparationTemplate(occurrenceId: string, formData: FormData): Promise<ActionResult> {
+  const auth = await commandCenterAuth();
+  if (!auth.ok) return auth.result;
+  const templateId = value(formData, "template_id");
+  if (!templateId) return { success: false, error: "적용할 반복 준비 양식을 선택해주세요." };
+
+  const { data, error } = await auth.supabase.rpc("cc_apply_preparation_template", {
+    p_occurrence_id: occurrenceId,
+    p_template_id: templateId,
+  });
+  if (error) return { success: false, error: error.message || "반복 준비 업무를 만들지 못했습니다." };
+  refresh();
+  return { success: true, warning: Number(data ?? 0) === 0 ? "이미 적용된 양식입니다." : undefined };
+}
+
+export async function rescheduleOccurrence(occurrenceId: string, formData: FormData): Promise<ActionResult> {
+  const auth = await commandCenterAuth();
+  if (!auth.ok) return auth.result;
+  const newDate = value(formData, "new_date");
+  const reason = value(formData, "reason");
+  if (!newDate || !reason) return { success: false, error: "새 날짜와 변경 이유를 입력해주세요." };
+
+  const { error } = await auth.supabase.rpc("cc_reschedule_occurrence", {
+    p_occurrence_id: occurrenceId,
+    p_new_date: newDate,
+    p_reason: reason,
+  });
+  if (error) return { success: false, error: error.message || "일정 날짜를 변경하지 못했습니다." };
+  refresh();
+  return { success: true };
+}
+
+export async function cancelOccurrence(occurrenceId: string, formData: FormData): Promise<ActionResult> {
+  const auth = await commandCenterAuth();
+  if (!auth.ok) return auth.result;
+  const reason = value(formData, "reason");
+  if (!reason) return { success: false, error: "취소 이유를 입력해주세요." };
+
+  const { error } = await auth.supabase.rpc("cc_cancel_occurrence", {
+    p_occurrence_id: occurrenceId,
+    p_reason: reason,
+  });
+  if (error) return { success: false, error: error.message || "일정을 취소하지 못했습니다." };
+  refresh();
+  return { success: true };
+}
+
+export async function setOccurrenceTemplateSkip(
+  occurrenceId: string,
+  skipped: boolean,
+  formData?: FormData
+): Promise<ActionResult> {
+  const auth = await commandCenterAuth();
+  if (!auth.ok) return auth.result;
+
+  if (skipped) {
+    const reason = formData ? value(formData, "reason") : "";
+    if (!reason) return { success: false, error: "생성 제외 이유를 입력해주세요." };
+    const { error } = await auth.supabase.rpc("cc_skip_occurrence_preparation", {
+      p_occurrence_id: occurrenceId,
+      p_reason: reason,
+    });
+    if (error) return { success: false, error: error.message || "준비 생성 제외를 저장하지 못했습니다." };
+  } else {
+    const { error } = await auth.supabase
+      .from("cc_occurrence_exceptions")
+      .update({ archived_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+      .eq("owner_id", auth.ownerId)
+      .eq("occurrence_id", occurrenceId)
+      .eq("exception_type", "skip_generation")
+      .is("archived_at", null);
+    if (error) return { success: false, error: "준비 생성 제외를 해제하지 못했습니다." };
+  }
   refresh();
   return { success: true };
 }

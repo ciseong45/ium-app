@@ -2,6 +2,7 @@ import {
   buildInboxDedupeKey,
   canTransitionTask,
   getPreparationStatus,
+  getRescheduleImpact,
   sortOperationalTasks,
   todayInTimeZone,
 } from "@/lib/command-center";
@@ -25,6 +26,9 @@ function task(overrides: Partial<CommandTask> = {}): CommandTask {
     ministry_id: null,
     occurrence_id: null,
     source_inbox_id: null,
+    template_id: null,
+    template_item_key: null,
+    relative_due_day: null,
     today_focus_order: null,
     completion_evidence: null,
     started_at: null,
@@ -94,5 +98,22 @@ describe("command center domain rules", () => {
       "2026-09-08"
     );
     expect(sorted.map((item) => item.id)).toEqual(["overdue", "today", "focus"]);
+  });
+
+  it("일정 변경 시 완료 업무와 수동 기한은 유지하고 자동 기한만 이동한다", () => {
+    const impact = getRescheduleImpact([
+      task({ id: "shift", template_id: "template-1", relative_due_day: -2, due_date: "2026-09-11" }),
+      task({ id: "past", template_id: "template-1", relative_due_day: -7, due_date: "2026-09-06" }),
+      task({ id: "done", template_id: "template-1", relative_due_day: -4, status: "completed" }),
+      task({ id: "manual", template_id: "template-1", relative_due_day: -3, due_date_is_manual: true }),
+      task({ id: "unrelated" }),
+    ], "2026-09-12", "2026-09-08");
+
+    expect(impact).toEqual({
+      shifted: 2,
+      preservedCompleted: 1,
+      preservedManual: 1,
+      needsReschedule: 1,
+    });
   });
 });
