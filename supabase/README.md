@@ -24,6 +24,10 @@
 | 16 | `security-phase1.sql` | 보안 강화 1단계 (익명 접근 제한) |
 | 17 | `security-phase2.sql` | 보안 강화 2단계 (JWT 기반 RLS) |
 
+### 목양 협업 기능
+
+기존 운영 DB에는 `phase24-pastoral-care-foundation.sql`을 현재 마이그레이션 뒤에 적용합니다. 이 파일은 열린 돌봄, 연락 기록, 다음 행동, 담당자와 공개 범위를 위한 테이블·RLS·기록 함수를 추가합니다.
+
 ## 적용 방법
 
 ```bash

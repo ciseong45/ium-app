@@ -29,7 +29,7 @@ export default function SharedDashboard({ data, today, anchor, view, canManage }
   return <div className="space-y-6">
     <header>
       <p className="text-xs tracking-widest text-stone-500">IUM CHAPEL · 함께 준비하는 사역</p>
-      <h1 className="mt-2 font-serif text-3xl text-stone-800">사역 대시보드</h1>
+      <h2 className="mt-2 font-serif text-3xl text-stone-800">공동 사역</h2>
       <p className="mt-2 text-sm text-stone-500">{dateLabel(today)} · 모든 날짜와 시간은 뉴욕 기준입니다.</p>
     </header>
     {data.errors.length > 0 && <p role="alert" className="rounded-lg bg-amber-50 p-4 text-sm text-amber-900">{data.errors.join(", ")} 정보를 불러오지 못했습니다. 일부 일정이나 자료가 보이지 않을 수 있습니다. 잠시 후 새로고침해주세요.</p>}

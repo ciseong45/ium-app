@@ -4,6 +4,8 @@ import SharedDashboard from "./SharedDashboard";
 import { getSharedDashboard } from "./shared-dashboard-actions";
 import { addDays, todayInTimeZone } from "@/lib/command-center";
 import { validDate } from "@/lib/shared-calendar";
+import { getCareDashboard } from "./care/actions";
+import CareDashboardPanel from "./care/CareDashboardPanel";
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ date?: string; view?: string }> }) {
   const { supabase, role, linkedMemberId } = await requireAuth();
@@ -12,6 +14,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   const anchor = params.date && validDate(params.date) ? params.date : today;
   const view = params.view === "month" ? "month" : "week";
   const sharedPromise = getSharedDashboard(today, anchor);
+  const carePromise = getCareDashboard(today);
   const weekDate = addDays(today, -new Date(today + "T12:00:00Z").getUTCDay());
 
   // 병렬로 모든 통계 데이터 가져오기
@@ -93,7 +96,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
   // 찬양팀 수
   const worshipMemberCount = worshipMembersRes.count ?? 0;
 
-  const shared = await sharedPromise;
+  const [shared, care] = await Promise.all([sharedPromise, carePromise]);
 
   // 내 순/다락방 정보 (순장, 다락방장용)
   type MyGroupInfo = {
@@ -167,7 +170,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
   return (
     <div className="space-y-12 animate-fade-in">
-      <SharedDashboard key={anchor + view} data={shared} today={today} anchor={anchor} view={view} canManage={role === "admin"} />
+      <CareDashboardPanel data={care} today={today} role={role} />
 
       {/* 내 순 바로가기 (순장/다락방장) */}
       {myGroups.length > 0 && (
@@ -197,6 +200,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           </div>
         </section>
       )}
+
+      <SharedDashboard key={anchor + view} data={shared} today={today} anchor={anchor} view={view} canManage={role === "admin"} />
 
       {/* 통계 카드 */}
       <section>

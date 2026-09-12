@@ -12,6 +12,8 @@ import {
   getSubStatus,
 } from "@/types/member";
 import { useRole } from "@/lib/RoleContext";
+import type { MemberCareData } from "@/types/care";
+import MemberCareSection from "../../care/MemberCareSection";
 
 type StatusLogEntry = {
   id: number;
@@ -33,6 +35,7 @@ export default function MemberDetail({
   groupInfo,
   newFamilyEntry,
   ministryTeams,
+  care,
 }: {
   member: Member;
   statusLog: StatusLogEntry[];
@@ -40,6 +43,7 @@ export default function MemberDetail({
   groupInfo: MemberGroupInfo | null;
   newFamilyEntry?: NewFamilyInfo;
   ministryTeams?: MinistryTeam[];
+  care: MemberCareData;
 }) {
   const router = useRouter();
   const role = useRole();
@@ -221,6 +225,12 @@ export default function MemberDetail({
           )}
         </div>
       </div>
+
+      <MemberCareSection
+        memberId={member.id}
+        memberName={`${member.last_name}${member.first_name}`}
+        data={care}
+      />
 
       {/* ========== 순 & 사역팀 카드 ========== */}
       {(groupInfo || (ministryTeams && ministryTeams.length > 0)) && (

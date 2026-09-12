@@ -12,14 +12,8 @@ const ROLE_LABELS = {
   pending: "승인 대기",
 } as const;
 
-const ROLE_COLORS: Record<string, string> = {
-  admin: "text-[#1a1a1a]",
-  upper_room_leader: "text-[#1a1a1a]",
-  group_leader: "text-[#1a1a1a]",
-};
-
 const PAGE_TITLES: Record<string, string> = {
-  "/": "Dashboard",
+  "/": "Pastoral Care",
   "/members": "Members",
   "/small-groups": "Small Groups",
   "/attendance": "Attendance",
@@ -30,7 +24,7 @@ const PAGE_TITLES: Record<string, string> = {
 };
 
 const PAGE_SUBTITLES: Record<string, string> = {
-  "/": "대시보드",
+  "/": "이번 주 목양",
   "/members": "멤버 관리",
   "/small-groups": "순관리",
   "/attendance": "출석 관리",

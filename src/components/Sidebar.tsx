@@ -103,27 +103,26 @@ type MenuSection = {
 
 const menuSections: MenuSection[] = [
   {
-    title: "총괄",
+    title: "함께 돌보기",
     items: [
-      { href: "/", label: "대시보드", icon: HomeIcon },
-      { href: "/command-center", label: "개인 총괄", icon: ClipboardIcon, adminOnly: true },
-      { href: "/weekly", label: "주간 자료", icon: DocumentTextIcon },
-      { href: "/events", label: "행사", icon: CalendarIcon },
+      { href: "/", label: "이번 주 목양", icon: HomeIcon },
+      { href: "/members", label: "성도", icon: UsersIcon },
+      { href: "/small-groups", label: "담당 공동체", icon: ClipboardIcon },
+      { href: "/attendance", label: "출석", icon: CheckCircleIcon },
     ],
   },
   {
-    title: "목양",
+    title: "양육과 연결",
     items: [
-      { href: "/members", label: "멤버 관리", icon: UsersIcon },
-      { href: "/small-groups", label: "순관리", icon: ClipboardIcon },
-      { href: "/attendance", label: "출석 관리", icon: CheckCircleIcon },
-      { href: "/new-family", label: "새가족", icon: UserPlusIcon },
+      { href: "/new-family", label: "방문·새가족", icon: UserPlusIcon },
       { href: "/one-to-one", label: "1:1 양육", icon: BookOpenIcon },
     ],
   },
   {
-    title: "예배",
+    title: "공동 사역",
     items: [
+      { href: "/weekly", label: "주간 자료", icon: DocumentTextIcon },
+      { href: "/events", label: "행사", icon: CalendarIcon },
       { href: "/worship/members", label: "예배팀 관리", icon: UsersIcon },
       { href: "/worship/planning", label: "예배기획", icon: MusicNoteIcon },
     ],
@@ -206,9 +205,21 @@ export default function Sidebar({
           ))}
         </nav>
 
-        {/* 설정 (하단 분리) */}
+        {/* 관리자 도구 (하단 분리) */}
         {role === "admin" && (
-          <div className="border-t border-white/[0.06] px-3 py-3">
+          <div className="space-y-0.5 border-t border-white/[0.06] px-3 py-3">
+            <Link
+              href="/command-center"
+              onClick={onClose}
+              className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] transition-all duration-300 ${
+                pathname.startsWith("/command-center")
+                  ? "bg-white/[0.07] text-white/90 font-medium"
+                  : "text-white/40 hover:bg-white/[0.03] hover:text-white/70"
+              }`}
+            >
+              <ClipboardIcon className="h-[17px] w-[17px] shrink-0 text-white/25 group-hover:text-white/50" />
+              개인 총괄
+            </Link>
             <Link
               href="/settings"
               onClick={onClose}
