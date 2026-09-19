@@ -28,7 +28,7 @@ const PAGE_SUBTITLES: Record<string, string> = {
   "/members": "멤버 관리",
   "/small-groups": "순관리",
   "/attendance": "출석 관리",
-  "/new-family": "새가족",
+  "/new-family": "방문·새가족",
   "/one-to-one": "1:1 양육",
   "/command-center": "개인 총괄",
   "/settings": "설정",

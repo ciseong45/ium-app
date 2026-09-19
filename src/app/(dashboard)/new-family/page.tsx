@@ -1,4 +1,10 @@
-import { getNewFamilies, getActiveMembers, getSeasons } from "./actions";
+import {
+  getNewFamilies,
+  getActiveMembers,
+  getSeasons,
+  getCourses,
+} from "./actions";
+import { requireAuth } from "@/lib/auth";
 import NewFamilyView from "./NewFamilyView";
 
 export default async function NewFamilyPage({
@@ -9,15 +15,19 @@ export default async function NewFamilyPage({
   const params = await searchParams;
   const seasonId = params.season ? Number(params.season) : undefined;
 
-  const [families, members, seasons] = await Promise.all([
-    getNewFamilies(seasonId),
+  const { linkedMemberId } = await requireAuth();
+  const [families, members, seasons, courses] = await Promise.all([
+    getNewFamilies(),
     getActiveMembers(),
     getSeasons(),
+    getCourses(),
   ]);
 
   return (
     <NewFamilyView
       families={families}
+      courses={courses}
+      myMemberId={linkedMemberId}
       members={members}
       seasons={seasons}
       currentSeasonId={seasonId}

@@ -310,7 +310,7 @@ export default function MemberDetail({
             </span>
           </div>
           <p className="mt-2 text-xs text-[#6b9e8d]">
-            순, 관계, 섬김, 목양담당 중 실제 연결을 확인한 뒤 새가족 화면에서 연결 완료로 정리해주세요.
+            방문·새가족 화면에서 교육 이수와 정식 등록 확정 여부를 확인해주세요. 순 이동과 관계 연결은 별도로 관리합니다.
           </p>
         </div>
       )}

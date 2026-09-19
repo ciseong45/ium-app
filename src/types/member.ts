@@ -1,4 +1,4 @@
-export type MemberStatus = "active" | "attending" | "inactive" | "removed" | "on_leave" | "new_family" | "adjusting";
+export type MemberStatus = "visitor" | "active" | "attending" | "inactive" | "removed" | "on_leave" | "new_family" | "adjusting";
 
 export type Member = {
   id: number;
@@ -53,6 +53,7 @@ export type MemberWithGroup = Member & {
 };
 
 export const STATUS_LABELS: Record<MemberStatus, string> = {
+  visitor: "방문",
   active: "재적",
   attending: "출석",
   inactive: "미출석",
@@ -63,6 +64,7 @@ export const STATUS_LABELS: Record<MemberStatus, string> = {
 };
 
 export const STATUS_COLORS: Record<MemberStatus, string> = {
+  visitor: "bg-amber-50 text-amber-800",
   active: "bg-[#edf5ed] text-[#3d6b3d]",
   attending: "bg-[var(--color-warm-bg)] text-[var(--color-warm-text)]",
   inactive: "bg-[#f5f0e0] text-[#8a7a56]",
@@ -76,6 +78,7 @@ export const STATUS_COLORS: Record<MemberStatus, string> = {
 
 // 인라인 편집 드롭다운용 메인 상태 옵션
 export const MAIN_STATUS_OPTIONS: { value: MemberStatus; label: string }[] = [
+  { value: "visitor", label: "방문" },
   { value: "active", label: "재적" },
   { value: "removed", label: "제적" },
   { value: "on_leave", label: "휴적" },
@@ -85,6 +88,8 @@ export const MAIN_STATUS_OPTIONS: { value: MemberStatus; label: string }[] = [
 // 상태 → 메인상태 표시용
 export function getMainStatus(status: MemberStatus): { label: string; color: string } {
   switch (status) {
+    case "visitor":
+      return { label: "방문", color: STATUS_COLORS.visitor };
     case "removed":
       return { label: "제적", color: STATUS_COLORS.removed };
     case "on_leave":

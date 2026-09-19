@@ -1,608 +1,643 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useMemo, useState } from "react";
 import {
   createNewFamily,
-  updateStep,
-  completeConnection,
-  deleteNewFamily,
+  createCourse,
+  updateEducation,
+  confirmRegistration,
+  updateAssignee,
   restoreNewFamily,
 } from "./actions";
-import type { NewFamilyEntry, Season } from "@/types/new-family";
+import type {
+  EducationCourse,
+  EducationStatus,
+  NewFamilyEntry,
+  Season,
+} from "@/types/new-family";
+import type { ActionResult } from "@/lib/validations";
+import {
+  DEFAULT_FILTERS,
+  filterFamilies,
+  educationState,
+  registrationState,
+  EDUCATION_LABELS,
+  REGISTRATION_LABELS,
+  type FamilyFilters,
+} from "@/lib/new-family-workflow";
 import { useRole } from "@/lib/RoleContext";
-import FilterPill from "@/components/ui/FilterPill";
-import EmptyState from "@/components/ui/EmptyState";
 import { INPUT_CLASS } from "@/components/ui/constants";
 
-const STEPS = [
-  { step: 1, label: "1주차 방문", color: "bg-[var(--color-warm-bg)] text-[var(--color-warm-text)]" },
-  { step: 2, label: "2주차 교육", color: "bg-[#f0f4ed] text-[#4a6741]" },
-  { step: 3, label: "3주차 교육", color: "bg-[#edf5ed] text-[#3d6b3d]" },
-];
-
 type SimpleMember = { id: number; last_name: string; first_name: string };
+const QUICK_FILTERS: { key: FamilyFilters["quick"]; label: string }[] = [
+  { key: "unregistered", label: "등록 전 명단" },
+  { key: "all", label: "전체" },
+  { key: "uneducated", label: "교육 미이수" },
+  { key: "pending", label: "등록 확정 대기" },
+  { key: "registered", label: "정식 등록 완료" },
+  { key: "archived", label: "보관" },
+];
+const BUTTON =
+  "rounded-lg bg-[#1a1a1a] px-4 py-2 text-sm text-white disabled:opacity-40";
 
 export default function NewFamilyView({
   families,
   members,
   seasons,
+  courses = [],
   currentSeasonId,
+  myMemberId = null,
 }: {
   families: NewFamilyEntry[];
   members: SimpleMember[];
   seasons: Season[];
+  courses?: EducationCourse[];
   currentSeasonId?: number;
+  myMemberId?: number | null;
 }) {
   const router = useRouter();
-  const role = useRole();
-  const [showForm, setShowForm] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [stepFilter, setStepFilter] = useState<number | null>(null);
-  const [showDroppedOut, setShowDroppedOut] = useState(false);
-  const [showCompleted, setShowCompleted] = useState(false);
-  const [showConnected, setShowConnected] = useState(false);
-
-  const activeSeason = seasons.find((s) => s.is_active);
-
-  const handleSeasonFilter = (seasonId: string) => {
-    if (seasonId === "all") {
-      router.push("/new-family");
-    } else {
-      router.push(`/new-family?season=${seasonId}`);
-    }
-  };
-
-  const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setLoading(true);
-    const result = await createNewFamily(new FormData(e.currentTarget));
-    if (result.success) {
-      setShowForm(false);
-      router.refresh();
-    } else {
-      alert(result.error);
-    }
-    setLoading(false);
-  };
-
-  const handleStepChange = async (id: number, step: number) => {
-    if (step === 3) {
-      if (!confirm("3주차 교육을 완료하면 '연결 진행 중' 상태로 변경됩니다. 목양담당이 연결 완료를 확인하면 성도로 정리됩니다. 진행하시겠습니까?")) return;
-    }
-    const result = await updateStep(id, step);
-    if (result.success) {
-      router.refresh();
-    } else {
-      alert(result.error);
-    }
-  };
-
-  const handleCompleteConnection = async (id: number, fullName: string) => {
-    if (!confirm(`${fullName}님의 공동체 연결을 완료 처리하시겠습니까?`)) return;
-    const result = await completeConnection(id);
-    if (result.success) {
-      router.refresh();
-    } else {
-      alert(result.error);
-    }
-  };
-
-  const handleDelete = async (id: number, fullName: string) => {
-    if (!confirm(`${fullName}님을 새가족 목록에서 삭제하시겠습니까?`)) return;
-    const result = await deleteNewFamily(id);
-    if (result.success) {
-      router.refresh();
-    } else {
-      alert(result.error);
-    }
-  };
-
-  const handleRestore = async (id: number, fullName: string) => {
-    if (!confirm(`${fullName}님을 새가족 과정으로 복귀시키겠습니까? (1주차부터 다시 시작)`)) return;
-    const result = await restoreNewFamily(id);
-    if (result.success) {
-      router.refresh();
-    } else {
-      alert(result.error);
-    }
-  };
-
-  // 진행 중 / 연결 필요 / 연결 완료 / 이탈 분리
-  const inProgressFamilies = useMemo(() => families.filter((f) => !f.dropped_out && f.step < 3), [families]);
-  const connectionNeededFamilies = useMemo(
-    () => families.filter((f) => !f.dropped_out && f.step === 3 && f.member.status === "adjusting"),
-    [families]
+  const canEdit = useRole() !== "group_leader";
+  const [filters, setFilters] = useState<FamilyFilters>({
+    ...DEFAULT_FILTERS,
+    visitSeason: currentSeasonId ? String(currentSeasonId) : "",
+  });
+  const [panel, setPanel] = useState<"visitor" | "course" | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const filtered = useMemo(
+    () => filterFamilies(families, filters, myMemberId),
+    [families, filters, myMemberId],
   );
-  const connectedFamilies = useMemo(
-    () => families.filter((f) => !f.dropped_out && f.step === 3 && f.member.status !== "adjusting"),
-    [families]
-  );
-  const droppedOutFamilies = useMemo(() => families.filter((f) => f.dropped_out), [families]);
-
-  // 단계별 통계 (진행 중만)
-  const stepCounts = useMemo(() => STEPS.filter((s) => s.step < 3).map((s) => ({
-    ...s,
-    count: inProgressFamilies.filter((f) => f.step === s.step).length,
-  })), [inProgressFamilies]);
-
-  // 2주 이상 단계 변화 없는 새가족 (진행 중만)
-  const stalled = useMemo(() => {
-    const twoWeeksAgo = new Date();
-    twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-    return inProgressFamilies.filter(
-      (f) => new Date(f.step_updated_at) < twoWeeksAgo
-    );
-  }, [inProgressFamilies]);
-
+  const assignees = useMemo(() => {
+    const all = new Map(members.map((m) => [m.id, m]));
+    families.forEach((f) => {
+      if (f.assignee) all.set(f.assignee.id, f.assignee);
+    });
+    return Array.from(all.values());
+  }, [members, families]);
+  const setFilter = (key: keyof FamilyFilters, value: string) =>
+    setFilters((old) => ({ ...old, [key]: value }));
+  async function run(action: () => Promise<ActionResult>, success: string) {
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const result = await action();
+      if (!result.success) {
+        setError(result.error);
+        return;
+      }
+      setMessage(success);
+      setPanel(null);
+      router.refresh();
+    } catch {
+      setError("저장하지 못했습니다. 연결 상태를 확인하고 다시 시도해주세요.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  const currentSeason = seasons.find((s) => s.is_active);
   return (
-    <div>
-      <div className="flex items-center justify-between">
-        <h2 className="font-serif text-2xl font-light tracking-tight text-[var(--color-warm-text)]">새가족</h2>
-        {role !== "group_leader" && (
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="rounded-lg bg-[#1a1a1a] px-5 py-2.5 text-sm font-medium text-white transition-all duration-300 hover:bg-[#333]"
-          >
-            + 새가족 등록
-          </button>
-        )}
-      </div>
-
-      {/* 시즌 필터 */}
-      {seasons.length > 0 && (
-        <div className="mt-4 flex gap-1.5 overflow-x-auto pb-1">
-          <FilterPill
-            label="전체"
-            active={!currentSeasonId}
-            onClick={() => handleSeasonFilter("all")}
-          />
-          {seasons.map((season) => (
-            <FilterPill
-              key={season.id}
-              label={`${season.name}${season.is_active ? " (현재)" : ""}`}
-              active={currentSeasonId === season.id}
-              onClick={() => handleSeasonFilter(String(season.id))}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* 단계별 요약 (클릭 시 필터) */}
-      <div className="mt-4 flex gap-3 overflow-x-auto pb-2">
-        {stepCounts.map((s) => (
-          <button
-            key={s.step}
-            onClick={() => setStepFilter(stepFilter === s.step ? null : s.step)}
-            className={`flex min-w-[100px] flex-col items-center rounded-xl border p-5 shadow-[var(--shadow-card)] transition-all duration-300 hover:shadow-[var(--shadow-card-hover)] ${
-              stepFilter === s.step
-                ? "border-[var(--color-warm-text)] bg-white ring-1 ring-[var(--color-warm-text)]/10"
-                : "border-[var(--color-warm-border)] bg-white hover:border-[var(--color-warm-text)]"
-            }`}
-          >
-            <span className="text-xs text-[var(--color-warm-muted)]">{s.label}</span>
-            <span className="mt-1 text-2xl font-bold text-[var(--color-warm-text)]">
-              {s.count}
-            </span>
-          </button>
-        ))}
-        {connectionNeededFamilies.length > 0 && (
-          <div className="flex min-w-[100px] flex-col items-center rounded-xl border border-[#c8e6c9] bg-[#e8f5e9] p-5">
-            <span className="text-xs text-[#3d6b3d]">연결 필요</span>
-            <span className="mt-1 text-2xl font-bold text-[#2e7d32]">
-              {connectionNeededFamilies.length}
-            </span>
-          </div>
-        )}
-        {connectedFamilies.length > 0 && (
-          <div className="flex min-w-[100px] flex-col items-center rounded-xl border border-[var(--color-warm-border)] bg-white p-5">
-            <span className="text-xs text-[var(--color-warm-muted)]">연결 완료</span>
-            <span className="mt-1 text-2xl font-bold text-[var(--color-warm-text)]">
-              {connectedFamilies.length}
-            </span>
-          </div>
-        )}
-        {droppedOutFamilies.length > 0 && (
-          <div className="flex min-w-[100px] flex-col items-center rounded-xl border border-red-200 bg-red-50 p-5">
-            <span className="text-xs text-red-400">이탈</span>
-            <span className="mt-1 text-2xl font-bold text-red-500">
-              {droppedOutFamilies.length}
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* 장기 미진행 경고 */}
-      {stalled.length > 0 && (
-        <div className="mt-4 rounded-xl border border-[#e5dfd3] bg-[#fdfbf5] p-4">
-          <h3 className="text-sm font-semibold text-[#8a7a56]">
-            2주 이상 단계 변화 없음
-          </h3>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {stalled.map((f) => (
-              <span
-                key={f.id}
-                className="rounded-full bg-[#f5f0e0] px-3 py-1 text-sm text-[#8a7a56]"
-              >
-                {f.member.last_name}{f.member.first_name}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* 활성 시즌 없음 경고 */}
-      {!activeSeason && (
-        <div className="mt-4 rounded-xl border border-[var(--color-warm-border)] bg-[var(--color-warm-bg)] p-4">
-          <p className="text-sm text-[var(--color-warm-muted)]">
-            활성 시즌이 없습니다. 순관리에서 시즌을 생성하고 활성화해주세요.
+    <div className="space-y-6">
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 className="font-serif text-2xl text-[var(--color-warm-text)]">
+            방문·새가족
+          </h2>
+          <p className="mt-2 text-sm text-[var(--color-warm-muted)]">
+            방문부터 새가족순, 교육 이수, 담당자의 정식 등록 확정까지 함께
+            관리합니다.
           </p>
         </div>
-      )}
-
-      {/* 등록 폼 */}
-      {showForm && (
-        <form
-          onSubmit={handleCreate}
-          className="mt-4 rounded-xl border border-[var(--color-warm-border)] bg-white p-6 shadow-[var(--shadow-card)] space-y-3"
+        {canEdit && (
+          <div className="flex gap-2">
+            <button
+              className={BUTTON}
+              onClick={() => setPanel(panel === "visitor" ? null : "visitor")}
+            >
+              방문 등록
+            </button>
+            <button
+              className={BUTTON}
+              onClick={() => setPanel(panel === "course" ? null : "course")}
+            >
+              교육 개설
+            </button>
+          </div>
+        )}
+      </header>
+      {error && (
+        <p
+          role="alert"
+          className="rounded-lg bg-red-50 p-3 text-sm text-red-700"
         >
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <label className="block text-sm font-medium text-[var(--color-warm-text)]">
-                성 <span className="text-red-500">*</span>
-              </label>
+          {error}
+        </p>
+      )}
+      {message && (
+        <p
+          role="status"
+          className="rounded-lg bg-green-50 p-3 text-sm text-green-800"
+        >
+          {message}
+        </p>
+      )}
+      {panel === "visitor" && (
+        <form
+          className="rounded-xl border bg-white p-5"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const data = new FormData(e.currentTarget);
+            void run(
+              () => createNewFamily(data),
+              "방문자로 등록하고 새가족순에 추가했습니다.",
+            );
+          }}
+        >
+          <h3 className="mb-4 font-semibold">첫 방문 등록</h3>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <label className="text-sm">
+              성
               <input
                 name="last_name"
                 required
+                maxLength={10}
                 className={INPUT_CLASS}
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-[var(--color-warm-text)]">
-                이름 <span className="text-red-500">*</span>
-              </label>
+            </label>
+            <label className="text-sm">
+              이름
               <input
                 name="first_name"
                 required
+                maxLength={40}
                 className={INPUT_CLASS}
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-[var(--color-warm-text)]">
-                전화번호
-              </label>
+            </label>
+            <label className="text-sm">
+              연락처
               <input
                 name="phone"
                 type="tel"
-                placeholder="010-0000-0000"
+                maxLength={20}
                 className={INPUT_CLASS}
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-[var(--color-warm-text)]">
-                첫 방문일 <span className="text-red-500">*</span>
-              </label>
+            </label>
+            <label className="text-sm">
+              첫 방문일
               <input
                 name="first_visit"
                 type="date"
                 required
-                defaultValue={new Date().toISOString().split("T")[0]}
                 className={INPUT_CLASS}
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-[var(--color-warm-text)]">
-                담당자
-              </label>
-              <select
-                name="assigned_to"
-                className={INPUT_CLASS}
-              >
-                <option value="">선택 안 함</option>
+            </label>
+            <label className="text-sm">
+              담당자
+              <select name="assigned_to" className={INPUT_CLASS}>
+                <option value="">미지정</option>
                 {members.map((m) => (
                   <option key={m.id} value={m.id}>
-                    {m.last_name}{m.first_name}
+                    {m.last_name}
+                    {m.first_name}
                   </option>
                 ))}
               </select>
-            </div>
+            </label>
           </div>
-          <div className="flex gap-2">
-            <button
-              type="submit"
-              disabled={loading}
-              className="rounded-lg bg-[#1a1a1a] px-5 py-2.5 text-sm font-medium text-white transition-all duration-300 hover:bg-[#333] disabled:opacity-50"
-            >
-              {loading ? "등록 중..." : "등록"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowForm(false)}
-              className="rounded-lg border border-[var(--color-warm-border)] bg-white px-5 py-2.5 text-sm font-medium text-[var(--color-warm-text)] transition-all duration-300 hover:border-[var(--color-warm-text)]"
-            >
-              취소
-            </button>
-          </div>
+          <p className="my-3 text-sm text-stone-500">
+            현재 학기의 새가족순에 소속됩니다. 정식 멤버 등록은 교육 이수 후
+            담당자가 확정합니다.
+          </p>
+          <button className={BUTTON} disabled={busy || !currentSeason}>
+            방문 등록 저장
+          </button>
+          {!currentSeason && (
+            <p role="alert" className="mt-2 text-sm text-red-700">
+              순 관리에서 현재 학기를 먼저 설정해주세요.
+            </p>
+          )}
         </form>
       )}
-
-      {/* 진행 중 새가족 목록 */}
-      {inProgressFamilies.length === 0 && connectionNeededFamilies.length === 0 && connectedFamilies.length === 0 && droppedOutFamilies.length === 0 ? (
-        <EmptyState message="등록된 새가족이 없습니다." />
-      ) : (
-        <div className="mt-6 space-y-3">
-          {inProgressFamilies
-            .filter((f) => stepFilter === null || f.step === stepFilter)
-            .map((family) => (
-            <div
-              key={family.id}
-              className="hover-lift rounded-xl border border-[var(--color-warm-border)] bg-white p-5 shadow-[var(--shadow-card)] transition-all duration-300 hover:shadow-[var(--shadow-card-hover)]"
+      {panel === "course" && (
+        <form
+          className="rounded-xl border bg-white p-5"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const data = new FormData(e.currentTarget);
+            void run(
+              () => createCourse(data),
+              "교육을 개설했습니다. 명단에서 참여자를 지정해주세요.",
+            );
+          }}
+        >
+          <h3 className="mb-4 font-semibold">새가족교육 개설</h3>
+          <div className="mb-4 grid gap-3 sm:grid-cols-3">
+            <label className="text-sm">
+              교육 학기
+              <select
+                name="season_id"
+                required
+                defaultValue={currentSeason?.id ?? ""}
+                className={INPUT_CLASS}
+              >
+                <option value="">학기 선택</option>
+                {seasons.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-sm">
+              교육 이름
+              <input
+                name="name"
+                required
+                maxLength={80}
+                placeholder="예: 가을학기 1차 새가족교육"
+                className={INPUT_CLASS}
+              />
+            </label>
+            <label className="text-sm">
+              교육 시작일
+              <input
+                name="starts_on"
+                required
+                type="date"
+                className={INPUT_CLASS}
+              />
+            </label>
+          </div>
+          <button className={BUTTON} disabled={busy}>
+            교육 저장
+          </button>
+        </form>
+      )}
+      <nav aria-label="빠른 명단 필터" className="flex flex-wrap gap-2">
+        {QUICK_FILTERS.map((q) => (
+          <button
+            key={q.key}
+            aria-pressed={filters.quick === q.key}
+            onClick={() =>
+              setFilters((old) => ({ ...old, quick: q.key, registration: "" }))
+            }
+            className={`rounded-xl border px-4 py-3 text-sm ${filters.quick === q.key ? "border-stone-800 bg-stone-800 text-white" : "bg-white text-stone-600"}`}
+          >
+            {q.label}{" "}
+            <span className="ml-2 font-semibold">
+              {
+                filterFamilies(
+                  families,
+                  { ...filters, quick: q.key, registration: "" },
+                  myMemberId,
+                ).length
+              }
+            </span>
+          </button>
+        ))}
+      </nav>
+      <section
+        aria-label="상세 필터"
+        className="rounded-xl border border-stone-200 bg-white p-4"
+      >
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <label className="text-xs text-stone-600">
+            이름·연락처 검색
+            <input
+              value={filters.search}
+              onChange={(e) => setFilter("search", e.target.value)}
+              placeholder="이름 또는 연락처"
+              className={INPUT_CLASS}
+            />
+          </label>
+          <label className="text-xs text-stone-600">
+            방문 학기
+            <select
+              value={filters.visitSeason}
+              onChange={(e) => setFilter("visitSeason", e.target.value)}
+              className={INPUT_CLASS}
             >
-              <div className="flex items-start justify-between">
+              <option value="">전체 학기</option>
+              {seasons.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                  {s.is_active ? " (현재)" : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-xs text-stone-600">
+            교육 차수
+            <select
+              value={filters.course}
+              onChange={(e) => setFilter("course", e.target.value)}
+              className={INPUT_CLASS}
+            >
+              <option value="">전체 교육</option>
+              {courses.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {seasons.find((s) => s.id === c.season_id)?.name} · {c.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-xs text-stone-600">
+            교육 상태
+            <select
+              value={filters.education}
+              onChange={(e) => setFilter("education", e.target.value)}
+              className={INPUT_CLASS}
+            >
+              <option value="">전체 상태</option>
+              {Object.entries(EDUCATION_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-xs text-stone-600">
+            등록 상태
+            <select
+              value={filters.registration}
+              onChange={(e) =>
+                setFilters((old) => ({
+                  ...old,
+                  registration: e.target.value,
+                  quick: old.quick === "archived" ? "archived" : "all",
+                }))
+              }
+              className={INPUT_CLASS}
+            >
+              <option value="">전체 상태</option>
+              {Object.entries(REGISTRATION_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-xs text-stone-600">
+            담당자
+            <select
+              value={filters.assignee}
+              onChange={(e) => setFilter("assignee", e.target.value)}
+              className={INPUT_CLASS}
+            >
+              <option value="">전체 담당자</option>
+              <option value="mine" disabled={!myMemberId}>
+                내 담당{!myMemberId ? " (계정 연결 필요)" : ""}
+              </option>
+              <option value="unassigned">미지정</option>
+              {assignees.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.last_name}
+                  {m.first_name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-xs text-stone-600">
+            방문 시작일
+            <input
+              type="date"
+              value={filters.from}
+              onChange={(e) => setFilter("from", e.target.value)}
+              className={INPUT_CLASS}
+            />
+          </label>
+          <label className="text-xs text-stone-600">
+            방문 종료일
+            <input
+              type="date"
+              min={filters.from}
+              value={filters.to}
+              onChange={(e) => setFilter("to", e.target.value)}
+              className={INPUT_CLASS}
+            />
+          </label>
+        </div>
+        <div className="mt-4 flex justify-between text-sm">
+          <span aria-live="polite">검색 결과 {filtered.length}명</span>
+          <button
+            onClick={() => setFilters({ ...DEFAULT_FILTERS })}
+            className="underline"
+          >
+            필터 초기화
+          </button>
+        </div>
+        {filters.from && filters.to && filters.from > filters.to && (
+          <p role="alert" className="mt-2 text-sm text-red-700">
+            종료일은 시작일 이후로 선택해주세요.
+          </p>
+        )}
+      </section>
+      {courses.length === 0 && (
+        <p className="text-sm text-stone-500">
+          개설된 교육이 없습니다. 교육을 개설하면 차수별로 참여·이수를 관리할 수
+          있습니다.
+        </p>
+      )}
+      <section aria-label="새가족순 명단" className="space-y-3">
+        {filtered.length === 0 && (
+          <div className="rounded-xl border border-dashed p-10 text-center text-stone-500">
+            조건에 맞는 명단이 없습니다. 필터를 변경해보세요.
+          </div>
+        )}
+        {filtered.map((f) => {
+          const name = `${f.member.last_name}${f.member.first_name}`;
+          const registration = registrationState(f);
+          return (
+            <article
+              key={f.id}
+              className="rounded-xl border border-stone-200 bg-white p-5"
+            >
+              <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Link
-                      href={`/members/${family.member.id}`}
-                      aria-label={`${family.member.last_name}${family.member.first_name} 상세 보기`}
-                      className="group inline-flex items-center gap-1 font-semibold text-[var(--color-warm-text)] hover:underline"
+                      href={`/members/${f.member.id}`}
+                      aria-label={`${name} 상세 보기`}
+                      className="text-lg font-semibold hover:underline"
                     >
-                      {family.member.last_name}{family.member.first_name}
-                      <span aria-hidden="true" className="text-xs text-[var(--color-warm-subtle)] transition-transform group-hover:translate-x-0.5">
-                        →
-                      </span>
+                      {name} →
                     </Link>
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STEPS[family.step - 1].color}`}>
-                      {STEPS[family.step - 1].label}
+                    <span className="rounded-full bg-stone-100 px-2 py-1 text-xs">
+                      {f.member.status === "visitor" ? "방문" : "새가족 기록"}
+                    </span>
+                    <span
+                      className={`rounded-full px-2 py-1 text-xs ${registration === "pending" ? "bg-amber-50 text-amber-800" : "bg-green-50 text-green-800"}`}
+                    >
+                      {REGISTRATION_LABELS[registration]}
                     </span>
                   </div>
-                  <div className="mt-1 flex gap-3 text-sm text-[var(--color-warm-muted)]">
-                    <span>첫 방문: {family.first_visit}</span>
-                    {family.member.phone && (
-                      <span>{family.member.phone}</span>
-                    )}
-                    {family.assignee && (
-                      <span>담당: {family.assignee.last_name}{family.assignee.first_name}</span>
-                    )}
-                  </div>
+                  <p className="mt-2 text-sm text-stone-500">
+                    첫 방문 {f.first_visit} · 교육{" "}
+                    {EDUCATION_LABELS[educationState(f)]}
+                  </p>
+                  {f.member.phone && (
+                    <a
+                      className="mt-1 inline-block text-sm text-stone-600"
+                      href={`tel:${f.member.phone}`}
+                    >
+                      {f.member.phone}
+                    </a>
+                  )}
+                  {f.registered_at && (
+                    <p className="mt-2 text-xs text-stone-500">
+                      등록 확정{" "}
+                      {new Date(f.registered_at).toLocaleDateString("ko-KR")}
+                      {f.registration_source === "legacy"
+                        ? " · 기존 처리 기록"
+                        : " · 담당자 확인 완료"}
+                    </p>
+                  )}
                 </div>
-                {role === "admin" && (
+                {canEdit && !f.dropped_out && registration === "pending" && (
                   <button
-                    onClick={() =>
-                      handleDelete(family.id, `${family.member.last_name}${family.member.first_name}`)
+                    disabled={
+                      busy || ["removed", "on_leave"].includes(f.member.status)
                     }
-                    className="text-xs text-red-400 hover:text-red-600"
+                    className={BUTTON}
+                    onClick={() => {
+                      if (
+                        confirm(
+                          `${name}님의 교육 이수를 확인하고 정식 멤버 등록을 확정하시겠습니까?`,
+                        )
+                      )
+                        void run(
+                          () => confirmRegistration(f.id),
+                          `${name}님의 정식 등록을 확정했습니다.`,
+                        );
+                    }}
                   >
-                    삭제
+                    정식 등록 확정
+                  </button>
+                )}
+                {canEdit && f.dropped_out && (
+                  <button
+                    disabled={busy}
+                    className={BUTTON}
+                    onClick={() =>
+                      void run(
+                        () => restoreNewFamily(f.id),
+                        "교육 이력을 보존하고 명단으로 복귀했습니다.",
+                      )
+                    }
+                  >
+                    명단 복귀
                   </button>
                 )}
               </div>
-
-              {/* 단계 버튼 */}
-              {role !== "group_leader" && (
-                <div className="mt-3 flex gap-1.5">
-                  {STEPS.map((s) => (
-                    <button
-                      key={s.step}
-                      onClick={() => handleStepChange(family.id, s.step)}
-                      className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                        family.step >= s.step
-                          ? s.color
-                          : "bg-[var(--color-warm-bg)] text-[var(--color-warm-subtle)] hover:bg-[var(--color-warm-border-light)]"
-                      }`}
+              <div className="mt-4 border-t border-stone-100 pt-3">
+                <label className="flex flex-wrap items-center gap-2 text-sm">
+                  담당자
+                  {canEdit ? (
+                    <select
+                      aria-label={`${name} 담당자`}
+                      value={f.assigned_to ?? ""}
+                      disabled={busy}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        void run(
+                          () =>
+                            updateAssignee(f.id, value ? Number(value) : null),
+                          "담당자를 변경했습니다.",
+                        );
+                      }}
+                      className="rounded border p-2"
                     >
-                      {s.step}. {s.label}
+                      <option value="">미지정</option>
+                      {assignees.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.last_name}
+                          {m.first_name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span>
+                      {f.assignee
+                        ? `${f.assignee.last_name}${f.assignee.first_name}`
+                        : "미지정"}
+                    </span>
+                  )}
+                </label>
+                {(f.enrollments ?? []).map((e) => (
+                  <p key={e.id} className="mt-2 text-sm text-stone-500">
+                    {courses.find((c) => c.id === e.course_id)?.name ??
+                      "교육 기록"}{" "}
+                    · {EDUCATION_LABELS[e.status]}
+                    {e.completed_at
+                      ? ` · 이수 ${new Date(e.completed_at).toLocaleDateString("ko-KR")}`
+                      : ""}
+                  </p>
+                ))}
+                {canEdit && !f.dropped_out && registration !== "registered" && (
+                  <form
+                    className="mt-3 flex flex-wrap items-end gap-2"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      const data = new FormData(e.currentTarget);
+                      void run(
+                        () =>
+                          updateEducation(
+                            f.id,
+                            Number(data.get("course")),
+                            data.get("status") as EducationStatus,
+                          ),
+                        "교육 기록을 저장했습니다. 정식 등록은 별도로 확정해주세요.",
+                      );
+                    }}
+                  >
+                    <label className="text-xs text-stone-600">
+                      교육 차수
+                      <select
+                        aria-label={`${name} 교육 차수`}
+                        name="course"
+                        required
+                        defaultValue=""
+                        className={INPUT_CLASS}
+                      >
+                        <option value="" disabled>
+                          교육 선택
+                        </option>
+                        {courses.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name} ({c.starts_on})
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="text-xs text-stone-600">
+                      참여 상태
+                      <select
+                        aria-label={`${name} 참여 상태`}
+                        name="status"
+                        className={INPUT_CLASS}
+                      >
+                        <option value="scheduled">참여 예정</option>
+                        <option value="in_progress">참여 중</option>
+                        <option value="completed">이수</option>
+                      </select>
+                    </label>
+                    <button
+                      disabled={busy || courses.length === 0}
+                      className={BUTTON}
+                    >
+                      교육 기록 저장
                     </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* 연결 필요 섹션 */}
-      {connectionNeededFamilies.length > 0 && (
-        <div className="mt-8">
-          <button
-            onClick={() => setShowCompleted(!showCompleted)}
-            className="flex items-center gap-2 text-sm font-semibold text-[#2e7d32] hover:text-[#1b5e20] transition-colors"
-          >
-            <span className={`inline-block transition-transform ${showCompleted ? "rotate-90" : ""}`}>
-              ▶
-            </span>
-            연결 필요 ({connectionNeededFamilies.length}명)
-          </button>
-
-          {showCompleted && (
-            <div className="mt-3 space-y-3">
-              {connectionNeededFamilies.map((family) => (
-                <div
-                  key={family.id}
-                  className="rounded-xl border border-[#c8e6c9] bg-[#f1f8e9]/50 p-5"
-                >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <Link
-                          href={`/members/${family.member.id}`}
-                          aria-label={`${family.member.last_name}${family.member.first_name} 상세 보기`}
-                          className="group inline-flex items-center gap-1 font-semibold text-[var(--color-warm-text)] hover:underline"
-                        >
-                          {family.member.last_name}{family.member.first_name}
-                          <span aria-hidden="true" className="text-xs text-[var(--color-warm-subtle)] transition-transform group-hover:translate-x-0.5">
-                            →
-                          </span>
-                        </Link>
-                        <span className="rounded-full bg-[#edf5ed] px-2 py-0.5 text-xs font-medium text-[#3d6b3d]">
-                          연결 진행 중
-                        </span>
-                      </div>
-                      <div className="mt-1 flex gap-3 text-sm text-[var(--color-warm-muted)]">
-                        <span>첫 방문: {family.first_visit}</span>
-                        <span>교육 완료: {new Date(family.step_updated_at).toLocaleDateString("ko-KR")}</span>
-                        {family.assignee && (
-                          <span>담당: {family.assignee.last_name}{family.assignee.first_name}</span>
-                        )}
-                      </div>
-                    </div>
-                    {role !== "group_leader" && (
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() =>
-                            handleCompleteConnection(family.id, `${family.member.last_name}${family.member.first_name}`)
-                          }
-                          className="rounded-lg bg-[#1a1a1a] px-3 py-1.5 text-xs font-medium text-white transition-all duration-300 hover:bg-[#333]"
-                        >
-                          연결 완료
-                        </button>
-                        {role === "admin" && (
-                          <button
-                            onClick={() =>
-                              handleDelete(family.id, `${family.member.last_name}${family.member.first_name}`)
-                            }
-                            className="text-xs text-red-400 hover:text-red-600"
-                          >
-                            삭제
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* 연결 완료 섹션 */}
-      {connectedFamilies.length > 0 && (
-        <div className="mt-8">
-          <button
-            onClick={() => setShowConnected(!showConnected)}
-            className="flex items-center gap-2 text-sm font-semibold text-[var(--color-warm-muted)] hover:text-[var(--color-warm-text)] transition-colors"
-          >
-            <span className={`inline-block transition-transform ${showConnected ? "rotate-90" : ""}`}>
-              ▶
-            </span>
-            연결 완료 ({connectedFamilies.length}명)
-          </button>
-
-          {showConnected && (
-            <div className="mt-3 space-y-3">
-              {connectedFamilies.map((family) => (
-                <div
-                  key={family.id}
-                  className="rounded-xl border border-[var(--color-warm-border)] bg-white p-5"
-                >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <Link
-                          href={`/members/${family.member.id}`}
-                          aria-label={`${family.member.last_name}${family.member.first_name} 상세 보기`}
-                          className="group inline-flex items-center gap-1 font-semibold text-[var(--color-warm-text)] hover:underline"
-                        >
-                          {family.member.last_name}{family.member.first_name}
-                          <span aria-hidden="true" className="text-xs text-[var(--color-warm-subtle)] transition-transform group-hover:translate-x-0.5">
-                            →
-                          </span>
-                        </Link>
-                        <span className="rounded-full bg-[var(--color-warm-bg)] px-2 py-0.5 text-xs font-medium text-[var(--color-warm-muted)]">
-                          연결 완료
-                        </span>
-                      </div>
-                      <div className="mt-1 flex gap-3 text-sm text-[var(--color-warm-muted)]">
-                        <span>첫 방문: {family.first_visit}</span>
-                        <span>교육 완료: {new Date(family.step_updated_at).toLocaleDateString("ko-KR")}</span>
-                        {family.assignee && (
-                          <span>담당: {family.assignee.last_name}{family.assignee.first_name}</span>
-                        )}
-                      </div>
-                    </div>
-                    {role === "admin" && (
-                      <button
-                        onClick={() =>
-                          handleDelete(family.id, `${family.member.last_name}${family.member.first_name}`)
-                        }
-                        className="text-xs text-red-400 hover:text-red-600"
-                      >
-                        삭제
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* 이탈 새가족 섹션 */}
-      {droppedOutFamilies.length > 0 && (
-        <div className="mt-8">
-          <button
-            onClick={() => setShowDroppedOut(!showDroppedOut)}
-            className="flex items-center gap-2 text-sm font-semibold text-red-400 hover:text-red-600 transition-colors"
-          >
-            <span className={`inline-block transition-transform ${showDroppedOut ? "rotate-90" : ""}`}>
-              ▶
-            </span>
-            이탈 새가족 ({droppedOutFamilies.length}명)
-          </button>
-
-          {showDroppedOut && (
-            <div className="mt-3 space-y-3">
-              {droppedOutFamilies.map((family) => (
-                <div
-                  key={family.id}
-                  className="rounded-xl border border-red-200 bg-red-50/50 p-5"
-                >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <Link
-                          href={`/members/${family.member.id}`}
-                          aria-label={`${family.member.last_name}${family.member.first_name} 상세 보기`}
-                          className="group inline-flex items-center gap-1 font-semibold text-[var(--color-warm-text)] hover:underline"
-                        >
-                          {family.member.last_name}{family.member.first_name}
-                          <span aria-hidden="true" className="text-xs text-[var(--color-warm-subtle)] transition-transform group-hover:translate-x-0.5">
-                            →
-                          </span>
-                        </Link>
-                        <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-500">
-                          이탈
-                        </span>
-                      </div>
-                      <div className="mt-1 flex gap-3 text-sm text-[var(--color-warm-muted)]">
-                        <span>첫 방문: {family.first_visit}</span>
-                        {family.dropped_out_at && (
-                          <span>이탈일: {new Date(family.dropped_out_at).toLocaleDateString("ko-KR")}</span>
-                        )}
-                        {family.assignee && (
-                          <span>담당: {family.assignee.last_name}{family.assignee.first_name}</span>
-                        )}
-                      </div>
-                    </div>
-                    {role !== "group_leader" && (
-                      <button
-                        onClick={() =>
-                          handleRestore(family.id, `${family.member.last_name}${family.member.first_name}`)
-                        }
-                        className="rounded-lg border border-[var(--color-warm-border)] bg-white px-3 py-1.5 text-xs font-medium text-[var(--color-warm-text)] transition-all duration-300 hover:border-[var(--color-warm-text)]"
-                      >
-                        복귀
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+                  </form>
+                )}
+              </div>
+            </article>
+          );
+        })}
+      </section>
     </div>
   );
 }

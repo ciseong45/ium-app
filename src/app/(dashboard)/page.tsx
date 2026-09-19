@@ -44,11 +44,11 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
         .select("status")
         .eq("week_date", weekDate);
     })(),
-    // 진행 중 새가족 (step < 3)
+    // 정식 등록 전 방문·새가족
     supabase
       .from("new_family")
       .select("id", { count: "exact", head: true })
-      .lt("step", 3).eq("dropped_out", false),
+      .is("registered_at", null).eq("dropped_out", false),
     // 진행 중 1:1 양육
     supabase
       .from("one_to_one")

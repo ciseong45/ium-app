@@ -333,7 +333,7 @@ export async function updateMember(id: number, formData: FormData): Promise<Acti
       await insertStatusLog(supabase, id, current.status, member.status, user.id);
 
       // 새가족 상태로 변경 시 new_family 엔트리 자동 생성
-      if (member.status === "new_family") {
+      if (member.status === "new_family" || member.status === "visitor") {
         await ensureNewFamilyEntry(supabase, id);
         revalidatePath("/new-family");
       }
@@ -531,7 +531,7 @@ export async function quickUpdateField(
     return { success: false, error: "잘못된 성별 값입니다." };
   }
 
-  const validStatuses = ["active", "attending", "inactive", "removed", "on_leave", "new_family", "adjusting"];
+  const validStatuses = ["active", "attending", "inactive", "removed", "on_leave", "new_family", "adjusting", "visitor"];
   if (field === "status" && value !== null && !validStatuses.includes(value)) {
     return { success: false, error: "잘못된 상태 값입니다." };
   }
@@ -552,7 +552,7 @@ export async function quickUpdateField(
       await insertStatusLog(supabase, memberId, current.status, value, user.id);
 
       // 새가족 상태로 변경 시 new_family 엔트리 자동 생성
-      if (value === "new_family") {
+      if (value === "new_family" || value === "visitor") {
         await ensureNewFamilyEntry(supabase, memberId);
         revalidatePath("/new-family");
       }
@@ -719,7 +719,7 @@ export async function importMembersCSV(
 
     const gender = GENDER_EN[genderRaw] ?? (["M", "F"].includes(genderRaw) ? genderRaw : null);
     const status = STATUS_LABEL_TO_EN[statusRaw] ??
-      (["active", "attending", "inactive", "removed", "on_leave", "new_family", "adjusting"].includes(statusRaw) ? statusRaw : "active");
+      (["active", "attending", "inactive", "removed", "on_leave", "new_family", "adjusting", "visitor"].includes(statusRaw) ? statusRaw : "active");
 
     const emailRaw = headerMap["email"] !== undefined ? fields[headerMap["email"]] ?? "" : "";
     if (emailRaw && !z.string().email().safeParse(emailRaw).success) {

@@ -47,46 +47,12 @@ export async function submitVisitorCard(formData: FormData): Promise<ActionResul
     if (data.previous_church) notesParts.push(`이전 교회: ${data.previous_church}`);
     const notes = notesParts.length > 0 ? notesParts.join("\n") : null;
 
-    // 1. 멤버 등록
-    const { data: member, error: memberError } = await supabase
-      .from("members")
-      .insert({
-        last_name: data.last_name,
-        first_name: data.first_name,
-        phone: data.phone,
-        gender: data.gender,
-        birth_date: data.birth_date,
-        status: "new_family",
-        kakao_id: data.kakao_id,
-        is_baptized: isBaptized,
-        school_or_work: data.school_work,
-        notes,
-      })
-      .select("id")
-      .single();
-
-    if (memberError) {
-      return { success: false, error: "등록에 실패했습니다. 다시 시도해주세요." };
-    }
-
-    // 2. 활성 시즌 확인
-    const { data: activeSeason } = await supabase
-      .from("small_group_seasons")
-      .select("id")
-      .eq("is_active", true)
-      .single();
-
-    // 3. 새가족 등록
-    const today = new Date().toISOString().split("T")[0];
-    const { error: nfError } = await supabase.from("new_family").insert({
-      member_id: member.id,
-      first_visit: today,
-      season_id: activeSeason?.id || null,
-    });
-
-    if (nfError) {
-      return { success: true, warning: "멤버는 등록되었으나 새가족 등록에 실패했습니다." };
-    }
+    const { error } = await supabase.rpc("receive_new_family", {p_data: {
+      last_name: data.last_name, first_name: data.first_name, phone: data.phone,
+      gender: data.gender, birth_date: data.birth_date, kakao_id: data.kakao_id,
+      is_baptized: isBaptized, school_or_work: data.school_work, notes,
+    }});
+    if (error) return {success: false, error: "방문 등록에 실패했습니다. 담당자에게 문의해주세요."};
 
     return { success: true };
   } catch (e) {

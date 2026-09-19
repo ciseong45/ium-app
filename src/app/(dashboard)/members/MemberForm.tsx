@@ -197,6 +197,7 @@ export default function MemberForm({ member }: { member?: Member }) {
         >
           <option value="active">재적</option>
           <option value="attending">출석</option>
+          <option value="visitor">방문</option>
           <option value="new_family">새가족</option>
           <option value="adjusting">연결 진행 중</option>
           <option value="on_leave">휴적</option>

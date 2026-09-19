@@ -16,7 +16,31 @@ export type NewFamilyEntry = {
   notes: string | null;
   dropped_out: boolean;
   dropped_out_at: string | null;
+  registered_at?: string | null;
+  registered_by?: string | null;
+  registration_source?: "confirmed" | "legacy" | null;
+  enrollments?: EducationEnrollment[];
   created_at: string;
-  member: { id: number; last_name: string; first_name: string; phone: string | null; status: string };
+  member: {
+    id: number;
+    last_name: string;
+    first_name: string;
+    phone: string | null;
+    status: string;
+  };
   assignee: { id: number; last_name: string; first_name: string } | null;
+};
+
+export type EducationStatus = "scheduled" | "in_progress" | "completed";
+export type EducationCourse = {
+  id: number;
+  season_id: number;
+  name: string;
+  starts_on: string;
+};
+export type EducationEnrollment = {
+  id: number;
+  course_id: number;
+  status: EducationStatus;
+  completed_at: string | null;
 };

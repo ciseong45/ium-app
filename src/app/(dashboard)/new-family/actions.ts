@@ -3,8 +3,13 @@
 import { requireAuth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/lib/validations";
-import { insertStatusLog, fetchActiveMembers } from "@/lib/queries";
-import type { Season, NewFamilyEntry } from "@/types/new-family";
+import { fetchActiveMembers } from "@/lib/queries";
+import type {
+  Season,
+  NewFamilyEntry,
+  EducationCourse,
+  EducationStatus,
+} from "@/types/new-family";
 
 export async function getSeasons() {
   const { supabase } = await requireAuth();
@@ -21,7 +26,7 @@ export async function getNewFamilies(seasonId?: number) {
   let query = supabase
     .from("new_family")
     .select(
-      "*, member:members!member_id(id, last_name, first_name, phone, status), assignee:members!assigned_to(id, last_name, first_name)"
+      "*, member:members!member_id(id, last_name, first_name, phone, status), assignee:members!assigned_to(id, last_name, first_name), enrollments:new_family_enrollments(id, course_id, status, completed_at)",
     );
 
   if (seasonId) {
@@ -29,21 +34,31 @@ export async function getNewFamilies(seasonId?: number) {
   }
 
   const { data, error } = await query;
-  if (error) return [] as NewFamilyEntry[];
+  if (error)
+    throw new Error(
+      "방문·새가족 정보를 불러오지 못했습니다. 데이터베이스 업데이트와 연결 상태를 확인해주세요.",
+    );
 
   // 이름순 정렬
   return (data as NewFamilyEntry[]).sort((a, b) =>
-    `${a.member.last_name}${a.member.first_name}`.localeCompare(`${b.member.last_name}${b.member.first_name}`, "ko")
+    `${a.member.last_name}${a.member.first_name}`.localeCompare(
+      `${b.member.last_name}${b.member.first_name}`,
+      "ko",
+    ),
   );
 }
 
-export async function createNewFamily(formData: FormData): Promise<ActionResult> {
+export async function createNewFamily(
+  formData: FormData,
+): Promise<ActionResult> {
   const { supabase, role } = await requireAuth();
-  if (role === "group_leader") return { success: false, error: "권한이 없습니다." };
+  if (role === "group_leader")
+    return { success: false, error: "권한이 없습니다." };
 
   const last_name = (formData.get("last_name") as string)?.trim();
   const first_name = (formData.get("first_name") as string)?.trim();
-  if (!last_name || !first_name) return { success: false, error: "성과 이름은 필수입니다." };
+  if (!last_name || !first_name)
+    return { success: false, error: "성과 이름은 필수입니다." };
 
   const phone = (formData.get("phone") as string) || null;
   const firstVisit = formData.get("first_visit") as string;
@@ -51,81 +66,147 @@ export async function createNewFamily(formData: FormData): Promise<ActionResult>
 
   if (!firstVisit) return { success: false, error: "첫 방문일은 필수입니다." };
 
-  // 먼저 멤버 등록
-  const { data: member, error: memberError } = await supabase
-    .from("members")
-    .insert({ last_name, first_name, phone, status: "new_family" })
-    .select("id")
-    .single();
-
-  if (memberError) return { success: false, error: "멤버 등록에 실패했습니다." };
-
-  // 활성 시즌 가져오기
-  const { data: activeSeason } = await supabase
-    .from("small_group_seasons")
-    .select("id")
-    .eq("is_active", true)
-    .single();
-
-  // 새가족 등록
-  const { error } = await supabase.from("new_family").insert({
-    member_id: member.id,
-    first_visit: firstVisit,
-    assigned_to: assignedTo ? Number(assignedTo) : null,
-    season_id: activeSeason?.id || null,
+  const { error } = await supabase.rpc("receive_new_family", {
+    p_data: {
+      last_name,
+      first_name,
+      phone,
+      first_visit: firstVisit,
+      assigned_to: assignedTo || null,
+    },
   });
-
-  if (error) return { success: false, error: "새가족 등록에 실패했습니다." };
-  revalidatePath("/new-family");
+  if (error)
+    return {
+      success: false,
+      error: "방문 등록에 실패했습니다. 활성 학기와 입력 내용을 확인해주세요.",
+    };
+  refreshFamilyPages();
   return { success: true };
 }
 
-export async function updateStep(id: number, step: number): Promise<ActionResult> {
-  const { supabase, user, role } = await requireAuth();
-  if (role === "group_leader") return { success: false, error: "권한이 없습니다." };
-
-  if (step < 1 || step > 3) return { success: false, error: "잘못된 단계입니다." };
-
-  const { error } = await supabase
-    .from("new_family")
-    .update({ step, step_updated_at: new Date().toISOString() })
-    .eq("id", id);
-  if (error) return { success: false, error: "단계 변경에 실패했습니다." };
-
-  // 3주차 교육 완료 시 멤버 상태를 연결 진행 중(adjusting)으로 전환
-  if (step === 3) {
-    const { data: family } = await supabase
-      .from("new_family")
-      .select("member_id")
-      .eq("id", id)
-      .single();
-
-    if (family) {
-      const { data: member } = await supabase
-        .from("members")
-        .select("status")
-        .eq("id", family.member_id)
-        .single();
-
-      if (member && member.status === "new_family") {
-        await supabase
-          .from("members")
-          .update({ status: "adjusting" })
-          .eq("id", family.member_id);
-
-        await insertStatusLog(supabase, family.member_id, member.status, "adjusting", user.id);
-      }
-    }
-  }
-
-  revalidatePath("/new-family");
-  revalidatePath("/members");
-  return { success: true };
+// 구버전 화면의 단계 변경 요청으로 등록 상태가 바뀌지 않도록 차단한다.
+export async function updateStep(
+  _id: number,
+  _step: number,
+): Promise<ActionResult> {
+  await requireAuth();
+  void _id;
+  void _step;
+  return {
+    success: false,
+    error: "교육 차수를 선택해 참여·이수 상태를 기록해주세요.",
+  };
 }
 
-export async function updateAssignee(id: number, assignedTo: number | null): Promise<ActionResult> {
+function refreshFamilyPages() {
+  for (const path of [
+    "/new-family",
+    "/members",
+    "/",
+    "/small-groups",
+    "/weekly",
+  ])
+    revalidatePath(path);
+  revalidatePath("/members/[id]", "page");
+}
+
+export async function getCourses(): Promise<EducationCourse[]> {
+  const { supabase } = await requireAuth();
+  const { data, error } = await supabase
+    .from("new_family_courses")
+    .select("id, season_id, name, starts_on")
+    .order("starts_on", { ascending: false });
+  if (error) throw new Error("교육 차수를 불러오지 못했습니다.");
+  return data ?? [];
+}
+
+export async function createCourse(formData: FormData): Promise<ActionResult> {
   const { supabase, role } = await requireAuth();
-  if (role === "group_leader") return { success: false, error: "권한이 없습니다." };
+  if (role === "group_leader")
+    return { success: false, error: "권한이 없습니다." };
+  const name = String(formData.get("name") || "").trim();
+  const season_id = Number(formData.get("season_id"));
+  const starts_on = String(formData.get("starts_on") || "");
+  if (
+    !name ||
+    name.length > 80 ||
+    !Number.isSafeInteger(season_id) ||
+    season_id < 1 ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(starts_on)
+  )
+    return { success: false, error: "교육 이름, 학기, 시작일을 확인해주세요." };
+  const { error } = await supabase
+    .from("new_family_courses")
+    .insert({ name, season_id, starts_on });
+  if (error)
+    return {
+      success: false,
+      error:
+        "교육 개설에 실패했습니다. 같은 학기에 동일한 이름이 있는지 확인해주세요.",
+    };
+  refreshFamilyPages();
+  return { success: true };
+}
+
+export async function updateEducation(
+  id: number,
+  courseId: number,
+  status: EducationStatus,
+): Promise<ActionResult> {
+  const { supabase, role } = await requireAuth();
+  if (role === "group_leader")
+    return { success: false, error: "권한이 없습니다." };
+  if (
+    !Number.isSafeInteger(id) ||
+    id < 1 ||
+    !Number.isSafeInteger(courseId) ||
+    courseId < 1 ||
+    !["scheduled", "in_progress", "completed"].includes(status)
+  )
+    return { success: false, error: "교육 차수와 상태를 확인해주세요." };
+  const { error } = await supabase.rpc("new_family_manage", {
+    p_family_id: id,
+    p_action: "education",
+    p_course_id: courseId,
+    p_status: status,
+  });
+  if (error)
+    return {
+      success: false,
+      error:
+        "교육 기록을 저장하지 못했습니다. 명단을 새로고침 후 확인해주세요.",
+    };
+  refreshFamilyPages();
+  return { success: true };
+}
+
+export async function confirmRegistration(id: number): Promise<ActionResult> {
+  const { supabase, role } = await requireAuth();
+  if (role === "group_leader")
+    return { success: false, error: "권한이 없습니다." };
+  if (!Number.isSafeInteger(id) || id < 1)
+    return { success: false, error: "대상자를 확인해주세요." };
+  const { error } = await supabase.rpc("new_family_manage", {
+    p_family_id: id,
+    p_action: "register",
+  });
+  if (error)
+    return {
+      success: false,
+      error:
+        "정식 등록하지 못했습니다. 교육 이수와 현재 참여 상태를 확인해주세요.",
+    };
+  refreshFamilyPages();
+  return { success: true };
+}
+
+export async function updateAssignee(
+  id: number,
+  assignedTo: number | null,
+): Promise<ActionResult> {
+  const { supabase, role } = await requireAuth();
+  if (role === "group_leader")
+    return { success: false, error: "권한이 없습니다." };
   const { error } = await supabase
     .from("new_family")
     .update({ assigned_to: assignedTo })
@@ -136,44 +217,12 @@ export async function updateAssignee(id: number, assignedTo: number | null): Pro
 }
 
 export async function completeConnection(id: number): Promise<ActionResult> {
-  const { supabase, user, role } = await requireAuth();
-  if (role === "group_leader") return { success: false, error: "권한이 없습니다." };
-
-  const { data: family, error: familyError } = await supabase
-    .from("new_family")
-    .select("member_id")
-    .eq("id", id)
-    .single();
-
-  if (familyError || !family) {
-    return { success: false, error: "새가족 정보를 찾을 수 없습니다." };
-  }
-
-  const { data: member } = await supabase
-    .from("members")
-    .select("status")
-    .eq("id", family.member_id)
-    .single();
-
-  if (!member) return { success: false, error: "멤버 정보를 찾을 수 없습니다." };
-
-  if (member.status === "attending") {
-    return { success: true };
-  }
-
-  const { error } = await supabase
-    .from("members")
-    .update({ status: "attending" })
-    .eq("id", family.member_id);
-
-  if (error) return { success: false, error: "연결 완료 처리에 실패했습니다." };
-
-  await insertStatusLog(supabase, family.member_id, member.status, "attending", user.id);
-
-  revalidatePath("/new-family");
-  revalidatePath("/members");
-  revalidatePath(`/members/${family.member_id}`);
-  return { success: true };
+  await requireAuth();
+  void id;
+  return {
+    success: false,
+    error: "화면을 새로고침하고 정식 등록 확정 기능을 사용해주세요.",
+  };
 }
 
 export async function deleteNewFamily(id: number): Promise<ActionResult> {
@@ -186,47 +235,15 @@ export async function deleteNewFamily(id: number): Promise<ActionResult> {
 }
 
 export async function restoreNewFamily(id: number): Promise<ActionResult> {
-  const { supabase, user, role } = await requireAuth();
-  if (role === "group_leader") return { success: false, error: "권한이 없습니다." };
-
-  // dropped_out 해제, step=1로 리셋
-  const { error } = await supabase
-    .from("new_family")
-    .update({
-      dropped_out: false,
-      dropped_out_at: null,
-      step: 1,
-      step_updated_at: new Date().toISOString(),
-    })
-    .eq("id", id);
+  const { supabase, role } = await requireAuth();
+  if (role === "group_leader")
+    return { success: false, error: "권한이 없습니다." };
+  const { error } = await supabase.rpc("new_family_manage", {
+    p_family_id: id,
+    p_action: "restore",
+  });
   if (error) return { success: false, error: "복귀 처리에 실패했습니다." };
-
-  // 멤버 상태 new_family로 복원
-  const { data: family } = await supabase
-    .from("new_family")
-    .select("member_id")
-    .eq("id", id)
-    .single();
-
-  if (family) {
-    const { data: member } = await supabase
-      .from("members")
-      .select("status")
-      .eq("id", family.member_id)
-      .single();
-
-    if (member) {
-      await supabase
-        .from("members")
-        .update({ status: "new_family" })
-        .eq("id", family.member_id);
-
-      await insertStatusLog(supabase, family.member_id, member.status, "new_family", user.id);
-    }
-  }
-
-  revalidatePath("/new-family");
-  revalidatePath("/members");
+  refreshFamilyPages();
   return { success: true };
 }
 
