@@ -77,6 +77,7 @@ it("등록 확정 대기 필터는 이수자만 표시한다", () => {
   expect(
     screen.getByRole("link", { name: "김이수 상세 보기" }),
   ).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "김이수 관리" }));
   expect(
     screen.getByRole("button", { name: "정식 등록 확정" }),
   ).toBeInTheDocument();
@@ -91,4 +92,36 @@ it("검색 결과가 없을 때 초기화로 기본 명단을 복원한다", () 
   expect(
     screen.getByRole("link", { name: "김새가족 상세 보기" }),
   ).toBeInTheDocument();
+});
+
+it("첫 화면은 명단만 보여주고 선택한 사람의 관리 항목만 펼친다", () => {
+  render(<NewFamilyView families={[family]} members={[]} seasons={[]} />);
+  expect(
+    screen.queryByRole("region", { name: "상세 필터" }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole("button", { name: "교육 기록 저장" }),
+  ).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "김새가족 관리" }));
+  expect(
+    screen.getByRole("button", { name: "교육 기록 저장" }),
+  ).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "김새가족 관리 닫기" }));
+  expect(
+    screen.queryByRole("button", { name: "교육 기록 저장" }),
+  ).not.toBeInTheDocument();
+});
+it("상세 필터를 접어도 선택한 조건을 유지하고 적용 수를 표시한다", () => {
+  render(<NewFamilyView families={[family]} members={[]} seasons={[]} />);
+  fireEvent.click(screen.getByRole("button", { name: "상세 필터" }));
+  fireEvent.change(screen.getByRole("combobox", { name: "교육 상태" }), {
+    target: { value: "completed" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "상세 필터 1" }));
+  expect(
+    screen.queryByRole("region", { name: "상세 필터" }),
+  ).not.toBeInTheDocument();
+  expect(screen.getByText("검색 결과 0명")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "필터 초기화" }));
+  expect(screen.getByText("검색 결과 1명")).toBeInTheDocument();
 });
