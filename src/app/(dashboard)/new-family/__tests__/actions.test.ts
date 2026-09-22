@@ -6,6 +6,7 @@ import {
   restoreNewFamily,
   updateStep,
   createCourse,
+  updateEducationProgress,
 } from "../actions";
 jest.mock("@/lib/auth");
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
@@ -102,4 +103,26 @@ it("복귀 시 교육 진도와 등록 상태를 초기화하지 않는다", asy
     p_action: "restore",
   });
   expect(from).not.toHaveBeenCalled();
+});
+
+it("교육 주차 저장과 수료는 정식 등록과 별도 요청이다", async () => {
+  expect(await updateEducationProgress(1, 2, 3, false)).toEqual({
+    success: true,
+  });
+  expect(rpc).toHaveBeenCalledWith("new_family_set_progress", {
+    p_family_id: 1,
+    p_course_id: 2,
+    p_week: 3,
+    p_complete: false,
+  });
+  expect(rpc).toHaveBeenCalledTimes(1);
+});
+it("교육 주차는 정수만 허용하고 순장 수정은 거부한다", async () => {
+  for (const week of [0, -1, 1.5, 53, NaN])
+    expect((await updateEducationProgress(1, 2, week, false)).success).toBe(
+      false,
+    );
+  setup("group_leader");
+  expect((await updateEducationProgress(1, 2, 1, false)).success).toBe(false);
+  expect(rpc).not.toHaveBeenCalled();
 });

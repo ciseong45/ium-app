@@ -3,6 +3,8 @@ import {
   registrationState,
   educationState,
   DEFAULT_FILTERS,
+  graduationReady,
+  progressLabel,
 } from "../new-family-workflow";
 import type { NewFamilyEntry } from "@/types/new-family";
 const entry = (patch: Partial<NewFamilyEntry> = {}): NewFamilyEntry => ({
@@ -112,4 +114,55 @@ it("기간 양끝을 포함하고 보관한 명단은 명시적으로 조회한�
       null,
     ),
   ).toHaveLength(1);
+});
+
+it("마지막 주차는 수료 대기이며 수료 자체와 구분한다", () => {
+  const f = entry({
+    step: 2,
+    enrollments: [
+      {
+        id: 1,
+        course_id: 9,
+        status: "in_progress",
+        completed_at: null,
+        current_week: 3,
+      },
+    ],
+  });
+  const courses = [
+    {
+      id: 9,
+      season_id: 1,
+      name: "가을",
+      starts_on: "2026-09-01",
+      total_weeks: 3,
+    },
+  ];
+  expect(graduationReady(f, courses)).toBe(true);
+  expect(educationState(f)).toBe("in_progress");
+  expect(registrationState(f)).toBe("unregistered");
+  expect(progressLabel(f)).toBe("교육 3주차");
+  expect(
+    filterFamilies(
+      [f],
+      { ...DEFAULT_FILTERS, quick: "graduation" },
+      null,
+      courses,
+    ),
+  ).toHaveLength(1);
+  expect(
+    filterFamilies(
+      [entry()],
+      { ...DEFAULT_FILTERS, quick: "graduation" },
+      null,
+      courses,
+    ),
+  ).toHaveLength(0);
+});
+it("수료 탭은 등록 완료 후에도 교육 수료 이력을 보존한다", () => {
+  const f = entry({ step: 3, registered_at: "2026-09-22" });
+  expect(
+    filterFamilies([f], { ...DEFAULT_FILTERS, quick: "graduation" }, null),
+  ).toHaveLength(1);
+  expect(progressLabel(f)).toBe("수료 완료");
 });

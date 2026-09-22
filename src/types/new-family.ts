@@ -37,10 +37,12 @@ export type EducationCourse = {
   season_id: number;
   name: string;
   starts_on: string;
+  total_weeks?: number;
 };
 export type EducationEnrollment = {
   id: number;
   course_id: number;
   status: EducationStatus;
   completed_at: string | null;
+  current_week?: number | null;
 };

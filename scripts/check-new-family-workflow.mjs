@@ -28,6 +28,15 @@ await db.exec(
     "utf8",
   ),
 );
+await db.exec(
+  await readFile(
+    new URL(
+      "../supabase/20260922-new-family-education-weeks.sql",
+      import.meta.url,
+    ),
+    "utf8",
+  ),
+);
 const scalar = async (sql) => Object.values((await db.query(sql)).rows[0])[0];
 await db.exec(
   `SET ROLE anon; SELECT receive_new_family('{"last_name":"김","first_name":"방문"}'); RESET ROLE;`,
@@ -61,7 +70,34 @@ await assert.rejects(
   /정식 등록/,
 );
 await db.exec(
-  `INSERT INTO new_family_courses(season_id,name,starts_on) VALUES(1,'1차','2026-09-20'); SELECT new_family_manage(1,'education',1,'completed');`,
+  `INSERT INTO new_family_courses(season_id,name,starts_on) VALUES(1,'1차','2026-09-20');`,
+);
+await assert.rejects(
+  db.exec(`SELECT new_family_set_progress(1,1,4,false);`),
+  /주차/,
+);
+await assert.rejects(
+  db.exec(`SELECT new_family_set_progress(1,1,3,true);`),
+  /마지막 주차/,
+);
+await db.exec(`SELECT new_family_set_progress(1,1,2,false);`);
+assert.equal(
+  await scalar(
+    "SELECT current_week FROM new_family_enrollments WHERE family_id=1",
+  ),
+  2,
+);
+await assert.rejects(
+  db.exec(`SELECT new_family_set_progress(1,1,2,true);`),
+  /마지막 주차/,
+);
+await db.exec(`SELECT new_family_set_progress(1,1,3,false);`);
+assert.equal(await scalar("SELECT step FROM new_family WHERE id=1"), 2);
+assert.equal(await scalar("SELECT status FROM members WHERE id=1"), "visitor");
+await db.exec(`SELECT new_family_set_progress(1,1,3,true);`);
+await assert.rejects(
+  db.exec(`SELECT new_family_set_progress(1,1,1,false);`),
+  /수료/,
 );
 assert.equal(await scalar("SELECT status FROM members WHERE id=1"), "visitor");
 assert.equal(
@@ -90,6 +126,10 @@ assert.equal(
   "confirmed",
 );
 await db.exec(`SET test.uid='00000000-0000-0000-0000-000000000002';`);
+await assert.rejects(
+  db.exec(`SELECT new_family_set_progress(1,1,1,false);`),
+  /권한/,
+);
 await assert.rejects(
   db.exec(`SELECT new_family_manage(1,'register');`),
   /권한/,

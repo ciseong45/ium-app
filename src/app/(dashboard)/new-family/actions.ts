@@ -26,7 +26,7 @@ export async function getNewFamilies(seasonId?: number) {
   let query = supabase
     .from("new_family")
     .select(
-      "*, member:members!member_id(id, last_name, first_name, phone, status), assignee:members!assigned_to(id, last_name, first_name), enrollments:new_family_enrollments(id, course_id, status, completed_at)",
+      "*, member:members!member_id(id, last_name, first_name, phone, status), assignee:members!assigned_to(id, last_name, first_name), enrollments:new_family_enrollments(id, course_id, status, completed_at, current_week)",
     );
 
   if (seasonId) {
@@ -114,7 +114,7 @@ export async function getCourses(): Promise<EducationCourse[]> {
   const { supabase } = await requireAuth();
   const { data, error } = await supabase
     .from("new_family_courses")
-    .select("id, season_id, name, starts_on")
+    .select("id, season_id, name, starts_on, total_weeks")
     .order("starts_on", { ascending: false });
   if (error) throw new Error("교육 차수를 불러오지 못했습니다.");
   return data ?? [];
@@ -127,7 +127,11 @@ export async function createCourse(formData: FormData): Promise<ActionResult> {
   const name = String(formData.get("name") || "").trim();
   const season_id = Number(formData.get("season_id"));
   const starts_on = String(formData.get("starts_on") || "");
+  const total_weeks = Number(formData.get("total_weeks") || 3);
   if (
+    !Number.isInteger(total_weeks) ||
+    total_weeks < 1 ||
+    total_weeks > 52 ||
     !name ||
     name.length > 80 ||
     !Number.isSafeInteger(season_id) ||
@@ -137,7 +141,7 @@ export async function createCourse(formData: FormData): Promise<ActionResult> {
     return { success: false, error: "교육 이름, 학기, 시작일을 확인해주세요." };
   const { error } = await supabase
     .from("new_family_courses")
-    .insert({ name, season_id, starts_on });
+    .insert({ name, season_id, starts_on, total_weeks });
   if (error)
     return {
       success: false,
@@ -250,4 +254,35 @@ export async function restoreNewFamily(id: number): Promise<ActionResult> {
 export async function getActiveMembers() {
   const { supabase } = await requireAuth();
   return fetchActiveMembers(supabase, ["active", "attending", "adjusting"]);
+}
+
+export async function updateEducationProgress(
+  id: number,
+  courseId: number,
+  week: number,
+  complete = false,
+): Promise<ActionResult> {
+  const { supabase, role } = await requireAuth();
+  if (role === "group_leader")
+    return { success: false, error: "권한이 없습니다." };
+  if (
+    ![id, courseId, week].every((v) => Number.isSafeInteger(v) && v > 0) ||
+    week > 52 ||
+    typeof complete !== "boolean"
+  )
+    return { success: false, error: "교육 차수와 주차를 확인해주세요." };
+  const { error } = await supabase.rpc("new_family_set_progress", {
+    p_family_id: id,
+    p_course_id: courseId,
+    p_week: week,
+    p_complete: complete,
+  });
+  if (error)
+    return {
+      success: false,
+      error:
+        "저장하지 못했습니다. 교육 주차와 현재 수료·등록 상태를 확인해주세요.",
+    };
+  refreshFamilyPages();
+  return { success: true };
 }

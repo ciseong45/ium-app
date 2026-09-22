@@ -1,7 +1,8 @@
-import type { NewFamilyEntry } from "@/types/new-family";
+import type { NewFamilyEntry, EducationCourse } from "@/types/new-family";
 
 export type FamilyFilters = {
   quick:
+    | "graduation"
     | "unregistered"
     | "all"
     | "uneducated"
@@ -44,6 +45,7 @@ export function filterFamilies(
   families: NewFamilyEntry[],
   filters: FamilyFilters,
   myMemberId: number | null,
+  courses: EducationCourse[] = [],
 ) {
   const needle = filters.search.trim().replace(/\s/g, "").toLowerCase();
   return families
@@ -51,6 +53,12 @@ export function filterFamilies(
       const registration = registrationState(f);
       const education = educationState(f);
       if (filters.quick === "archived" ? !f.dropped_out : f.dropped_out)
+        return false;
+      if (
+        filters.quick === "graduation" &&
+        education !== "completed" &&
+        !graduationReady(f, courses)
+      )
         return false;
       if (filters.quick === "unregistered" && registration === "registered")
         return false;
@@ -117,3 +125,31 @@ export const REGISTRATION_LABELS: Record<string, string> = {
   pending: "등록 확정 대기",
   registered: "정식 등록 완료",
 };
+
+export function graduationEnrollment(
+  f: NewFamilyEntry,
+  courses: EducationCourse[],
+) {
+  if (f.dropped_out || f.registered_at || educationState(f) === "completed")
+    return undefined;
+  return f.enrollments?.find(
+    (e) =>
+      e.status === "in_progress" &&
+      e.current_week != null &&
+      e.current_week ===
+        (courses.find((c) => c.id === e.course_id)?.total_weeks ?? 3),
+  );
+}
+export function graduationReady(f: NewFamilyEntry, courses: EducationCourse[]) {
+  return !!graduationEnrollment(f, courses);
+}
+export function progressLabel(f: NewFamilyEntry) {
+  if (f.dropped_out) return "보관";
+  if (educationState(f) === "completed") return "수료 완료";
+  const current = [...(f.enrollments ?? [])]
+    .filter((e) => e.status === "in_progress")
+    .sort((a, b) => b.id - a.id)[0];
+  return current?.current_week
+    ? `교육 ${current.current_week}주차`
+    : `교육 ${EDUCATION_LABELS[educationState(f)]}`;
+}

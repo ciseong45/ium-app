@@ -3,22 +3,24 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import EducationProgressEditor from "./EducationProgressEditor";
 import {
   createNewFamily,
   createCourse,
-  updateEducation,
+  updateEducationProgress,
   confirmRegistration,
   updateAssignee,
   restoreNewFamily,
 } from "./actions";
 import type {
   EducationCourse,
-  EducationStatus,
   NewFamilyEntry,
   Season,
 } from "@/types/new-family";
 import type { ActionResult } from "@/lib/validations";
 import {
+  graduationEnrollment,
+  progressLabel,
   DEFAULT_FILTERS,
   filterFamilies,
   educationState,
@@ -33,6 +35,7 @@ import { INPUT_CLASS } from "@/components/ui/constants";
 type SimpleMember = { id: number; last_name: string; first_name: string };
 const QUICK_FILTERS: { key: FamilyFilters["quick"]; label: string }[] = [
   { key: "unregistered", label: "등록 전 명단" },
+  { key: "graduation", label: "수료" },
   { key: "all", label: "전체" },
   { key: "uneducated", label: "교육 미이수" },
   { key: "pending", label: "등록 확정 대기" },
@@ -65,6 +68,7 @@ export default function NewFamilyView({
   });
   const [panel, setPanel] = useState<"visitor" | "course" | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [progressId, setProgressId] = useState<number | null>(null);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const advancedCount = [
     filters.visitSeason,
@@ -80,8 +84,8 @@ export default function NewFamilyView({
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const filtered = useMemo(
-    () => filterFamilies(families, filters, myMemberId),
-    [families, filters, myMemberId],
+    () => filterFamilies(families, filters, myMemberId, courses),
+    [families, filters, myMemberId, courses],
   );
   const assignees = useMemo(() => {
     const all = new Map(members.map((m) => [m.id, m]));
@@ -105,6 +109,7 @@ export default function NewFamilyView({
       setMessage(success);
       setPanel(null);
       router.refresh();
+      return true;
     } catch {
       setError("저장하지 못했습니다. 연결 상태를 확인하고 다시 시도해주세요.");
     } finally {
@@ -274,6 +279,18 @@ export default function NewFamilyView({
               />
             </label>
             <label className="text-sm">
+              총 교육 주수
+              <input
+                name="total_weeks"
+                type="number"
+                min={1}
+                max={52}
+                defaultValue={3}
+                required
+                className={INPUT_CLASS}
+              />
+            </label>
+            <label className="text-sm">
               교육 시작일
               <input
                 name="starts_on"
@@ -288,13 +305,18 @@ export default function NewFamilyView({
           </button>
         </form>
       )}
-      <nav aria-label="빠른 명단 필터" className="flex flex-wrap gap-2">
+      <nav
+        role="tablist"
+        aria-label="빠른 명단 필터"
+        className="flex flex-wrap gap-2"
+      >
         {QUICK_FILTERS.filter(
           (q) => !["archived", "uneducated"].includes(q.key),
         ).map((q) => (
           <button
+            role="tab"
+            aria-selected={filters.quick === q.key}
             key={q.key}
-            aria-pressed={filters.quick === q.key}
             onClick={() =>
               setFilters((old) => ({ ...old, quick: q.key, registration: "" }))
             }
@@ -307,12 +329,19 @@ export default function NewFamilyView({
                   families,
                   { ...filters, quick: q.key, registration: "" },
                   myMemberId,
+                  courses,
                 ).length
               }
             </span>
           </button>
         ))}
       </nav>
+      {filters.quick === "graduation" && (
+        <p className="text-sm text-stone-500">
+          마지막 주차에 도달한 분과 수료한 분의 명단입니다. 수료 후 정식 등록은
+          관리에서 확정해주세요.
+        </p>
+      )}
       <div className="flex flex-wrap items-center gap-2">
         <label className="min-w-0 flex-1">
           <span className="sr-only">이름·연락처 검색</span>
@@ -517,15 +546,67 @@ export default function NewFamilyView({
                 >
                   {name}
                 </Link>
-                <span
-                  className={`row-start-2 w-fit rounded-full px-2 py-1 text-xs md:row-auto ${registration === "pending" ? "bg-amber-50 text-amber-800" : registration === "registered" ? "bg-green-50 text-green-800" : "bg-stone-100 text-stone-600"}`}
-                >
-                  {f.dropped_out
-                    ? "보관"
-                    : registration === "unregistered"
-                      ? `교육 ${EDUCATION_LABELS[educationState(f)]}`
-                      : REGISTRATION_LABELS[registration]}
-                </span>
+                <div className="row-start-2 flex flex-wrap items-center gap-2 md:row-auto">
+                  <button
+                    aria-label={`${name} 진행 상태 변경`}
+                    aria-expanded={progressId === f.id}
+                    aria-controls={`family-${f.id}-progress`}
+                    disabled={
+                      !canEdit ||
+                      busy ||
+                      f.dropped_out ||
+                      registration === "registered" ||
+                      educationState(f) === "completed"
+                    }
+                    onClick={() => {
+                      setProgressId(progressId === f.id ? null : f.id);
+                      setExpandedId(null);
+                    }}
+                    className={`rounded-full px-2 py-1 text-xs disabled:cursor-default ${educationState(f) === "completed" ? "bg-green-50 text-green-800" : "bg-stone-100 text-stone-700 hover:bg-stone-200"}`}
+                  >
+                    {progressLabel(f)}
+                    {canEdit &&
+                    !f.dropped_out &&
+                    registration !== "registered" &&
+                    educationState(f) !== "completed"
+                      ? " ▾"
+                      : ""}
+                  </button>
+                  {filters.quick === "graduation" &&
+                    graduationEnrollment(f, courses) &&
+                    canEdit && (
+                      <button
+                        aria-label={`${name} 수료 처리`}
+                        disabled={busy}
+                        className="rounded-lg border border-stone-300 px-2 py-1 text-xs hover:bg-stone-50 disabled:opacity-40"
+                        onClick={() => {
+                          const enrollment = graduationEnrollment(f, courses)!;
+                          if (
+                            confirm(
+                              `${name}님의 교육 이수를 확인하고 수료 처리하시겠습니까? 정식 등록은 별도로 확정합니다.`,
+                            )
+                          )
+                            void run(
+                              () =>
+                                updateEducationProgress(
+                                  f.id,
+                                  enrollment.course_id,
+                                  enrollment.current_week!,
+                                  true,
+                                ),
+                              `${name}님의 수료를 완료했습니다. 정식 등록은 별도로 확정해주세요.`,
+                            );
+                        }}
+                      >
+                        수료 처리
+                      </button>
+                    )}
+                  {educationState(f) === "completed" && (
+                    <span className="text-xs text-stone-500">
+                      {REGISTRATION_LABELS[registration]}
+                    </span>
+                  )}
+                </div>
                 <span className="hidden text-sm text-stone-500 md:block">
                   {f.first_visit}
                 </span>
@@ -538,14 +619,37 @@ export default function NewFamilyView({
                   aria-label={`${name} 관리${expandedId === f.id ? " 닫기" : ""}`}
                   aria-expanded={expandedId === f.id}
                   aria-controls={`family-${f.id}-details`}
-                  onClick={() =>
+                  onClick={() => (
+                    setProgressId(null),
                     setExpandedId(expandedId === f.id ? null : f.id)
-                  }
+                  )}
                   className="col-start-2 row-span-2 row-start-1 rounded-lg px-2 py-2 text-sm text-stone-600 hover:bg-stone-100 md:col-auto md:row-span-1 md:row-auto"
                 >
                   {expandedId === f.id ? "닫기 ↑" : "관리 ↓"}
                 </button>
               </div>
+              {progressId === f.id && (
+                <div
+                  id={`family-${f.id}-progress`}
+                  className="border-t border-stone-100 bg-stone-50 px-4 py-4"
+                >
+                  <EducationProgressEditor
+                    key={f.id}
+                    family={f}
+                    courses={courses}
+                    busy={busy}
+                    onClose={() => setProgressId(null)}
+                    onSave={(course, week) => {
+                      void run(
+                        () => updateEducationProgress(f.id, course, week),
+                        "교육 주차를 저장했습니다.",
+                      ).then((ok) => {
+                        if (ok) setProgressId(null);
+                      });
+                    }}
+                  />
+                </div>
+              )}
               {expandedId === f.id && (
                 <div
                   id={`family-${f.id}-details`}
@@ -665,61 +769,22 @@ export default function NewFamilyView({
                       )}
                     {canEdit &&
                       !f.dropped_out &&
-                      registration !== "registered" && (
-                        <form
-                          className="mt-3 flex flex-wrap items-end gap-2"
-                          onSubmit={(e) => {
-                            e.preventDefault();
-                            const data = new FormData(e.currentTarget);
-                            void run(
-                              () =>
-                                updateEducation(
-                                  f.id,
-                                  Number(data.get("course")),
-                                  data.get("status") as EducationStatus,
-                                ),
-                              "교육 기록을 저장했습니다. 정식 등록은 별도로 확정해주세요.",
-                            );
-                          }}
-                        >
-                          <label className="text-xs text-stone-600">
-                            교육 차수
-                            <select
-                              aria-label={`${name} 교육 차수`}
-                              name="course"
-                              required
-                              defaultValue=""
-                              className={INPUT_CLASS}
-                            >
-                              <option value="" disabled>
-                                교육 선택
-                              </option>
-                              {courses.map((c) => (
-                                <option key={c.id} value={c.id}>
-                                  {c.name} ({c.starts_on})
-                                </option>
-                              ))}
-                            </select>
-                          </label>
-                          <label className="text-xs text-stone-600">
-                            참여 상태
-                            <select
-                              aria-label={`${name} 참여 상태`}
-                              name="status"
-                              className={INPUT_CLASS}
-                            >
-                              <option value="scheduled">참여 예정</option>
-                              <option value="in_progress">참여 중</option>
-                              <option value="completed">이수</option>
-                            </select>
-                          </label>
-                          <button
-                            disabled={busy || courses.length === 0}
-                            className={BUTTON}
-                          >
-                            교육 기록 저장
-                          </button>
-                        </form>
+                      registration !== "registered" &&
+                      educationState(f) !== "completed" && (
+                        <div className="mt-3">
+                          <EducationProgressEditor
+                            family={f}
+                            courses={courses}
+                            busy={busy}
+                            onSave={(course, week) => {
+                              void run(
+                                () =>
+                                  updateEducationProgress(f.id, course, week),
+                                "교육 주차를 저장했습니다.",
+                              );
+                            }}
+                          />
+                        </div>
                       )}
                   </div>
                 </div>
