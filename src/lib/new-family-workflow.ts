@@ -2,6 +2,9 @@ import type { NewFamilyEntry, EducationCourse } from "@/types/new-family";
 
 export type FamilyFilters = {
   quick:
+    | "week1"
+    | "week2"
+    | "week3"
     | "graduation"
     | "unregistered"
     | "all"
@@ -60,6 +63,12 @@ export function filterFamilies(
         filters.quick === "graduation" &&
         education !== "completed" &&
         !graduationReady(f, courses)
+      )
+        return false;
+      if (
+        filters.quick.startsWith("week") &&
+        (registration === "registered" ||
+          educationProgressValue(f) !== filters.quick.slice(4))
       )
         return false;
       if (filters.quick === "unregistered" && registration === "registered")

@@ -164,3 +164,42 @@ it("저장 실패를 표시하며 기존 주차를 유지한다", async () => {
     screen.getByRole("combobox", { name: "김새가족 진행 상태" }),
   ).toHaveValue("");
 });
+
+it("주차별 탭은 인원수와 명단을 보여주며 저장 후 새 주차로 이동한다", () => {
+  const first = { ...family, education_progress: 1 };
+  const second = {
+    ...family,
+    id: 2,
+    education_progress: 2,
+    member: { ...family.member, id: 102, first_name: "두주" },
+  };
+  const { rerender } = render(
+    <NewFamilyView families={[first, second]} members={[]} seasons={[]} />,
+  );
+  fireEvent.click(screen.getByRole("tab", { name: "1주차 1" }));
+  expect(
+    screen.getByRole("link", { name: "김새가족 상세 보기" }),
+  ).toBeInTheDocument();
+  expect(
+    screen.queryByRole("link", { name: "김두주 상세 보기" }),
+  ).not.toBeInTheDocument();
+  rerender(
+    <NewFamilyView
+      families={[{ ...first, education_progress: 2 }, second]}
+      members={[]}
+      seasons={[]}
+    />,
+  );
+  expect(screen.getByRole("tab", { name: "1주차 0" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  expect(
+    screen.queryByRole("link", { name: "김새가족 상세 보기" }),
+  ).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("tab", { name: "2주차 2" }));
+  expect(
+    screen.getByRole("link", { name: "김새가족 상세 보기" }),
+  ).toBeInTheDocument();
+  expect(screen.getByRole("tab", { name: "3주차 0" })).toBeInTheDocument();
+});

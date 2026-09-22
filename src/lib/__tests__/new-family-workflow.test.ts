@@ -187,3 +187,51 @@ it("직접 선택한 주차가 이전 교육 기록보다 우선하며 수료는
     ),
   ).toHaveLength(1);
 });
+
+it("주차별 풀은 해당 주차만 포함하며 수료·등록·보관자는 제외한다", () => {
+  const families = [
+    entry({ id: 1, education_progress: 1 }),
+    entry({ id: 2, education_progress: 2 }),
+    entry({ id: 3, education_progress: 3 }),
+    entry({ id: 4, education_progress: 4 }),
+    entry({ id: 5, education_progress: 2, registered_at: "2026-09-22" }),
+    entry({ id: 6, education_progress: 2, dropped_out: true }),
+  ];
+  for (const week of [1, 2, 3] as const)
+    expect(
+      filterFamilies(
+        families,
+        { ...DEFAULT_FILTERS, quick: `week${week}` },
+        null,
+      ).map((f) => f.id),
+    ).toEqual([week]);
+});
+it("주차별 풀은 기존 차수별 주차도 읽고 검색·담당자 조건을 유지한다", () => {
+  const f = entry({
+    step: 2,
+    enrollments: [
+      {
+        id: 1,
+        course_id: 9,
+        current_week: 2,
+        status: "in_progress",
+        completed_at: null,
+      },
+    ],
+  });
+  expect(
+    filterFamilies(
+      [f],
+      {
+        ...DEFAULT_FILTERS,
+        quick: "week2",
+        search: "김방문",
+        assignee: "unassigned",
+      },
+      null,
+    ),
+  ).toHaveLength(1);
+  expect(
+    filterFamilies([f], { ...DEFAULT_FILTERS, quick: "week1" }, null),
+  ).toHaveLength(0);
+});

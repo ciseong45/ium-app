@@ -35,6 +35,9 @@ import { INPUT_CLASS } from "@/components/ui/constants";
 type SimpleMember = { id: number; last_name: string; first_name: string };
 const QUICK_FILTERS: { key: FamilyFilters["quick"]; label: string }[] = [
   { key: "unregistered", label: "등록 전 명단" },
+  { key: "week1", label: "1주차" },
+  { key: "week2", label: "2주차" },
+  { key: "week3", label: "3주차" },
   { key: "graduation", label: "수료" },
   { key: "all", label: "전체" },
   { key: "uneducated", label: "교육 미이수" },
