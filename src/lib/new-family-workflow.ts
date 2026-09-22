@@ -34,7 +34,11 @@ export const DEFAULT_FILTERS: FamilyFilters = {
 };
 export function educationState(f: NewFamilyEntry) {
   if (f.education_progress != null)
-    return f.education_progress === 4 ? "completed" : "in_progress";
+    return f.education_progress === 0
+      ? "not_started"
+      : f.education_progress === 4
+        ? "completed"
+        : "in_progress";
   if (f.step === 3 || f.enrollments?.some((e) => e.status === "completed"))
     return "completed";
   if (f.enrollments?.some((e) => e.status === "in_progress") || f.step === 2)
@@ -159,6 +163,7 @@ export function graduationReady(f: NewFamilyEntry, courses: EducationCourse[]) {
 export function progressLabel(f: NewFamilyEntry) {
   if (f.dropped_out) return "보관";
   if (educationState(f) === "completed") return "수료 완료";
+  if (f.education_progress === 0) return "교육 미참여";
   if (f.education_progress != null) return `${f.education_progress}주차`;
   const current = [...(f.enrollments ?? [])]
     .filter((e) => e.status === "in_progress")
@@ -171,6 +176,7 @@ export function progressLabel(f: NewFamilyEntry) {
 export function educationProgressValue(f: NewFamilyEntry): string {
   if (f.education_progress != null) return String(f.education_progress);
   if (educationState(f) === "completed") return "4";
+  if (educationState(f) === "not_started") return "0";
   const e = [...(f.enrollments ?? [])]
     .filter((e) => e.status === "in_progress")
     .sort((a, b) => b.id - a.id)[0];

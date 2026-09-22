@@ -235,3 +235,21 @@ it("주차별 풀은 기존 차수별 주차도 읽고 검색·담당자 조건�
     filterFamilies([f], { ...DEFAULT_FILTERS, quick: "week1" }, null),
   ).toHaveLength(0);
 });
+
+it("미참여로 되돌리면 과거 이수 기록이 있어도 주차·수료 풀에서 제외된다", () => {
+  const f = entry({
+    step: 3,
+    education_progress: 0,
+    enrollments: [
+      { id: 1, course_id: 9, status: "completed", completed_at: "2026-09-22" },
+    ],
+  });
+  expect(educationState(f)).toBe("not_started");
+  expect(progressLabel(f)).toBe("교육 미참여");
+  expect(registrationState(f)).toBe("unregistered");
+  for (const quick of ["week1", "week2", "week3", "graduation"] as const)
+    expect(
+      filterFamilies([f], { ...DEFAULT_FILTERS, quick }, null),
+    ).toHaveLength(0);
+  expect(filterFamilies([f], DEFAULT_FILTERS, null)).toHaveLength(1);
+});

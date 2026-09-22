@@ -46,6 +46,15 @@ await db.exec(
     "utf8",
   ),
 );
+await db.exec(
+  await readFile(
+    new URL(
+      "../supabase/20260922-new-family-reset-education.sql",
+      import.meta.url,
+    ),
+    "utf8",
+  ),
+);
 const scalar = async (sql) => Object.values((await db.query(sql)).rows[0])[0];
 await db.exec(
   `SET ROLE anon; SELECT receive_new_family('{"last_name":"김","first_name":"방문"}'); RESET ROLE;`,
@@ -120,6 +129,16 @@ assert.equal(
   1,
 );
 assert.equal(await scalar("SELECT step FROM new_family WHERE id=1"), 2);
+await assert.rejects(
+  db.exec(`SELECT new_family_manage(1,'register');`),
+  /교육 이수/,
+);
+await db.exec(`SELECT new_family_set_simple_education(1,0);`);
+assert.equal(
+  await scalar("SELECT education_progress FROM new_family WHERE id=1"),
+  0,
+);
+assert.equal(await scalar("SELECT step FROM new_family WHERE id=1"), 1);
 await assert.rejects(
   db.exec(`SELECT new_family_manage(1,'register');`),
   /교육 이수/,

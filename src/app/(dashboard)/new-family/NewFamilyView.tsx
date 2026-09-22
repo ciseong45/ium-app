@@ -563,15 +563,18 @@ export default function NewFamilyView({
                           () => updateSimpleEducation(f.id, value),
                           value === 4
                             ? "수료 처리했습니다. 정식 등록은 별도로 확정해주세요."
-                            : `${value}주차로 변경했습니다.`,
+                            : value === 0
+                              ? "교육 미참여로 변경했습니다."
+                              : `${value}주차로 변경했습니다.`,
                         );
                       }}
                     >
-                      <option value="" disabled>
-                        {educationState(f) === "in_progress"
-                          ? progressLabel(f)
-                          : "교육 미참여"}
-                      </option>
+                      {educationProgressValue(f) === "" && (
+                        <option value="" disabled>
+                          {progressLabel(f)}
+                        </option>
+                      )}
+                      <option value="0">교육 미참여</option>
                       <option value="1">1주차</option>
                       <option value="2">2주차</option>
                       <option value="3">3주차</option>

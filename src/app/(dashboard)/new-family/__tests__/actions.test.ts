@@ -142,3 +142,13 @@ it("간편 진도의 권한과 선택값을 검증한다", async () => {
   expect((await updateSimpleEducation(1, 2)).success).toBe(false);
   expect(rpc).not.toHaveBeenCalled();
 });
+
+it("미참여로 되돌리는 값 0을 저장하고 음수는 거부한다", async () => {
+  expect(await updateSimpleEducation(1, 0)).toEqual({ success: true });
+  expect(rpc).toHaveBeenCalledWith("new_family_set_simple_education", {
+    p_family_id: 1,
+    p_progress: 0,
+  });
+  expect((await updateSimpleEducation(1, -1)).success).toBe(false);
+  expect(rpc).toHaveBeenCalledTimes(1);
+});

@@ -298,7 +298,7 @@ export async function updateSimpleEducation(
     !Number.isSafeInteger(id) ||
     id < 1 ||
     !Number.isInteger(progress) ||
-    progress < 1 ||
+    progress < 0 ||
     progress > 4
   )
     return { success: false, error: "교육 주차를 확인해주세요." };

@@ -162,7 +162,7 @@ it("저장 실패를 표시하며 기존 주차를 유지한다", async () => {
   );
   expect(
     screen.getByRole("combobox", { name: "김새가족 진행 상태" }),
-  ).toHaveValue("");
+  ).toHaveValue("0");
 });
 
 it("주차별 탭은 인원수와 명단을 보여주며 저장 후 새 주차로 이동한다", () => {
@@ -202,4 +202,25 @@ it("주차별 탭은 인원수와 명단을 보여주며 저장 후 새 주차�
     screen.getByRole("link", { name: "김새가족 상세 보기" }),
   ).toBeInTheDocument();
   expect(screen.getByRole("tab", { name: "3주차 0" })).toBeInTheDocument();
+});
+
+it("1주차에서 교육 미참여를 선택하여 이전 단계로 되돌린다", async () => {
+  render(
+    <NewFamilyView
+      families={[{ ...family, education_progress: 1 }]}
+      members={[]}
+      seasons={[]}
+    />,
+  );
+  const select = screen.getByRole("combobox", { name: "김새가족 진행 상태" });
+  expect(
+    screen.getByRole("option", { name: "교육 미참여" }),
+  ).not.toBeDisabled();
+  fireEvent.change(select, { target: { value: "0" } });
+  await waitFor(() => expect(updateSimpleEducation).toHaveBeenCalledWith(1, 0));
+  await waitFor(() =>
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "교육 미참여로 변경했습니다.",
+    ),
+  );
 });
