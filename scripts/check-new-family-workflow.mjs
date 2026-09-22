@@ -37,6 +37,15 @@ await db.exec(
     "utf8",
   ),
 );
+await db.exec(
+  await readFile(
+    new URL(
+      "../supabase/20260922-new-family-simple-education.sql",
+      import.meta.url,
+    ),
+    "utf8",
+  ),
+);
 const scalar = async (sql) => Object.values((await db.query(sql)).rows[0])[0];
 await db.exec(
   `SET ROLE anon; SELECT receive_new_family('{"last_name":"김","first_name":"방문"}'); RESET ROLE;`,
@@ -104,6 +113,27 @@ assert.equal(
   await scalar("SELECT registered_at FROM new_family WHERE id=1"),
   null,
 );
+// 간편 변경은 개설 없이 수료 가능하며 등록 상태는 바꾸지 않는다.
+await db.exec(`SELECT new_family_set_simple_education(1,1);`);
+assert.equal(
+  await scalar("SELECT education_progress FROM new_family WHERE id=1"),
+  1,
+);
+assert.equal(await scalar("SELECT step FROM new_family WHERE id=1"), 2);
+await assert.rejects(
+  db.exec(`SELECT new_family_manage(1,'register');`),
+  /교육 이수/,
+);
+await db.exec(`SELECT new_family_set_simple_education(1,4);`);
+assert.equal(
+  await scalar("SELECT registered_at FROM new_family WHERE id=1"),
+  null,
+);
+assert.equal(await scalar("SELECT status FROM members WHERE id=1"), "visitor");
+await assert.rejects(
+  db.exec(`SELECT new_family_set_simple_education(1,5);`),
+  /주차/,
+);
 await db.exec(
   `SELECT new_family_manage(1,'register'); SELECT new_family_manage(1,'register');`,
 );
@@ -125,6 +155,10 @@ assert.equal(
   await scalar("SELECT registration_source FROM new_family WHERE id=1"),
   "confirmed",
 );
+await assert.rejects(
+  db.exec(`SELECT new_family_set_simple_education(1,2);`),
+  /정식 등록/,
+);
 await db.exec(`SET test.uid='00000000-0000-0000-0000-000000000002';`);
 await assert.rejects(
   db.exec(`SELECT new_family_set_progress(1,1,1,false);`),
@@ -132,6 +166,10 @@ await assert.rejects(
 );
 await assert.rejects(
   db.exec(`SELECT new_family_manage(1,'register');`),
+  /권한/,
+);
+await assert.rejects(
+  db.exec(`SELECT new_family_set_simple_education(1,2);`),
   /권한/,
 );
 await db.exec(

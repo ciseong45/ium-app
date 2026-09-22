@@ -7,6 +7,7 @@ import {
   updateStep,
   createCourse,
   updateEducationProgress,
+  updateSimpleEducation,
 } from "../actions";
 jest.mock("@/lib/auth");
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
@@ -124,5 +125,20 @@ it("교육 주차는 정수만 허용하고 순장 수정은 거부한다", asyn
     );
   setup("group_leader");
   expect((await updateEducationProgress(1, 2, 1, false)).success).toBe(false);
+  expect(rpc).not.toHaveBeenCalled();
+});
+
+it("간편 진도는 교육 개설 없이 저장하며 수료와 등록을 분리한다", async () => {
+  expect(await updateSimpleEducation(1, 4)).toEqual({ success: true });
+  expect(rpc).toHaveBeenCalledWith("new_family_set_simple_education", {
+    p_family_id: 1,
+    p_progress: 4,
+  });
+  expect(rpc).toHaveBeenCalledTimes(1);
+});
+it("간편 진도의 권한과 선택값을 검증한다", async () => {
+  expect((await updateSimpleEducation(1, 5)).success).toBe(false);
+  setup("group_leader");
+  expect((await updateSimpleEducation(1, 2)).success).toBe(false);
   expect(rpc).not.toHaveBeenCalled();
 });

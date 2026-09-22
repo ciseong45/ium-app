@@ -286,3 +286,31 @@ export async function updateEducationProgress(
   refreshFamilyPages();
   return { success: true };
 }
+
+export async function updateSimpleEducation(
+  id: number,
+  progress: number,
+): Promise<ActionResult> {
+  const { supabase, role } = await requireAuth();
+  if (role === "group_leader")
+    return { success: false, error: "권한이 없습니다." };
+  if (
+    !Number.isSafeInteger(id) ||
+    id < 1 ||
+    !Number.isInteger(progress) ||
+    progress < 1 ||
+    progress > 4
+  )
+    return { success: false, error: "교육 주차를 확인해주세요." };
+  const { error } = await supabase.rpc("new_family_set_simple_education", {
+    p_family_id: id,
+    p_progress: progress,
+  });
+  if (error)
+    return {
+      success: false,
+      error: "교육 상태를 저장하지 못했습니다. 새로고침 후 다시 시도해주세요.",
+    };
+  refreshFamilyPages();
+  return { success: true };
+}

@@ -166,3 +166,24 @@ it("수료 탭은 등록 완료 후에도 교육 수료 이력을 보존한다",
   ).toHaveLength(1);
   expect(progressLabel(f)).toBe("수료 완료");
 });
+
+it("직접 선택한 주차가 이전 교육 기록보다 우선하며 수료는 별도 탭에 표시된다", () => {
+  const f = entry({
+    step: 3,
+    education_progress: 2,
+    enrollments: [
+      { id: 1, course_id: 9, status: "completed", completed_at: "2026-09-01" },
+    ],
+  });
+  expect(educationState(f)).toBe("in_progress");
+  expect(registrationState(f)).toBe("unregistered");
+  expect(progressLabel(f)).toBe("2주차");
+  expect(graduationReady({ ...f, education_progress: 3 }, [])).toBe(true);
+  expect(
+    filterFamilies(
+      [{ ...f, education_progress: 4 }],
+      { ...DEFAULT_FILTERS, quick: "graduation" },
+      null,
+    ),
+  ).toHaveLength(1);
+});

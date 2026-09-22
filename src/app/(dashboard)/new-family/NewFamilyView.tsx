@@ -3,11 +3,10 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import EducationProgressEditor from "./EducationProgressEditor";
 import {
   createNewFamily,
   createCourse,
-  updateEducationProgress,
+  updateSimpleEducation,
   confirmRegistration,
   updateAssignee,
   restoreNewFamily,
@@ -19,7 +18,8 @@ import type {
 } from "@/types/new-family";
 import type { ActionResult } from "@/lib/validations";
 import {
-  graduationEnrollment,
+  graduationReady,
+  educationProgressValue,
   progressLabel,
   DEFAULT_FILTERS,
   filterFamilies,
@@ -68,7 +68,6 @@ export default function NewFamilyView({
   });
   const [panel, setPanel] = useState<"visitor" | "course" | null>(null);
   const [showFilters, setShowFilters] = useState(false);
-  const [progressId, setProgressId] = useState<number | null>(null);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const advancedCount = [
     filters.visitSeason,
@@ -338,7 +337,7 @@ export default function NewFamilyView({
       </nav>
       {filters.quick === "graduation" && (
         <p className="text-sm text-stone-500">
-          마지막 주차에 도달한 분과 수료한 분의 명단입니다. 수료 후 정식 등록은
+          3주차에 도달한 분과 수료한 분의 명단입니다. 수료 후 정식 등록은
           관리에서 확정해주세요.
         </p>
       )}
@@ -547,56 +546,52 @@ export default function NewFamilyView({
                   {name}
                 </Link>
                 <div className="row-start-2 flex flex-wrap items-center gap-2 md:row-auto">
-                  <button
-                    aria-label={`${name} 진행 상태 변경`}
-                    aria-expanded={progressId === f.id}
-                    aria-controls={`family-${f.id}-progress`}
-                    disabled={
-                      !canEdit ||
-                      busy ||
-                      f.dropped_out ||
-                      registration === "registered" ||
-                      educationState(f) === "completed"
-                    }
-                    onClick={() => {
-                      setProgressId(progressId === f.id ? null : f.id);
-                      setExpandedId(null);
-                    }}
-                    className={`rounded-full px-2 py-1 text-xs disabled:cursor-default ${educationState(f) === "completed" ? "bg-green-50 text-green-800" : "bg-stone-100 text-stone-700 hover:bg-stone-200"}`}
-                  >
-                    {progressLabel(f)}
-                    {canEdit &&
-                    !f.dropped_out &&
-                    registration !== "registered" &&
-                    educationState(f) !== "completed"
-                      ? " ▾"
-                      : ""}
-                  </button>
+                  {canEdit &&
+                  !f.dropped_out &&
+                  registration !== "registered" ? (
+                    <select
+                      aria-label={`${name} 진행 상태`}
+                      value={educationProgressValue(f)}
+                      disabled={busy}
+                      className={`cursor-pointer rounded-full border-0 px-2 py-1 text-xs disabled:opacity-50 ${educationState(f) === "completed" ? "bg-green-50 text-green-800" : "bg-stone-100 text-stone-700"}`}
+                      onChange={(e) => {
+                        const value = Number(e.target.value);
+                        void run(
+                          () => updateSimpleEducation(f.id, value),
+                          value === 4
+                            ? "수료 처리했습니다. 정식 등록은 별도로 확정해주세요."
+                            : `${value}주차로 변경했습니다.`,
+                        );
+                      }}
+                    >
+                      <option value="" disabled>
+                        {educationState(f) === "in_progress"
+                          ? progressLabel(f)
+                          : "교육 미참여"}
+                      </option>
+                      <option value="1">1주차</option>
+                      <option value="2">2주차</option>
+                      <option value="3">3주차</option>
+                      <option value="4">수료</option>
+                    </select>
+                  ) : (
+                    <span className="rounded-full bg-stone-100 px-2 py-1 text-xs text-stone-600">
+                      {progressLabel(f)}
+                    </span>
+                  )}
                   {filters.quick === "graduation" &&
-                    graduationEnrollment(f, courses) &&
+                    graduationReady(f, courses) &&
                     canEdit && (
                       <button
                         aria-label={`${name} 수료 처리`}
                         disabled={busy}
-                        className="rounded-lg border border-stone-300 px-2 py-1 text-xs hover:bg-stone-50 disabled:opacity-40"
-                        onClick={() => {
-                          const enrollment = graduationEnrollment(f, courses)!;
-                          if (
-                            confirm(
-                              `${name}님의 교육 이수를 확인하고 수료 처리하시겠습니까? 정식 등록은 별도로 확정합니다.`,
-                            )
+                        className="rounded-lg border px-2 py-1 text-xs"
+                        onClick={() =>
+                          void run(
+                            () => updateSimpleEducation(f.id, 4),
+                            "수료 처리했습니다. 정식 등록은 별도로 확정해주세요.",
                           )
-                            void run(
-                              () =>
-                                updateEducationProgress(
-                                  f.id,
-                                  enrollment.course_id,
-                                  enrollment.current_week!,
-                                  true,
-                                ),
-                              `${name}님의 수료를 완료했습니다. 정식 등록은 별도로 확정해주세요.`,
-                            );
-                        }}
+                        }
                       >
                         수료 처리
                       </button>
@@ -619,37 +614,14 @@ export default function NewFamilyView({
                   aria-label={`${name} 관리${expandedId === f.id ? " 닫기" : ""}`}
                   aria-expanded={expandedId === f.id}
                   aria-controls={`family-${f.id}-details`}
-                  onClick={() => (
-                    setProgressId(null),
+                  onClick={() =>
                     setExpandedId(expandedId === f.id ? null : f.id)
-                  )}
+                  }
                   className="col-start-2 row-span-2 row-start-1 rounded-lg px-2 py-2 text-sm text-stone-600 hover:bg-stone-100 md:col-auto md:row-span-1 md:row-auto"
                 >
                   {expandedId === f.id ? "닫기 ↑" : "관리 ↓"}
                 </button>
               </div>
-              {progressId === f.id && (
-                <div
-                  id={`family-${f.id}-progress`}
-                  className="border-t border-stone-100 bg-stone-50 px-4 py-4"
-                >
-                  <EducationProgressEditor
-                    key={f.id}
-                    family={f}
-                    courses={courses}
-                    busy={busy}
-                    onClose={() => setProgressId(null)}
-                    onSave={(course, week) => {
-                      void run(
-                        () => updateEducationProgress(f.id, course, week),
-                        "교육 주차를 저장했습니다.",
-                      ).then((ok) => {
-                        if (ok) setProgressId(null);
-                      });
-                    }}
-                  />
-                </div>
-              )}
               {expandedId === f.id && (
                 <div
                   id={`family-${f.id}-details`}
@@ -759,33 +731,6 @@ export default function NewFamilyView({
                           : ""}
                       </p>
                     ))}
-                    {canEdit &&
-                      courses.length === 0 &&
-                      !f.dropped_out &&
-                      registration !== "registered" && (
-                        <p className="mt-3 text-sm text-stone-500">
-                          교육을 개설하면 참여·이수를 기록할 수 있습니다.
-                        </p>
-                      )}
-                    {canEdit &&
-                      !f.dropped_out &&
-                      registration !== "registered" &&
-                      educationState(f) !== "completed" && (
-                        <div className="mt-3">
-                          <EducationProgressEditor
-                            family={f}
-                            courses={courses}
-                            busy={busy}
-                            onSave={(course, week) => {
-                              void run(
-                                () =>
-                                  updateEducationProgress(f.id, course, week),
-                                "교육 주차를 저장했습니다.",
-                              );
-                            }}
-                          />
-                        </div>
-                      )}
                   </div>
                 </div>
               )}

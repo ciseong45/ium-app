@@ -10,6 +10,7 @@ export type NewFamilyEntry = {
   member_id: number;
   first_visit: string;
   step: number;
+  education_progress?: number | null;
   step_updated_at: string;
   assigned_to: number | null;
   season_id: number | null;
