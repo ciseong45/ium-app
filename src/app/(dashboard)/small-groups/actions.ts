@@ -270,8 +270,8 @@ export async function getUnassignedMembers(seasonId: number) {
   // 이 시즌에 배정된 멤버 ID 목록
   const { data: assigned, error: assignedError } = await supabase
     .from("small_group_members")
-    .select("member_id, small_groups!inner(season_id)")
-    .eq("small_groups.season_id", seasonId);
+    .select("member_id")
+    .eq("season_id", seasonId);
   if (assignedError) throw new Error("현재 순원을 확인하지 못했습니다.");
 
   const assignedIds = (assigned || []).map((a) => a.member_id);
