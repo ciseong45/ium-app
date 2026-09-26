@@ -9,7 +9,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import { INPUT_CLASS } from "@/components/ui/constants";
 import type { Member } from "@/types/member";
 import type { UpperRoom, GroupMemberEntry } from "@/types/small-group";
-import type { Application } from "./applications-actions";
+import type { Campaign, RegistrationApplication } from "@/lib/small-group-registration";
 
 type Season = {
   id: number;
@@ -35,7 +35,11 @@ export default function SmallGroupsView({
   upperRooms,
   unassignedMembers,
   initialGroupMembers,
-  initialPool,
+  campaigns,
+  selectedCampaignId,
+  initialApplications,
+  educationLabels,
+  operatorSettings,
 }: {
   seasons: Season[];
   activeSeason: Season | null;
@@ -43,7 +47,11 @@ export default function SmallGroupsView({
   upperRooms: UpperRoom[];
   unassignedMembers: Member[];
   initialGroupMembers: Record<number, GroupMemberEntry[]>;
-  initialPool: Application[];
+  campaigns: Campaign[];
+  selectedCampaignId: number | null;
+  initialApplications: RegistrationApplication[];
+  educationLabels: Record<number, string>;
+  operatorSettings: { choices: { id: string; name: string }[]; assigned: Record<number, string[]> };
 }) {
   const router = useRouter();
   const role = useRole();
@@ -205,7 +213,11 @@ export default function SmallGroupsView({
             upperRooms={upperRooms}
             unassignedMembers={unassignedMembers}
             initialGroupMembers={initialGroupMembers}
-            initialPool={initialPool}
+            campaigns={campaigns}
+            selectedCampaignId={selectedCampaignId}
+            initialApplications={initialApplications}
+            educationLabels={educationLabels}
+            operatorSettings={operatorSettings}
             hideHeader
           />
         ) : (

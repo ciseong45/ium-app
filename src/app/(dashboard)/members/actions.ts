@@ -396,50 +396,19 @@ export async function moveMembersToGroup(
   if (role === "group_leader") return { success: false, error: "권한이 없습니다." };
   if (memberIds.length === 0) return { success: false, error: "선택한 멤버가 없습니다." };
 
-  // 활성 시즌의 그룹 ID 목록 조회
-  const { data: activeSeason } = await supabase
+  const { data: activeSeason, error: seasonError } = await supabase
     .from("small_group_seasons")
     .select("id")
     .eq("is_active", true)
     .single();
 
-  if (!activeSeason) return { success: false, error: "활성 시즌이 없습니다." };
-
-  const { data: seasonGroups } = await supabase
-    .from("small_groups")
-    .select("id")
-    .eq("season_id", activeSeason.id);
-
-  const seasonGroupIds = (seasonGroups || []).map((g: { id: number }) => g.id);
-  if (seasonGroupIds.length === 0) return { success: false, error: "활성 시즌에 순이 없습니다." };
-
-  // 기존 배정 삭제 (활성 시즌 순만)
-  const { error: deleteError } = await supabase
-    .from("small_group_members")
-    .delete()
-    .in("member_id", memberIds)
-    .in("group_id", seasonGroupIds);
-
-  if (deleteError) return { success: false, error: "기존 순 배정 해제에 실패했습니다." };
-
-  // targetGroupId가 null이면 배정 해제만
-  if (targetGroupId === null) {
-    revalidatePath("/members");
-    revalidatePath("/small-groups");
-    return { success: true };
-  }
-
-  // 새 그룹에 배정
-  const rows = memberIds.map((memberId) => ({
-    group_id: targetGroupId,
-    member_id: memberId,
-  }));
-
-  const { error: insertError } = await supabase
-    .from("small_group_members")
-    .insert(rows);
-
-  if (insertError) return { success: false, error: "순 배정에 실패했습니다." };
+  if (seasonError || !activeSeason) return { success: false, error: "활성 시즌을 확인하지 못했습니다." };
+  if (memberIds.length > 100) return { success: false, error: "한 번에 100명까지 배정할 수 있습니다." };
+  const { error } = await supabase.rpc("set_group_members_bulk", {
+    p_season_id: activeSeason.id, p_member_ids: memberIds, p_target_group_id: targetGroupId,
+    p_reason: "성도 목록에서 순 소속 변경",
+  });
+  if (error) return { success: false, error: "순 배정을 저장하지 못했습니다. 학기와 현재 순을 확인해주세요." };
 
   revalidatePath("/members");
   revalidatePath("/small-groups");

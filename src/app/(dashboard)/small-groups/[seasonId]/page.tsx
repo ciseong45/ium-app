@@ -5,27 +5,34 @@ import {
   getAllGroupMembersForSeason,
   getUpperRoomsBySeason,
 } from "../actions";
-import { getPool } from "../applications-actions";
+import { getApplicationsByCampaign, getCampaignsBySeason, getEducationLabels, getOperatorSettings } from "../registration-actions";
 import SeasonTabs from "../SeasonTabs";
 import type { Member } from "@/types/member";
 import type { GroupMemberEntry } from "@/types/small-group";
 
 export default async function SeasonDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ seasonId: string }>;
+  searchParams: Promise<{ campaign?: string }>;
 }) {
   const { seasonId } = await params;
+  const query = await searchParams;
   const id = Number(seasonId);
 
-  const [seasons, groups, unassigned, allGroupMembers, upperRooms, pool] = await Promise.all([
+  const [seasons, groups, unassigned, allGroupMembers, upperRooms, campaigns] = await Promise.all([
     getSeasons(),
     getGroupsBySeason(id),
     getUnassignedMembers(id),
     getAllGroupMembersForSeason(id),
     getUpperRoomsBySeason(id),
-    getPool(id),
+    getCampaignsBySeason(id),
   ]);
+  const selectedCampaignId = campaigns.find(c => c.id === Number(query.campaign))?.id ?? campaigns[0]?.id ?? null;
+  const initialApplications = selectedCampaignId ? await getApplicationsByCampaign(selectedCampaignId) : [];
+  const educationLabels = selectedCampaignId ? await getEducationLabels(selectedCampaignId, initialApplications) : {};
+  const operatorSettings = await getOperatorSettings(id);
 
   const season = seasons.find((s) => s.id === id);
   if (!season) {
@@ -47,7 +54,11 @@ export default async function SeasonDetailPage({
       upperRooms={upperRooms}
       unassignedMembers={unassigned as Member[]}
       initialGroupMembers={groupMembersMap}
-      initialPool={pool}
+      campaigns={campaigns}
+      selectedCampaignId={selectedCampaignId}
+      initialApplications={initialApplications}
+      educationLabels={educationLabels}
+      operatorSettings={operatorSettings}
     />
   );
 }

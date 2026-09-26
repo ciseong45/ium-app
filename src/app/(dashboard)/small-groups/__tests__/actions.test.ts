@@ -38,7 +38,7 @@ function createQueryMock(
 
 function setupAuth(role = "admin") {
   const queryMock = createQueryMock();
-  const supabase = { from: jest.fn().mockReturnValue(queryMock) };
+  const supabase = { from: jest.fn().mockReturnValue(queryMock), rpc: jest.fn().mockResolvedValue({ error: null }) };
   requireAuthMock.mockResolvedValue({
     supabase: supabase as any,
     user: { id: "user-1" } as any,
@@ -209,16 +209,15 @@ describe("assignMember", () => {
   });
 
   it("정상 배정 성공", async () => {
-    const { supabase, queryMock } = setupAuth("admin");
+    const { supabase } = setupAuth("admin");
     const { assignMember } = await importActions();
 
     const result = await assignMember(1, 100, 1);
 
     expect(result).toEqual({ success: true });
-    expect(supabase.from).toHaveBeenCalledWith("small_group_members");
-    expect(queryMock.insert).toHaveBeenCalledWith({
-      group_id: 1,
-      member_id: 100,
+    expect(supabase.rpc).toHaveBeenCalledWith("set_group_member", {
+      p_season_id: 1, p_member_id: 100, p_group_id: 1,
+      p_expected_group_id: null, p_reason: "순별 명단에서 배정",
     });
     expect(revalidatePath).toHaveBeenCalledWith("/small-groups/1");
   });
@@ -236,23 +235,23 @@ describe("unassignMember", () => {
   });
 
   it("정상 제외 성공", async () => {
-    const { supabase, queryMock } = setupAuth("admin");
+    const { supabase } = setupAuth("admin");
     const { unassignMember } = await importActions();
 
     const result = await unassignMember(1, 100, 1);
 
     expect(result).toEqual({ success: true });
-    expect(supabase.from).toHaveBeenCalledWith("small_group_members");
-    expect(queryMock.delete).toHaveBeenCalled();
-    expect(queryMock.eq).toHaveBeenCalledWith("group_id", 1);
-    expect(queryMock.eq).toHaveBeenCalledWith("member_id", 100);
+    expect(supabase.rpc).toHaveBeenCalledWith("set_group_member", {
+      p_season_id: 1, p_member_id: 100, p_group_id: null,
+      p_expected_group_id: 1, p_reason: "순별 명단에서 제외",
+    });
     expect(revalidatePath).toHaveBeenCalledWith("/small-groups/1");
   });
 });
 
 // ===== getSeasons =====
 describe("getSeasons", () => {
-  it("에러 시 빈 배열 반환", async () => {
+  it("조회 오류를 빈 학기로 숨기지 않는다", async () => {
     const queryMock = createQueryMock({
       data: null,
       error: { message: "DB error" },
@@ -266,8 +265,6 @@ describe("getSeasons", () => {
     });
 
     const { getSeasons } = await importActions();
-    const result = await getSeasons();
-
-    expect(result).toEqual([]);
+    await expect(getSeasons()).rejects.toThrow("학기 목록을 불러오지 못했습니다.");
   });
 });

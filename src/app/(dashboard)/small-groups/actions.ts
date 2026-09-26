@@ -13,7 +13,7 @@ export async function getSeasons() {
     .from("small_group_seasons")
     .select("id, name, is_active, start_date, end_date, created_at")
     .order("created_at", { ascending: false });
-  if (error) return [];
+  if (error) throw new Error("학기 목록을 불러오지 못했습니다.");
   return data;
 }
 
@@ -99,7 +99,7 @@ export async function getUpperRoomsBySeason(seasonId: number) {
     .select("id, season_id, name, leader_id, display_order, leader:members!leader_id(id, last_name, first_name)")
     .eq("season_id", seasonId)
     .order("display_order");
-  if (error) return [];
+  if (error) throw new Error("다락방 목록을 불러오지 못했습니다.");
   return (data ?? []).map((d: any) => ({
     id: d.id as number,
     season_id: d.season_id as number,
@@ -143,7 +143,7 @@ export async function getGroupsBySeason(seasonId: number) {
     .select("*, leader:members!leader_id(id, last_name, first_name)")
     .eq("season_id", seasonId)
     .order("name");
-  if (error) return [];
+  if (error) throw new Error("순 목록을 불러오지 못했습니다.");
   return data;
 }
 
@@ -228,7 +228,7 @@ export async function getGroupMembers(groupId: number) {
     .select("id, group_id, member:members(id, last_name, first_name, status, phone, email, gender, birth_date, address, kakao_id, is_baptized, school_or_work, notes, created_at, updated_at)")
     .eq("group_id", groupId)
     .order("created_at");
-  if (error) return [];
+  if (error) throw new Error("순원 목록을 불러오지 못했습니다.");
   return data;
 }
 
@@ -236,11 +236,12 @@ export async function getGroupMembers(groupId: number) {
 export async function getAllGroupMembersForSeason(seasonId: number) {
   const { supabase } = await requireAuth();
 
-  const { data: groups } = await supabase
+  const { data: groups, error: groupsError } = await supabase
     .from("small_groups")
     .select("id")
     .eq("season_id", seasonId);
 
+  if (groupsError) throw new Error("순 목록을 불러오지 못했습니다.");
   if (!groups || groups.length === 0) return [];
 
   const groupIds = groups.map((g: { id: number }) => g.id);
@@ -250,7 +251,7 @@ export async function getAllGroupMembersForSeason(seasonId: number) {
     .in("group_id", groupIds)
     .order("created_at");
 
-  if (error) return [];
+  if (error) throw new Error("순원 명단을 불러오지 못했습니다.");
 
   const memberEntries = (data ?? []).map((d: any) => ({
     id: d.id as number,
@@ -259,42 +260,19 @@ export async function getAllGroupMembersForSeason(seasonId: number) {
     member: d.member as import("@/types/member").Member,
   }));
 
-  const { data: assignedApplications } = await supabase
-    .from("small_group_applications")
-    .select("id, member_id, assigned_group_id, name, phone, source, note, applied_at")
-    .eq("season_id", seasonId)
-    .eq("status", "assigned")
-    .in("assigned_group_id", groupIds)
-    .order("applied_at");
-
-  const applicationEntries = (assignedApplications ?? [])
-    .filter((d: any) => d.assigned_group_id !== null)
-    .map((d: any) => ({
-      id: d.id as number,
-      group_id: d.assigned_group_id as number,
-      kind: "application" as const,
-      application: {
-        id: d.id as number,
-        member_id: d.member_id as number | null,
-        name: d.name as string,
-        phone: d.phone as string | null,
-        source: d.source as "form" | "admin",
-        note: d.note as string | null,
-        applied_at: d.applied_at as string,
-      },
-    }));
-
-  return [...memberEntries, ...applicationEntries];
+  return memberEntries;
 }
 
 export async function getUnassignedMembers(seasonId: number) {
-  const { supabase } = await requireAuth();
+  const { supabase, role } = await requireAuth();
+  if (role === "group_leader") return [];
 
   // 이 시즌에 배정된 멤버 ID 목록
-  const { data: assigned } = await supabase
+  const { data: assigned, error: assignedError } = await supabase
     .from("small_group_members")
     .select("member_id, small_groups!inner(season_id)")
     .eq("small_groups.season_id", seasonId);
+  if (assignedError) throw new Error("현재 순원을 확인하지 못했습니다.");
 
   const assignedIds = (assigned || []).map((a) => a.member_id);
 
@@ -311,16 +289,17 @@ export async function getUnassignedMembers(seasonId: number) {
   }
 
   const { data, error } = await query;
-  if (error) return [];
+  if (error) throw new Error("미배정 성도를 불러오지 못했습니다.");
   return data;
 }
 
 export async function assignMember(groupId: number, memberId: number, seasonId: number): Promise<ActionResult> {
   const { supabase, role } = await requireAuth();
   if (role === "group_leader") return { success: false, error: "권한이 없습니다." };
-  const { error } = await supabase
-    .from("small_group_members")
-    .insert({ group_id: groupId, member_id: memberId });
+  const { error } = await supabase.rpc("set_group_member", {
+    p_season_id: seasonId, p_member_id: memberId, p_group_id: groupId,
+    p_expected_group_id: null, p_reason: "순별 명단에서 배정",
+  });
   if (error) return { success: false, error: "멤버 배정에 실패했습니다." };
   revalidatePath(`/small-groups/${seasonId}`);
   return { success: true };
@@ -329,11 +308,10 @@ export async function assignMember(groupId: number, memberId: number, seasonId: 
 export async function unassignMember(groupId: number, memberId: number, seasonId: number): Promise<ActionResult> {
   const { supabase, role } = await requireAuth();
   if (role === "group_leader") return { success: false, error: "권한이 없습니다." };
-  const { error } = await supabase
-    .from("small_group_members")
-    .delete()
-    .eq("group_id", groupId)
-    .eq("member_id", memberId);
+  const { error } = await supabase.rpc("set_group_member", {
+    p_season_id: seasonId, p_member_id: memberId, p_group_id: null,
+    p_expected_group_id: groupId, p_reason: "순별 명단에서 제외",
+  });
   if (error) return { success: false, error: "멤버 제외에 실패했습니다." };
   revalidatePath(`/small-groups/${seasonId}`);
   return { success: true };

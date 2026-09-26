@@ -6,9 +6,9 @@ export async function updateSession(request: NextRequest) {
     request,
   });
 
-  const publicPaths = ["/login", "/auth", "/visitor-card", "/summer-apply", "/pending"];
+  const publicPaths = ["/login", "/auth", "/visitor-card", "/summer-apply", "/group-apply", "/api/group-applications", "/pending"];
   const isPublicPath = publicPaths.some((path) =>
-    request.nextUrl.pathname.startsWith(path)
+    request.nextUrl.pathname === path || request.nextUrl.pathname.startsWith(`${path}/`)
   );
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;

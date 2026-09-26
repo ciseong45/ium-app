@@ -5,23 +5,28 @@ import {
   getAllGroupMembersForSeason,
   getUpperRoomsBySeason,
 } from "./actions";
-import { getPool } from "./applications-actions";
+import { getApplicationsByCampaign, getCampaignsBySeason, getEducationLabels, getOperatorSettings } from "./registration-actions";
 import SmallGroupsView from "./SmallGroupsView";
 import type { GroupMemberEntry } from "@/types/small-group";
 
-export default async function SmallGroupsPage() {
+export default async function SmallGroupsPage({ searchParams }: { searchParams: Promise<{ campaign?: string }> }) {
+  const query = await searchParams;
   const seasons = await getSeasons();
   const activeSeason = seasons.find((s) => s.is_active) ?? null;
 
   // 활성 시즌이 있으면 해당 시즌의 모든 데이터 병렬 로드
   if (activeSeason) {
-    const [groups, unassigned, allGroupMembers, upperRooms, pool] = await Promise.all([
+    const [groups, unassigned, allGroupMembers, upperRooms, campaigns] = await Promise.all([
       getGroupsBySeason(activeSeason.id),
       getUnassignedMembers(activeSeason.id),
       getAllGroupMembersForSeason(activeSeason.id),
       getUpperRoomsBySeason(activeSeason.id),
-      getPool(activeSeason.id),
+      getCampaignsBySeason(activeSeason.id),
     ]);
+    const selectedCampaignId = campaigns.find(c => c.id === Number(query.campaign))?.id ?? campaigns[0]?.id ?? null;
+    const initialApplications = selectedCampaignId ? await getApplicationsByCampaign(selectedCampaignId) : [];
+    const educationLabels = selectedCampaignId ? await getEducationLabels(selectedCampaignId, initialApplications) : {};
+    const operatorSettings = await getOperatorSettings(activeSeason.id);
 
     const groupMembersMap: Record<number, GroupMemberEntry[]> = {};
     for (const group of groups) {
@@ -38,7 +43,11 @@ export default async function SmallGroupsPage() {
         upperRooms={upperRooms}
         unassignedMembers={unassigned}
         initialGroupMembers={groupMembersMap}
-        initialPool={pool}
+        campaigns={campaigns}
+        selectedCampaignId={selectedCampaignId}
+        initialApplications={initialApplications}
+        educationLabels={educationLabels}
+        operatorSettings={operatorSettings}
       />
     );
   }
@@ -51,7 +60,11 @@ export default async function SmallGroupsPage() {
       upperRooms={[]}
       unassignedMembers={[]}
       initialGroupMembers={{}}
-      initialPool={[]}
+      campaigns={[]}
+      selectedCampaignId={null}
+      initialApplications={[]}
+      educationLabels={{}}
+      operatorSettings={{ choices: [], assigned: {} }}
     />
   );
 }
